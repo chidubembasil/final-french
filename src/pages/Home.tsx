@@ -105,7 +105,7 @@ export default function Home() {
             <main className='w-full h-fit  pt-20'>
                <div id="slider" className="w-full h-screen relative overflow-hidden">
 
-                <Swiper
+                <Swiper 
                      modules={[Autoplay] as any}
   autoplay={{ delay: 7000 }}
   loop
