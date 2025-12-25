@@ -5,37 +5,36 @@ import pic from "../assets/img/_A1A4703.jpg"
 function Podcast(){
     return(
         <main className="pt-20">
-           <div className="relative w-full h-[95dvh] overflow-hidden">
+          <div className="relative w-full h-[95dvh] overflow-hidden">
+              {/* Background image */}
+              <img
+                src={pic}
+                alt=""
+                className="absolute inset-0 w-full h-full object-cover z-0"
+              />
 
-  {/* Background image */}
-  <img
-    src={pic}
-    alt=""
-    className="absolute inset-0 w-full h-full object-cover z-0"
-  />
+              {/* Red + Blue gradient overlay */}
+              <div className="absolute inset-0 z-10 bg-gradient-to-br from-red-600/70 via-red-500/50 to-blue-800/70" />
 
-  {/* Red + Blue gradient overlay */}
-  <div className="absolute inset-0 z-10 bg-gradient-to-br from-red-600/70 via-red-500/50 to-blue-800/70" />
+              {/* Content */}
+              <div className="relative z-20 w-full h-full flex flex-col items-start justify-center pl-6 gap-5">
 
-  {/* Content */}
-  <div className="relative z-20 w-full h-full flex flex-col items-start justify-center pl-6 gap-5">
+                {/* Glass badge */}
+                <div className="flex flex-row items-center gap-2 px-4 py-2 text-white bg-white/20 backdrop-blur-md border border-white/30 rounded-3xl">
+                  <Headphones color="white" size={17} />
+                  <p className="text-sm">À toi le micro</p>
+                </div>
 
-    {/* Glass badge */}
-    <div className="flex flex-row items-center gap-2 px-4 py-2 text-white bg-white/20 backdrop-blur-md border border-white/30 rounded-3xl">
-      <Headphones color="white" size={17} />
-      <p className="text-sm">À toi le micro</p>
-    </div>
+                <h1 className="text-white text-6xl font-bold font-serif">
+                  Podcast Library
+                </h1>
 
-    <h1 className="text-white text-6xl font-bold">
-      Podcast Library
-    </h1>
+                <p className="text-white text-xl max-w-xl">
+                  Listen to podcasts created by Nigerian learners and teachers.
+                </p>
 
-    <p className="text-white text-xl max-w-xl">
-      Listen to podcasts created by Nigerian learners and teachers.
-    </p>
-
-  </div>
-</div>
+              </div>
+            </div>
 
 
             <div className="w-full h-fit">

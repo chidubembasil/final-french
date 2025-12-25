@@ -1,5 +1,5 @@
 import logo from '../assets/img/logo.png'
-import { Globe2 } from "lucide-react";
+import { Globe } from "lucide-react";
 // import { useState } from 'react';
 import { Link } from "react-router-dom";
 function Header() {
@@ -59,9 +59,9 @@ function Header() {
             <div>
                 
                
-                <form action="" method="get" className='w-30 h-5 flex flex-row focus:border-0  enabled:border-0 active:border-0'>
-                    <label htmlFor="lang"><Globe2/></label>
-                    <select name="lang" id="lang">
+                <form action="" method="get" className='w-30 h-5 flex flex-row items-center focus:border-0  enabled:border-0 active:border-0'>
+                    <label htmlFor="lang"><Globe size={15}/></label>
+                    <select name="lang" id="lang" className='appearance-auto focus:border-0  enabled:border-0 active:border-0'>
                         <option value="english" selected>EN</option>
                         <option value="french">FR</option>
                     </select>

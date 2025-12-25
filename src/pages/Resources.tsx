@@ -21,10 +21,10 @@ function Resources(){
   {/* Content */}
   <div className="relative z-20 w-full h-full flex flex-col items-start justify-center pl-6 gap-5">
 
-   <div className="flex flex-row items-center justify-center text-white h-8 w-35  bg-white/20 backdrop-blur-md border border-white/30 rounded-3xl  ">
-                    <BookOpen color="white" size={17}/><p>For Teachers</p>
+   <div className="flex flex-row items-center justify-center gap-1 text-white h-8 w-35  bg-white/20 backdrop-blur-md border border-white/30 rounded-3xl  ">
+                    <BookOpen color="white" size={17}/> <p>For Teachers</p>
                 </div>
-                <h1 className="text-white text-6xl font-bold">Teaching Resources</h1>
+                <h1 className="text-white text-6xl font-bold font-serif">Teaching Resources</h1>
                 <p className="text-white text-xl">Tools and materials to enhance your French language teaching.</p>
 
   </div>

@@ -5,6 +5,8 @@ import Footer from "./components/footer"
 import Header from "./components/header";
 import Podcast from "./pages/Podcast";
 import Resources from "./pages/Resources";
+import Gallery from "./pages/Gallery";
+import CookieConsent from "./components/CookieConsent"
 
 
 function App() {
@@ -17,8 +19,10 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/podcast" element={<Podcast />} />
           <Route path="/resource" element={<Resources />} />
+          <Route path="/gallery" element={<Gallery />} />
         </Routes>
         <Footer />
+        <CookieConsent/>
       </BrowserRouter>
     </>
   )
