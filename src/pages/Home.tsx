@@ -107,7 +107,7 @@ export default function Home() {
     return (
         <>
             <main className='w-full h-fit  pt-20'>
-               <div id="slider" className="w-full h-screen relative overflow-hidden mb-7">
+               <div id="slider" className="relative w-full h-[90dvh] md:h-[90dvh] overflow-hidden">
 
                     <Swiper 
                         modules={[Autoplay] as any}

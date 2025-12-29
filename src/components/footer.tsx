@@ -22,11 +22,11 @@ function Footer() {
                     <h1 className="text-xl text-white font-bold">Quick Link</h1>
                     <div className="flex flex-col gap-1 text-sm">
                         <Link to="/" className="text-[#b2bdb8]">Home</Link>
-                        <Link to="/B.A.C" className="text-[#b2bdb8]">Bilingual and Competitive</Link>
+                        <Link to="/Bac" className="text-[#b2bdb8]">Bilingual and Competitive</Link>
                         <Link to="/podcast" className="text-[#b2bdb8]">Podcast</Link>
                         <Link to="/gallery" className="text-[#b2bdb8]">Gallery</Link>
                         <Link to="/resource" className="text-[#b2bdb8]">Resources</Link>
-                        <Link to="/contact" className="text-[#b2bdb8]">Contact</Link>
+                        <Link to="/news&blog" className="text-[#b2bdb8]">News & Blog</Link>
                     </div>
                 </div>
                 <div className="w-full text-white flex justify-start items-start flex-col gap-2.5 md:justify-center md:items-center">
@@ -49,7 +49,7 @@ function Footer() {
                 </div>
             </div>
             <hr className="border-b border-solid border-[#b2bdb8] "/>
-            <div className="flex flex-row justify-between items-center w-full h-30 bg-transparent h-10 text-[#b2bdb8]">
+            <div className="flex flex-row justify-between items-center w-full h-30 bg-transparent  text-[#b2bdb8]">
                 <p>© 2025 French Naija. All rights reserved.</p>
                 <p>Designed by TEDPRIME</p>
             </div>

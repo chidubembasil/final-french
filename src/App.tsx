@@ -6,6 +6,8 @@ import Header from "./components/header";
 import Podcast from "./pages/Podcast";
 import Resources from "./pages/Resources";
 import Gallery from "./pages/Gallery";
+import News from "./pages/News";
+import BAC from "./pages/Bac";
 import CookieConsent from "./components/CookieConsent"
 
 
@@ -20,6 +22,8 @@ function App() {
           <Route path="/podcast" element={<Podcast />} />
           <Route path="/resource" element={<Resources />} />
           <Route path="/gallery" element={<Gallery />} />
+          <Route path="/news&blog" element={<News />} />
+          <Route path="/bac" element={<BAC />} />
         </Routes>
         <Footer />
         <CookieConsent/>
