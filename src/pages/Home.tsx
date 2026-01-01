@@ -4,7 +4,6 @@ import { Autoplay } from "swiper/modules";
 import "swiper/css";   
 // import "swiper/css";
 // import "swiper/css/autoplay";
-import { Languages, FileText, Users, Edit, Image, Podcast  } from "lucide-react";
 // import { Link } from 'react-router-dom';
 import pic from "../assets/img/_A1A4704.jpg"
 import pic2 from "../assets/img/_A1A4765.jpg"
