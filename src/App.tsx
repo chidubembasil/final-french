@@ -8,6 +8,7 @@ import Resources from "./pages/Resources";
 import Gallery from "./pages/Gallery";
 import News from "./pages/News";
 import BAC from "./pages/Bac";
+import Activites from "./pages/Activity";
 import CookieConsent from "./components/CookieConsent"
 
 
@@ -24,6 +25,7 @@ function App() {
           <Route path="/gallery" element={<Gallery />} />
           <Route path="/news&blog" element={<News />} />
           <Route path="/bac" element={<BAC />} />
+          <Route path="/activities" element={<Activites />} />
         </Routes>
         <Footer />
         <CookieConsent/>

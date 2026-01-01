@@ -1,57 +1,97 @@
-import { Instagram, Facebook, Twitter, Mail, Phone, Pin } from "lucide-react";
+import logo from '../assets/img/logo.png'; // Your logo import
+import { Instagram, Facebook, Twitter, Youtube, Mail, MapPin } from "lucide-react";
 import { Link } from "react-router-dom";
-function Footer() {
-    
-    return (
-        <footer className="w-full h-fit pt-20 px-2 bg-[#1d2330] flex flex-col gap-3 font-serif">
-            <div className="flex flex-col justify-between items-center w-full bg-transparent h-fit pb-2.5 md:flex md:flex-row md:items-start md:h-50 md:mb-4" >
-                <div className="w-full flex flex-col justify-start items-start gap-2.5 md:justify-center md:items-center">
-                    <h1 className="text-xl text-white font-bold ">À toi le micro Naija</h1>
-                    <p className="text-center text-sm text-[#b2bdb8] text-sm md:text-left">A French Education Fund Initiative</p>
-                    <div className="flex flex-row gap-1">
 
-                        <span className="bg-[#343945] w-10 h-10 rounded-xl flex justify-center items-center"> <Instagram color="white" size={20}/></span>
-                        <span className="bg-[#343945] w-10 h-10 rounded-xl flex justify-center items-center"><Facebook color="white" size={20}/></span>
-                        <span className="bg-[#343945] w-10 h-10 rounded-xl flex justify-center items-center"><Twitter color="white" size={20}/></span>
-                       
-                           
-                     
+function Footer() {
+    return (
+        <footer className="w-full bg-[#1d2330] pt-16 pb-8 px-6 md:px-12 lg:px-24 text-[#b2bdb8]">
+            <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+                
+                {/* Brand Section with Logo */}
+                <div className="flex flex-col items-start gap-5">
+                    <div className="flex items-center gap-3">
+                        <img src={logo} alt="À toi le micro logo" className="w-12 h-12 object-contain" />
+                        <div className="flex flex-col">
+                            <h1 className="text-xl text-white font-bold font-serif leading-tight">
+                                À toi le micro
+                            </h1>
+                            <span className="text-xs text-gray-400">Naija</span>
+                        </div>
+                    </div>
+                    
+                    <p className="text-sm leading-relaxed max-w-xs">
+                        A French Education Fund Initiative. Empowering Nigerian learners through digital storytelling.
+                    </p>
+
+                    <div className="flex flex-row gap-2.5">
+                        {[
+                            { icon: <Facebook size={18} />, link: "#" },
+                            { icon: <Twitter size={18} />, link: "#" },
+                            { icon: <Instagram size={18} />, link: "#" },
+                            { icon: <Youtube size={18} />, link: "#" }
+                        ].map((social, i) => (
+                            <a 
+                                key={i} 
+                                href={social.link} 
+                                className="w-9 h-9 rounded-full bg-white/5 flex justify-center items-center hover:bg-blue-600 hover:text-white transition-all duration-300 border border-white/10"
+                            >
+                                {social.icon}
+                            </a>
+                        ))}
                     </div>
                 </div>
-                <div className="w-full text-white flex flex-col justify-start items-start gap-2.5 md:justify-center md:items-center ">
-                    <h1 className="text-xl text-white font-bold">Quick Link</h1>
-                    <div className="flex flex-col gap-1 text-sm">
-                        <Link to="/" className="text-[#b2bdb8]">Home</Link>
-                        <Link to="/Bac" className="text-[#b2bdb8]">Bilingual and Competitive</Link>
-                        <Link to="/podcast" className="text-[#b2bdb8]">Podcast</Link>
-                        <Link to="/gallery" className="text-[#b2bdb8]">Gallery</Link>
-                        <Link to="/resource" className="text-[#b2bdb8]">Resources</Link>
-                        <Link to="/news&blog" className="text-[#b2bdb8]">News & Blog</Link>
+
+                {/* Quick Links */}
+                <div className="flex flex-col gap-6">
+                    <h2 className="text-white font-bold text-sm uppercase tracking-widest">Quick Links</h2>
+                    <nav className="flex flex-col gap-3 text-sm">
+                        <Link to="/" className="hover:text-blue-400 transition-colors">Home</Link>
+                        <Link to="/bac" className="hover:text-blue-400 transition-colors">Bilingual & Competitive</Link>
+                        <Link to="/podcast" className="hover:text-blue-400 transition-colors">Podcasts</Link>
+                        <Link to="/gallery" className="hover:text-blue-400 transition-colors">Gallery</Link>
+                        <Link to="/resource" className="hover:text-blue-400 transition-colors">Resources</Link>
+                        <Link to="/news&blog" className="hover:text-blue-400 transition-colors">News & Blog</Link>
+                         <Link to="/activities" className="hover:text-blue-400 transition-colors">Activites</Link>
+                    </nav>
+                </div>
+
+                {/* Resources (External Links) */}
+                <div className="flex flex-col gap-6">
+                    <h2 className="text-white font-bold text-sm uppercase tracking-widest">Resources</h2>
+                    <div className="flex flex-col gap-3 text-sm">
+                        <a href="https://enseigner.tv5monde.com/" target="_blank" rel="noreferrer" className="hover:text-blue-400 transition-colors">TV5 Monde</a>
+                        <a href="https://savoirs.rfi.fr/" target="_blank" rel="noreferrer" className="hover:text-blue-400 transition-colors">RFI Savoirs</a>
+                        <a href="https://www.ifprofs.org/" target="_blank" rel="noreferrer" className="hover:text-blue-400 transition-colors">IFprofs</a>
+                        <a href="#" className="hover:text-blue-400 transition-colors">Alliance Française</a>
                     </div>
                 </div>
-                <div className="w-full text-white flex justify-start items-start flex-col gap-2.5 md:justify-center md:items-center">
-                    <h1 className="text-xl text-white font-bold font-Playfair">Contact Us</h1>
-                    <ul className="text-sm flex flex-col gap-1 p-2">
-                        <li className="flex flex-row gap-1 items-center text-[#b2bdb8]"><Mail color={'red'} size={17}/> info@atoilenaija.com </li>
-                        <li className="flex flex-row gap-1 text-[#b2bdb8]"><Phone color={'red'} size={17}/> +234 XXX XXX XXXX</li>
-                        <li className="flex flex-row gap-1 text-[#b2bdb8]"><Pin color={'red'} size={17}/> Lagos, Nigeria</li>
+
+                {/* Contact Us */}
+                <div className="flex flex-col gap-6">
+                    <h2 className="text-white font-bold text-sm uppercase tracking-widest">Contact</h2>
+                    <ul className="flex flex-col gap-4 text-sm">
+                        <li className="flex items-start gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center shrink-0">
+                                <MapPin className="text-red-500" size={16} />
+                            </div>
+                            <span>Institut Français du Nigéria, Abuja, Nigeria</span>
+                        </li>
+                        <li className="flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center shrink-0">
+                                <Mail className="text-red-500" size={16} />
+                            </div>
+                            <a href="mailto:contact@atoilemicro.ng" className="hover:text-white transition-colors">
+                                contact@atoilemicro.ng
+                            </a>
+                        </li>
                     </ul>
                 </div>
-                <div className="w-full text-white flex justify-start items-start flex-col gap-2.5 md:justify-center md:items-center">
-                    <h1 className="text-xl text-white font-bold">Resources</h1>
-                    <div className="flex flex-col gap-1 text-sm">
-                        <a href="#" className="text-[#b2bdb8]">TV5 Monde</a>
-                        <a href="#" className="text-[#b2bdb8]">TV5 Monde</a>
-                        <a href="#" className="text-[#b2bdb8]">TV5 Monde</a>
-                        <a href="#" className="text-[#b2bdb8]">TV5 Monde</a>
-                        <a href="#" className="text-[#b2bdb8]">TV5 Monde</a>
-                    </div>
-                </div>
             </div>
-            <hr className="border-b border-solid border-[#b2bdb8] "/>
-            <div className="flex flex-row justify-between items-center w-full h-30 bg-transparent  text-[#b2bdb8]">
-                <p>© 2025 French Naija. All rights reserved.</p>
-                <p>Designed by TEDPRIME</p>
+
+            {/* Bottom bar */}
+            <div className="max-w-7xl mx-auto border-t border-white/5 pt-8 flex flex-col md:flex-row justify-center items-center gap-4 text-[11px] uppercase tracking-tighter opacity-60">
+                <p>© 2026 À TOI LE MICRO NAIJA. ALL RIGHTS RESERVED.</p>
+                
             </div>
         </footer>
     );

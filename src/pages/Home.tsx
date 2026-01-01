@@ -13,6 +13,8 @@ import { motion } from 'framer-motion';
 import GalleryHero from "../components/Gallery-Hero"
 import PodcastHero from "../components/PodcastHero"
 import NewsHero from "../components/NewsHero"
+import ResourceHero from "../components/ResourcesHero"
+import AboutWithContactForm from "../components/About"
 
 // // install Swiper modules
 // SwiperCore.use([Autoplay]);
@@ -193,13 +195,14 @@ export default function Home() {
                                             >
                                             Get Started
                                             </motion.button>
-                                            <motion.button
+                                            <motion.a
+                                            href="#about"
                                             whileHover={{ scale: 1.05 }}
                                             whileTap={{ scale: 0.95 }}
                                             className="mt-6 bg-transparent border-2 border-solid border-white text-white hover:bg-transparent hover:text-white px-8 py-3 rounded-lg shadow-xl cursor-pointer"
                                             >
                                             Learn More
-                                            </motion.button>
+                                            </motion.a>
                                         </motion.div>
                                     </motion.div>
                                 </div>
@@ -210,6 +213,8 @@ export default function Home() {
 <GalleryHero />
 <PodcastHero />
 <NewsHero />
+<ResourceHero/>
+<AboutWithContactForm/>
                {/*  <div className="w-full h-100 border-2 border-solid border-amber-400">
                     <GalleryHero />
                 </div>

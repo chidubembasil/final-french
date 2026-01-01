@@ -1,0 +1,95 @@
+import { BookOpen, FileText, Video, Link as LinkIcon, Download, ArrowRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+export default function ResourceHero() {
+    const [resources, setResources] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        // Added a limit and a cache-buster just in case
+        fetch('https://atoilemicronaija-project-sunshine-production2.up.railway.app/api/resources?limit=4')
+            .then((res) => res.json())
+            .then((data) => {
+                console.log("Resource Data:", data); // Check your console to see what the fields are named!
+                // Some APIs wrap data in an object like { data: [...] }
+                const finalData = Array.isArray(data) ? data : (data.data || []);
+                setResources(finalData);
+                setLoading(false);
+            })
+            .catch((err) => {
+                console.error("Resource fetch error:", err);
+                setLoading(false);
+            });
+    }, []);
+
+    const getTypeStyles = (type: string) => {
+        const t = type?.toUpperCase() || 'DEFAULT';
+        if (t === 'PDF') return { bg: 'bg-blue-50', text: 'text-blue-600', icon: <FileText size={24} /> };
+        if (t === 'VIDEO') return { bg: 'bg-red-50', text: 'text-red-600', icon: <Video size={24} /> };
+        if (t === 'LINK' || t === 'EXTERNAL') return { bg: 'bg-rose-50', text: 'text-rose-600', icon: <LinkIcon size={24} /> };
+        return { bg: 'bg-gray-100', text: 'text-gray-600', icon: <Download size={24} /> };
+    };
+
+    return (
+        <main className="w-full py-20 flex flex-col items-center bg-[#fcfaf8]">
+            <div className="flex flex-col items-center gap-3 mb-16 text-center">
+                <span className='px-4 py-1.5 rounded-full flex items-center gap-2 bg-blue-100 text-blue-700 text-sm font-bold border border-blue-200'>
+                    <BookOpen size={16}/> Tools for educators
+                </span>
+                <h2 className='font-serif text-5xl md:text-6xl font-bold text-slate-900'>Teaching Resources</h2>
+                <div className='w-24 h-1 bg-blue-700 rounded-full mt-2'></div>
+            </div>
+
+            <div className="w-[90%] max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
+                {loading ? (
+                    // Loading Skeletons
+                    [1, 2, 3, 4].map((n) => (
+                        <div key={n} className="h-32 w-full bg-gray-200 animate-pulse rounded-[2.5rem]" />
+                    ))
+                ) : resources.length > 0 ? (
+                    resources.map((res: any) => {
+                        const styles = getTypeStyles(res.type);
+                        return (
+                            <div 
+                                key={res.id || res._id}
+                                onClick={() => navigate('/resource')}
+                                className="group flex items-center p-8 bg-white rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative overflow-hidden cursor-pointer"
+                            >
+                                <div className={`w-16 h-16 shrink-0 rounded-2xl ${styles.bg} ${styles.text} flex items-center justify-center`}>
+                                    {styles.icon}
+                                </div>
+                                <div className="ml-6 flex-1">
+                                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1 block">
+                                        {res.type || 'Resource'}
+                                    </span>
+                                    <h3 className="text-xl font-bold text-slate-800 group-hover:text-blue-700">
+                                        {res.title || res.name} 
+                                    </h3>
+                                    <p className="text-sm text-gray-500 line-clamp-1 mt-1">
+                                        {res.description || res.summary || "No description available"}
+                                    </p>
+                                </div>
+                                <div className="ml-4 opacity-20 group-hover:opacity-100 group-hover:translate-x-2 transition-all">
+                                    <ArrowRight size={20} />
+                                </div>
+                            </div>
+                        );
+                    })
+                ) : (
+                    <div className="col-span-full text-center py-10 text-gray-400">
+                        No resources found. Check your API connection.
+                    </div>
+                )}
+            </div>
+
+            <button 
+                onClick={() => navigate('/resource')}
+                className='text-white bg-blue-800 px-10 py-4 rounded-2xl flex items-center gap-3 font-bold hover:bg-blue-900 transition-all shadow-lg'
+            >
+                Explore Resources <ArrowRight size={18}/>
+            </button>
+        </main>
+    );
+}
