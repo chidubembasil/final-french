@@ -29,56 +29,10 @@ export default function Home() {
         color: string
     }
 
-    type cardTxt = {
-        icon : React.FC<React.SVGProps<SVGSVGElement>>,
-        title : string,
-        direction : string,
-        text: string
 
 
 
-    }
-
-
-    const card : cardTxt[] = [
-        {
-            icon: Podcast,
-            title: "Podcasts",
-            direction: "/podcast",
-            text: "Listen to engaging French language learning podcasts"
-        },
-         {
-            icon: FileText,
-            title: "News & Blog",
-            direction: "/news&blog",
-            text: "Stay updated with latest news and articles about French education"
-        },
-         {
-            icon: Edit,
-            title: "Interactive Exercises",
-            direction: "/interactive-exercises",
-            text: "Practice with interactive exercises and quizzes"
-        },
-         {
-            icon: Image,
-            title: "Galleries",
-             direction: "/gallery",
-            text: "View photos and videos from our educational events"
-        },
-         {
-            icon: Languages,
-            title: "Resources",
-            direction: "/interactive-exercises",
-            text: "Explore mediation activities, lesson plans, and recommended platforms"
-        },
-         {
-            icon: Users,
-            title: "Community",
-            direction: "/B.A.C",
-            text: "Connect with teachers, learners, and associations from across the region"
-        },
-    ]
-
+    
     const sliderItem : text[] = [
         {
             title: "À toi le micro Naija",
