@@ -83,7 +83,7 @@ function Gallery() {
   return (
     <main className="pt-20 bg-gray-50/30 min-h-screen relative">
       {/* Hero Section */}
-      <div className="relative w-full h-[70dvh] overflow-hidden bg-slate-900">
+      <div className="relative w-full h-[90dvh] overflow-hidden">
         <img 
           src={pic} 
           alt="Gallery Hero" 
