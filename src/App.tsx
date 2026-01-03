@@ -1,11 +1,11 @@
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { HashRouter, Routes, Route } from "react-router-dom";
 import "./index.css";
 
 import Header from "./components/header";
 import Footer from "./components/footer";
 import CookieConsent from "./components/CookieConsent";
 
-// ✅ Standard imports (No more lazy loading)
+// Standard imports
 import Home from "./pages/Home";
 import Podcast from "./pages/Podcast";
 import Resources from "./pages/Resources";
@@ -16,23 +16,27 @@ import Activites from "./pages/Activity";
 
 const App: React.FC = () => {
   return (
-    <BrowserRouter>
+    // ✅ Switched to HashRouter to prevent "disappearing" pages on live servers
+    <HashRouter>
       <Header />
 
-      {/* Suspense is no longer needed for routes since we aren't lazy loading */}
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/podcast" element={<Podcast />} />
-        <Route path="/resource" element={<Resources />} />
-        <Route path="/gallery" element={<Gallery />} />
-        <Route path="/news&blog" element={<News />} />
-        <Route path="/bac" element={<BAC />} />
-        <Route path="/activities" element={<Activites />} />
-      </Routes>
+      <main>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/podcast" element={<Podcast />} />
+          <Route path="/resource" element={<Resources />} />
+          <Route path="/gallery" element={<Gallery />} />
+          <Route path="/news&blog" element={<News />} />
+          <Route path="/bac" element={<BAC />} />
+          <Route path="/activities" element={<Activites />} />
+          {/* ✅ Catch-all route: if a path doesn't exist, go Home */}
+          <Route path="*" element={<Home />} />
+        </Routes>
+      </main>
 
       <Footer />
       <CookieConsent />
-    </BrowserRouter>
+    </HashRouter>
   );
 };
 
