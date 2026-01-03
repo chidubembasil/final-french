@@ -31,7 +31,7 @@ export default function GalleryHero() {
                 <span className='px-4 py-1.5 rounded-full flex items-center gap-2 bg-blue-100 text-blue-600 text-sm font-medium'>
                     <Sparkles size={16}/> Visual documentation
                 </span>
-                <h2 className='font-serif text-5xl font-bold'>Gallery</h2>
+                <h2 className='font-serif text-4xl font-bold text-center'>Gallery</h2>
                 <div className='w-24 h-1 bg-blue-700 rounded-full'></div>
             </div>
 

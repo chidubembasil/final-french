@@ -31,7 +31,7 @@ export default function NewsHero() {
                 <span className='px-4 py-1.5 rounded-full flex items-center gap-2 bg-blue-100 text-blue-600 text-sm font-medium'>
                     <Newspaper size={18}/> Stay Informed
                 </span>
-                <h2 className='font-serif text-5xl font-bold'>News & Blog</h2>
+                <h2 className='font-serif text-4xl font-bold text-center'>News & Blog</h2>
                 <div className='w-24 h-1 bg-blue-700'></div>
             </div>
 

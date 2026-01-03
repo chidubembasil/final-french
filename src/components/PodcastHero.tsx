@@ -34,7 +34,7 @@ export default function PodcastHero() {
                 <span className='px-4 py-1 rounded-full flex items-center gap-2 bg-red-100 text-red-600 text-xs font-bold uppercase'>
                     <Headphones size={14}/> Listen to learners and teachers
                 </span>
-                <h2 className='font-serif text-5xl font-bold'>Featured Podcasts</h2>
+                <h2 className='font-serif text-4xl font-bold text-center'>Featured Podcasts</h2>
                 <div className='w-24 h-1 bg-blue-600'></div>
             </div>
 
