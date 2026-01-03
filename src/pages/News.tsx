@@ -23,9 +23,9 @@ function News() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
-
+const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
   useEffect(() => {
-    fetch("https://atoilemicronaija-project-sunshine-production2.up.railway.app/api/news")
+    fetch(`${CLIENT_KEY}api/news`)
       .then(res => res.json())
       .then((data: BlogPost[]) => {
         setBlogs(data);

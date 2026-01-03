@@ -26,9 +26,9 @@ function Podcast() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
   const [activePodcast, setActivePodcast] = useState<Podcast | null>(null);
-
+  const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
   useEffect(() => {
-    fetch('https://atoilemicronaija-project-sunshine-production2.up.railway.app/api/podcasts')
+    fetch(`${CLIENT_KEY}api/podcasts`)
       .then((res) => res.json())
       .then((data: Podcast[]) => {
         setPodcasts(data);

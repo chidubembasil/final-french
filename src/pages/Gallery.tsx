@@ -23,9 +23,9 @@ function Gallery() {
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
-
+  const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
   useEffect(() => {
-    fetch('https://atoilemicronaija-project-sunshine-production2.up.railway.app/api/galleries') 
+    fetch(`${CLIENT_KEY}api/galleries`) 
       .then((res) => res.json())
       .then((data: GalleryImage[]) => {
         setImages(data);

@@ -27,9 +27,9 @@ function Resources() {
 
   // Modal State
   const [viewingResource, setViewingResource] = useState<Resource | null>(null);
-
+  const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
   useEffect(() => {
-    fetch('https://atoilemicronaija-project-sunshine-production2.up.railway.app/api/resources')
+    fetch(`${CLIENT_KEY}api/resources`)
       .then(res => res.json())
       .then((data: Resource[]) => {
         setResources(data);

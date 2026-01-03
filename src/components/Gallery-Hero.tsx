@@ -5,9 +5,9 @@ import { useNavigate } from 'react-router-dom';
 export default function GalleryHero() {
     const [items, setItems] = useState([]);
     const navigate = useNavigate();
-
+const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
     useEffect(() => {
-        fetch('https://atoilemicronaija-project-sunshine-production2.up.railway.app/api/gallery?limit=4')
+        fetch(`${CLIENT_KEY}api/gallery?limit=4`)
             .then(res => res.json())
             .then(data => setItems(data))
             .catch(err => console.error("Gallery Hero fetch error:", err));

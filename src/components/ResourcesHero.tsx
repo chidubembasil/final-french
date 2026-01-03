@@ -6,10 +6,10 @@ export default function ResourceHero() {
     const [resources, setResources] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
-
+const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
     useEffect(() => {
         // Added a limit and a cache-buster just in case
-        fetch('https://atoilemicronaija-project-sunshine-production2.up.railway.app/api/resources?limit=4')
+        fetch(`${CLIENT_KEY}api/resources?limit=4`)
             .then((res) => res.json())
             .then((data) => {
                 console.log("Resource Data:", data); // Check your console to see what the fields are named!

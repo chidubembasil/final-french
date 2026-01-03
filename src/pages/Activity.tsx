@@ -26,10 +26,10 @@ function Activites() {
 
   // Exercise Progress State
   const [answers, setAnswers] = useState<Record<number, string>>({});
-
+const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
   // 1. Fetch all exercises for the grid
   useEffect(() => {
-    fetch('https://atoilemicronaija-project-sunshine-production2.up.railway.app/api/exercises')
+    fetch(`${CLIENT_KEY}api/exercises`)
       .then((res) => res.json())
       .then((data) => {
         setExercises(Array.isArray(data) ? data : (data.data || []));
