@@ -5,7 +5,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   // If hosting on GitHub Pages, change '/' to '/your-repo-name/'
-  base: '/', 
+  base: '', 
   plugins: [
     react({
       babel: {
