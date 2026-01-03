@@ -56,7 +56,7 @@ export default function ResourceHero() {
                 <span className='px-4 py-1.5 rounded-full flex items-center gap-2 bg-blue-100 text-blue-700 text-sm font-bold border border-blue-200'>
                     <BookOpen size={16}/> Tools for educators
                 </span>
-                <h2 className='font-serif text-4xl text-center md:text-4xl font-bold text-slate-900'>Teaching Resources</h2>
+                <h2 className='font-serif text-4xl text-center font-bold text-slate-900'>Teaching Resources</h2>
                 <div className='w-24 h-1 bg-blue-700 rounded-full mt-2'></div>
             </div>
 
