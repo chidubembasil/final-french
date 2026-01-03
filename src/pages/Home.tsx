@@ -24,9 +24,6 @@ export default function Home() {
         color: string
     }
 
-
-
-
     
     const sliderItem : text[] = [
         {
