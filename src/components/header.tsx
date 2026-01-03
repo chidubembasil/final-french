@@ -55,7 +55,7 @@ function Header() {
                     body { top: 0px !important; }
                     .goog-te-balloon-frame { display: none !important; }
                     #goog-gt-tt { display: none !important; visibility: hidden !important; }
-                    .skiptranslate { display: none !important; }
+                .skiptranslate { display: none !important; }
                 `}
             </style>
 
