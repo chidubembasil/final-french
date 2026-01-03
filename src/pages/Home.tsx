@@ -1,7 +1,6 @@
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
-
-import "swiper/css";   
+import "swiper/css";
 // import "swiper/css";
 // import "swiper/css/autoplay";
 // import { Link } from 'react-router-dom';
@@ -65,8 +64,9 @@ export default function Home() {
                <div id="slider" className="relative w-full h-[90dvh] md:h-[90dvh] overflow-hidden">
 
                     <Swiper 
-                        modules={[Autoplay] as any}
-                        autoplay={{ delay: 7000 }}
+                        key="home-swiper"
+                        modules={[Autoplay]}
+                        autoplay={{ delay: 7000, disableOnInteraction: false }}
                         loop
                         slidesPerView={1}
                         >
