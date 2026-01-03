@@ -3,17 +3,30 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function PodcastHero() {
+    // ✅ Always initialize as an empty array
     const [podcasts, setPodcasts] = useState([]);
     const navigate = useNavigate();
-const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
+    const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || "";
+
     useEffect(() => {
         fetch(`${CLIENT_KEY}api/podcasts?limit=4`)
-            .then(res => res.json())
-            .then(data => setPodcasts(data))
-            .catch(err => console.error("Podcast Hero fetch error:", err));
-    }, []);
+            .then(res => {
+                if (!res.ok) throw new Error('Failed to fetch');
+                return res.json();
+            })
+            .then(data => {
+                // ✅ Robust check: Handle both raw arrays and { data: [] } formats
+                const finalData = Array.isArray(data) ? data : (data?.data || []);
+                setPodcasts(finalData);
+            })
+            .catch(err => {
+                console.error("Podcast Hero fetch error:", err);
+                setPodcasts([]); // ✅ Ensure state remains an array on error
+            });
+    }, [CLIENT_KEY]);
 
-    const featured = podcasts[0] as any;
+    // ✅ Safe access: Use optional chaining or check length
+    const featured = podcasts.length > 0 ? podcasts[0] : null;
 
     return (
         <main className="w-full py-16 flex flex-col items-center bg-white">
@@ -26,15 +39,16 @@ const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
             </div>
 
             <div className="w-[90%] max-w-6xl mb-12">
+                {/* ✅ Render featured only if it exists */}
                 {featured && (
                     <div className="relative w-full rounded-[2.5rem] p-8 md:p-12 mb-8 overflow-hidden bg-gradient-to-r from-blue-900 via-blue-700 to-red-600 text-white flex flex-col md:flex-row items-center gap-10">
                         <div className="flex-1 space-y-4">
                             <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded text-[10px] font-black uppercase">Featured Episode</span>
-                            <h3 className="text-3xl md:text-4xl font-bold">{featured.title}</h3>
-                            <p className="opacity-80">Hosted by {featured.author}</p>
+                            <h3 className="text-3xl md:text-4xl font-bold">{(featured as any).title}</h3>
+                            <p className="opacity-80">Hosted by {(featured as any).author}</p>
                             <div className="flex gap-4 text-[10px] font-black uppercase">
-                                <span className="flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full">{featured.level || 'General'}</span>
-                                <span className="flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full">{featured.duration || '8:32'}</span>
+                                <span className="flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full">{(featured as any).level || 'General'}</span>
+                                <span className="flex items-center gap-1 bg-white/10 px-3 py-1 rounded-full">{(featured as any).duration || '8:32'}</span>
                             </div>
                         </div>
                         <div 
@@ -49,8 +63,9 @@ const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {podcasts.slice(1, 3).map((p: any) => (
-                        <div key={p.id} className="bg-white border border-gray-100 p-6 rounded-[2rem] shadow-xs flex items-center gap-6 group hover:border-blue-200 transition-colors">
+                    {/* ✅ Added Array.isArray check to prevent .slice() crash */}
+                    {Array.isArray(podcasts) && podcasts.slice(1, 3).map((p: any) => (
+                        <div key={p.id || p._id} className="bg-white border border-gray-100 p-6 rounded-[2rem] shadow-xs flex items-center gap-6 group hover:border-blue-200 transition-colors">
                             <div className="w-24 h-24 bg-gray-100 rounded-2xl flex items-center justify-center text-gray-400 group-hover:bg-blue-50 group-hover:text-blue-500 transition-colors">
                                 <Headphones size={32} />
                             </div>

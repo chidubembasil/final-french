@@ -64,7 +64,7 @@ export default function Home() {
                         loop
                         slidesPerView={1}
                         >
-                        {sliderItem.map((item, index) => (
+                        {sliderItem?.map((item, index) => (
                             <SwiperSlide key={index}>
                                 <div className="relative w-full h-screen">
 

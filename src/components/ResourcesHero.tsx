@@ -3,29 +3,47 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function ResourceHero() {
+    // ✅ Keep as empty array to prevent .map() crashes
     const [resources, setResources] = useState([]);
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
-const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
+    
+    // Ensure the key exists or fallback to empty string
+    const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || "";
+
     useEffect(() => {
-        // Added a limit and a cache-buster just in case
+        setLoading(true);
         fetch(`${CLIENT_KEY}api/resources?limit=4`)
-            .then((res) => res.json())
+            .then((res) => {
+                // Check if response is okay before parsing JSON
+                if (!res.ok) throw new Error('Network response was not ok');
+                return res.json();
+            })
             .then((data) => {
-                console.log("Resource Data:", data); // Check your console to see what the fields are named!
-                // Some APIs wrap data in an object like { data: [...] }
-                const finalData = Array.isArray(data) ? data : (data.data || []);
+                console.log("Resource Data:", data);
+                
+                // ✅ CRITICAL FIX: Robust check for Array
+                // This handles cases where data is { data: [...] }, an array [...], or null
+                let finalData = [];
+                if (Array.isArray(data)) {
+                    finalData = data;
+                } else if (data && Array.isArray(data.data)) {
+                    finalData = data.data;
+                }
+
                 setResources(finalData);
                 setLoading(false);
             })
             .catch((err) => {
                 console.error("Resource fetch error:", err);
+                setResources([]); // ✅ Reset to empty array on error to prevent .map crash
                 setLoading(false);
             });
-    }, []);
+    }, [CLIENT_KEY]); // Added CLIENT_KEY as dependency
 
     const getTypeStyles = (type: string) => {
-        const t = type?.toUpperCase() || 'DEFAULT';
+        // Safe check for type
+        const t = typeof type === 'string' ? type.toUpperCase() : 'DEFAULT';
         if (t === 'PDF') return { bg: 'bg-blue-50', text: 'text-blue-600', icon: <FileText size={24} /> };
         if (t === 'VIDEO') return { bg: 'bg-red-50', text: 'text-red-600', icon: <Video size={24} /> };
         if (t === 'LINK' || t === 'EXTERNAL') return { bg: 'bg-rose-50', text: 'text-rose-600', icon: <LinkIcon size={24} /> };
@@ -44,16 +62,16 @@ const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
             <div className="w-[90%] max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-8 mb-12">
                 {loading ? (
-                    // Loading Skeletons
                     [1, 2, 3, 4].map((n) => (
                         <div key={n} className="h-32 w-full bg-gray-200 animate-pulse rounded-[2.5rem]" />
                     ))
-                ) : resources.length > 0 ? (
-                    resources.map((res: any) => {
-                        const styles = getTypeStyles(res.type);
+                ) : (Array.isArray(resources) && resources.length > 0) ? (
+                    resources.map((res: any, index: number) => {
+                        // Safe access to styles
+                        const styles = getTypeStyles(res?.type);
                         return (
                             <div 
-                                key={res.id || res._id}
+                                key={res?.id || res?._id || index}
                                 onClick={() => navigate('/resource')}
                                 className="group flex items-center p-8 bg-white rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative overflow-hidden cursor-pointer"
                             >
@@ -62,13 +80,13 @@ const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
                                 </div>
                                 <div className="ml-6 flex-1">
                                     <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1 block">
-                                        {res.type || 'Resource'}
+                                        {res?.type || 'Resource'}
                                     </span>
                                     <h3 className="text-xl font-bold text-slate-800 group-hover:text-blue-700">
-                                        {res.title || res.name} 
+                                        {res?.title || res?.name || "Untitled Resource"} 
                                     </h3>
                                     <p className="text-sm text-gray-500 line-clamp-1 mt-1">
-                                        {res.description || res.summary || "No description available"}
+                                        {res?.description || res?.summary || "No description available"}
                                     </p>
                                 </div>
                                 <div className="ml-4 opacity-20 group-hover:opacity-100 group-hover:translate-x-2 transition-all">
