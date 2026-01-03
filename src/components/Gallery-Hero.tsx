@@ -9,7 +9,7 @@ export default function GalleryHero() {
     const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || "";
 
     useEffect(() => {
-        fetch(`${CLIENT_KEY}api/gallery?limit=4`)
+        fetch(`${CLIENT_KEY}api/galleries?limit=4`)
             .then(res => {
                 if (!res.ok) throw new Error('Gallery fetch failed');
                 return res.json();
