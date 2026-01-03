@@ -1,23 +1,28 @@
-import { BrowserRouter, Routes, Route} from "react-router-dom";
-import Home from "./pages/Home";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { lazy, Suspense } from "react";
+
 import "./index.css";
-import Footer from "./components/footer"
+
 import Header from "./components/header";
-import Podcast from "./pages/Podcast";
-import Resources from "./pages/Resources";
-import Gallery from "./pages/Gallery";
-import News from "./pages/News";
-import BAC from "./pages/Bac";
-import Activites from "./pages/Activity";
-import CookieConsent from "./components/CookieConsent"
+import Footer from "./components/footer";
+import CookieConsent from "./components/CookieConsent";
 
+// ✅ Lazy-loaded pages
+const Home = lazy(() => import("./pages/Home"));
+const Podcast = lazy(() => import("./pages/Podcast"));
+const Resources = lazy(() => import("./pages/Resources"));
+const Gallery = lazy(() => import("./pages/Gallery"));
+const News = lazy(() => import("./pages/News"));
+const BAC = lazy(() => import("./pages/Bac"));
+const Activites = lazy(() => import("./pages/Activity"));
 
-function App() {
-
+const App: React.FC = () => {
   return (
-    <>
-      <BrowserRouter>
+    <BrowserRouter>
       <Header />
+
+      {/* ✅ Suspense wraps ONLY the routes */}
+      <Suspense fallback={<div>Loading...</div>}>
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/podcast" element={<Podcast />} />
@@ -27,11 +32,12 @@ function App() {
           <Route path="/bac" element={<BAC />} />
           <Route path="/activities" element={<Activites />} />
         </Routes>
-        <Footer />
-        <CookieConsent/>
-      </BrowserRouter>
-    </>
-  )
-}
+      </Suspense>
 
-export default App
+      <Footer />
+      <CookieConsent />
+    </BrowserRouter>
+  );
+};
+
+export default App;
