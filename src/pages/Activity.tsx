@@ -46,7 +46,7 @@ const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
     setIsPopupLoading(true);
     setAnswers({}); // Reset answers for new exercise
     try {
-      const res = await fetch(`${CLIENT_KEY}/api/exercises/${id}`);
+      const res = await fetch(`${CLIENT_KEY}api/exercises/${id}`);
       const data = await res.json();
       setSelectedExercise(data);
     } catch (err) {
