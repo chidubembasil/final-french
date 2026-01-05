@@ -9,7 +9,12 @@ import GalleryHero from "../components/Gallery-Hero"
 import PodcastHero from "../components/PodcastHero"
 import NewsHero from "../components/NewsHero"
 import ResourceHero from "../components/ResourcesHero"
-import AboutWithContactForm from "../components/About"
+import AboutUs from "../components/About"
+import BACSection from "../components/BacHero"
+import InteractiveActivities from "../components/ActiHero"
+import PartnersSection from "../components/Partners"
+
+
 
 // // install Swiper modules
 // SwiperCore.use([Autoplay]);
@@ -157,11 +162,16 @@ export default function Home() {
                         ))}
                     </Swiper>
                 </div>
-<GalleryHero />
+                
+<AboutUs/>
+<BACSection/>
+<InteractiveActivities/>
 <PodcastHero />
-<NewsHero />
 <ResourceHero/>
-<AboutWithContactForm/>
+<NewsHero />
+<GalleryHero />
+<PartnersSection/>
+
                {/*  <div className="w-full h-100 border-2 border-solid border-amber-400">
                     <GalleryHero />
                 </div>

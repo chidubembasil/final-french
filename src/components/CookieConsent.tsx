@@ -55,7 +55,7 @@ const CookieConsent = () => {
   return (
     <>
       {/* Cookie Banner */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t-4 border-blue-600 shadow-2xl z-50 animate-slide-up">
+      <div className="h-8 fixed bottom-0 left-0 right-0 bg-white border-t-4 border-blue-600 shadow-2xl z-50 animate-slide-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-start gap-4">
             <div className="flex-shrink-0">
@@ -124,6 +124,7 @@ const CookieConsent = () => {
                 <button
                   onClick={() => setShowSettings(false)}
                   className="text-gray-400 hover:text-gray-600 transition-colors"
+                  aria-label="Close cookie settings"
                 >
                   <X className="w-6 h-6" />
                 </button>

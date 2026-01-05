@@ -1,7 +1,7 @@
 import logo from '../assets/img/logo.png';
 import { Globe, Menu, X } from "lucide-react";
 import { useState, useEffect } from 'react';
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 
 function Header() {
     const [isOpen, setIsOpen] = useState(false);
@@ -39,15 +39,15 @@ function Header() {
     const navLink = [
         { path: "/", name: "Home" },
         { path: "/bac", name: "Bilingual and Competitive" },
-        { path: "/news&blog", name: "News & Blog" },
+        { path: "/activities", name: "Activities" },
         { path: "/podcast", name: "Podcasts" },
         { path: "/resource", name: "Resources" },
-        { path: "/activities", name: "Activities" },
-        { path: "/gallery", name: "Gallery" },
+        { path: "/news&blog", name: "News & Blog" },
+        { path: "/gallery", name: "Gallery" }
     ];
 
     return (
-        <header className="h-20 w-full px-6 fixed top-0 left-0 z-[100] bg-white border-b border-gray-100 flex flex-row justify-between items-center shadow-sm">
+       <header className="h-20 w-full px-6 fixed top-0 left-0 z-[1000] bg-white border-b border-gray-100 flex flex-row justify-between items-center shadow-sm">
             {/* CSS to hide Google Popups and Banners */}
             <style>
                 {`
@@ -61,9 +61,9 @@ function Header() {
 
             <div id="google_translate_element" style={{ display: 'none' }}></div>
 
-            <div className="shrink-0">
+            <Link to="/" className="shrink-0">
                 <img src={logo} alt="logo" className="w-12 h-12 md:w-14 object-contain" />
-            </div>
+            </Link>
 
             <nav className='hidden lg:flex items-center gap-2'>
                 {navLink.map((item, index) => (
