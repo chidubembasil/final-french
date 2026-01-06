@@ -1,5 +1,5 @@
 import logo from '../assets/img/logo.png'; // Your logo import
-import { Instagram, Facebook, Twitter, Youtube, Mail, MapPin } from "lucide-react";
+import { Instagram, Facebook, Twitter, Youtube, Mail, MapPin, Linkedin } from "lucide-react";
 import { Link } from "react-router-dom";
 
 function Footer() {
@@ -25,10 +25,12 @@ function Footer() {
 
                     <div className="flex flex-row gap-2.5">
                         {[
-                            { icon: <Facebook size={18} />, link: "#" },
-                            { icon: <Twitter size={18} />, link: "#" },
-                            { icon: <Instagram size={18} />, link: "#" },
-                            { icon: <Youtube size={18} />, link: "#" }
+                            { icon: <Facebook size={18} />, link: "https://www.facebook.com/profile.php?id=100095181674120" },
+                            { icon: <Instagram size={18} />, link: "https://www.instagram.com/reel/DRR_PogEd-o/?igsh=MWFjd3g2cjcydm41bQ==" },
+                            { icon: <Linkedin size={18} />, link: "https://www.linkedin.com/company/embassy-of-france-in-nigeria/" },
+                             { icon: <Twitter size={18} />, link: "https://x.com/ATLM_Naija" },
+                              { icon: <Youtube size={18} />, link: "https://www.youtube.com/@ATLM_Naija" }
+                            
                         ].map((social, i) => (
                             <a 
                                 key={i} 
@@ -47,11 +49,12 @@ function Footer() {
                     <nav className="flex flex-col gap-3 text-sm">
                         <Link to="/" className="hover:text-blue-400 transition-colors">Home</Link>
                         <Link to="/bac" className="hover:text-blue-400 transition-colors">Bilingual & Competitive</Link>
+                        <Link to="/activities" className="hover:text-blue-400 transition-colors">Activites</Link>
                         <Link to="/podcast" className="hover:text-blue-400 transition-colors">Podcasts</Link>
-                        <Link to="/gallery" className="hover:text-blue-400 transition-colors">Gallery</Link>
                         <Link to="/resource" className="hover:text-blue-400 transition-colors">Resources</Link>
                         <Link to="/news&blog" className="hover:text-blue-400 transition-colors">News & Blog</Link>
-                         <Link to="/activities" className="hover:text-blue-400 transition-colors">Activites</Link>
+                        <Link to="/gallery" className="hover:text-blue-400 transition-colors">Gallery</Link>
+
                     </nav>
                 </div>
 
@@ -62,7 +65,7 @@ function Footer() {
                         <a href="https://enseigner.tv5monde.com/" target="_blank" rel="noreferrer" className="hover:text-blue-400 transition-colors">TV5 Monde</a>
                         <a href="https://savoirs.rfi.fr/" target="_blank" rel="noreferrer" className="hover:text-blue-400 transition-colors">RFI Savoirs</a>
                         <a href="https://www.ifprofs.org/" target="_blank" rel="noreferrer" className="hover:text-blue-400 transition-colors">IFprofs</a>
-                        <a href="#" className="hover:text-blue-400 transition-colors">Alliance Française</a>
+                        <a href="https://www.afnigeria.org/lagos/" className="hover:text-blue-400 transition-colors">Alliance Française</a>
                     </div>
                 </div>
 
@@ -80,8 +83,8 @@ function Footer() {
                             <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center shrink-0">
                                 <Mail className="text-red-500" size={16} />
                             </div>
-                            <a href="mailto:contact@atoilemicro.ng" className="hover:text-white transition-colors">
-                                contact@atoilemicro.ng
+                            <a href="mailto:atoilemicronaijawebsite@gmail.com" className="hover:text-white transition-colors">
+                                atoilemicronaijawebsite@gmail.com
                             </a>
                         </li>
                     </ul>
