@@ -1,4 +1,4 @@
-import { BookOpen, Search, X, ExternalLink, FileText, PlayCircle, ChevronLeft, ChevronRight, Loader2, Library } from "lucide-react";
+import {Search, X, ExternalLink, FileText, PlayCircle, ChevronLeft, ChevronRight, Loader2, Library } from "lucide-react";
 import pic from "../assets/img/_A1A4699.jpg";
 import { useState, useEffect, useMemo } from 'react';
 

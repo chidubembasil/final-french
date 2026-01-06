@@ -1,4 +1,4 @@
-import { Newspaper, Calendar, ExternalLink, GraduationCap, Laptop, Users, Briefcase, ChevronRight, Target } from "lucide-react";
+import { Newspaper, Calendar, ExternalLink, Laptop, Users, Briefcase, ChevronRight, Target } from "lucide-react";
 import pic from "../assets/img/_A1A4779.jpg"
 import { useNavigate } from "react-router-dom";
 import React from "react";
