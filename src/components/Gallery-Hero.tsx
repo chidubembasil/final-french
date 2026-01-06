@@ -24,7 +24,7 @@ export default function GalleryHero() {
       try {
         setLoading(true);
         // Removed ?limit=4 to fetch all data
-        const response = await fetch(`${baseUrl}api/galleries`);
+        const response = await fetch(`${CLIENT_KEY}api/galleries`);
 
         if (!response.ok) {
           throw new Error(`Failed to fetch galleries: ${response.status}`);
@@ -52,7 +52,7 @@ export default function GalleryHero() {
     if (rawPath.startsWith('http://') || rawPath.startsWith('https://')) return rawPath;
 
     const cleanPath = rawPath.replace(/^\/+/, '');
-    const cleanBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
+    const cleanBase = CLIENT_KEY.endsWith('/') ? CLIENT_KEY : `${CLIENT_KEY}/`;
     return `${cleanBase}${cleanPath}`;
   };
 
