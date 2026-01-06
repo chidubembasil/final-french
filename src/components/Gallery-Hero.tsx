@@ -16,7 +16,6 @@ export default function GalleryHero() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Get base URL from environment variable
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || '';
   const baseUrl = CLIENT_KEY ? (CLIENT_KEY.endsWith('/') ? CLIENT_KEY : `${CLIENT_KEY}/`) : '/';
 
@@ -24,7 +23,8 @@ export default function GalleryHero() {
     const fetchGalleries = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${baseUrl}api/galleries?limit=4`);
+        // Removed ?limit=4 to fetch all data
+        const response = await fetch(`${baseUrl}api/galleries`);
 
         if (!response.ok) {
           throw new Error(`Failed to fetch galleries: ${response.status}`);
@@ -33,7 +33,8 @@ export default function GalleryHero() {
         const data = await response.json();
         const galleryItems = Array.isArray(data) ? data : data?.data || [];
 
-        setItems(galleryItems);
+        // Use slice(0, 4) to only keep the first four items for the Hero display
+        setItems(galleryItems.slice(0, 4));
       } catch (err) {
         console.error('Gallery fetch error:', err);
         setItems([]);
@@ -45,25 +46,13 @@ export default function GalleryHero() {
     fetchGalleries();
   }, [baseUrl]);
 
-  // Improved & more reliable image URL builder
   const getFullImageUrl = (item: GalleryItem): string => {
     const rawPath = item?.imageUrl || item?.image;
+    if (!rawPath) return 'https://via.placeholder.com/400x600?text=No+Image';
+    if (rawPath.startsWith('http://') || rawPath.startsWith('https://')) return rawPath;
 
-    // Case 1: No image path at all
-    if (!rawPath) {
-      return 'https://via.placeholder.com/400x600?text=No+Image';
-    }
-
-    // Case 2: Already a full absolute URL
-    if (rawPath.startsWith('http://') || rawPath.startsWith('https://')) {
-      return rawPath;
-    }
-
-    // Case 3: Relative path → prepend baseUrl
-    // Remove leading slashes to avoid double slashes
     const cleanPath = rawPath.replace(/^\/+/, '');
     const cleanBase = baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`;
-
     return `${cleanBase}${cleanPath}`;
   };
 
@@ -79,17 +68,12 @@ export default function GalleryHero() {
 
       <div className="w-[90%] max-w-7xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         {loading ? (
-          // Skeleton loaders
           [1, 2, 3, 4].map((i) => (
             <div key={i} className="h-80 rounded-[2rem] bg-gray-200 animate-pulse" />
           ))
         ) : items.length > 0 ? (
           items.map((item) => {
             const imageUrl = getFullImageUrl(item);
-
-            // Optional: for debugging - remove in production
-            // console.log(`Item: ${item.title || 'Untitled'} → ${imageUrl}`);
-
             return (
               <div
                 key={item.id || item._id || Math.random()}
@@ -102,7 +86,7 @@ export default function GalleryHero() {
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                   onError={(e) => {
                     e.currentTarget.src = 'https://via.placeholder.com/400x600?text=Image+Error';
-                    e.currentTarget.onerror = null; // prevent infinite loop
+                    e.currentTarget.onerror = null;
                   }}
                   loading="lazy"
                 />
