@@ -1,4 +1,4 @@
-import {  ExternalLink, GraduationCap, Building2, Globe2 } from "lucide-react";
+import { GraduationCap, Building2, Globe2 } from "lucide-react";
 
 export default function BACSection() {
   const pillars = [
@@ -45,14 +45,14 @@ export default function BACSection() {
             </p>
           </div>
           
-          <a 
+          {/* <a 
             href="https://bac-retour-ng.vercel.app/" 
             target="_blank" 
             rel="noopener noreferrer"
             className="flex items-center gap-2 px-6 py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-xl shadow-slate-200 shrink-0"
           >
             Technical Officer Evaluation <ExternalLink size={16} />
-          </a>
+          </a> */}
         </div>
 
         {/* Pillars Grid */}

@@ -103,7 +103,7 @@ function Resources() {
   return (
     <main className="pt-20 bg-gray-50/30 min-h-screen relative">
       {/* Hero Section */}
-      <div className="relative w-full h-[80dvh] overflow-hidden">
+      <div className="relative w-full h-[90dvh] overflow-hidden">
         <img src={pic} alt="Resources Hero" className="absolute inset-0 w-full h-full object-cover z-0" />
         <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/90 via-blue-800/60 to-red-700/60" />
         <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-12 gap-5">
