@@ -10,9 +10,10 @@ interface BlogPost {
   content: string;
   coverImage: string;
   category: string;
-  publishedAt: string;
+  publishedAt: string; 
+  createdAt?: string;   
   language: string;
-  state: string; // Added State field
+  state: string;
 }
 
 const NIGERIAN_STATES = ["Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara"];
@@ -23,7 +24,6 @@ function News() {
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   
-  // Advanced Filters
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [activeState, setActiveState] = useState<string>('All');
@@ -52,13 +52,21 @@ function News() {
     document.body.style.overflow = selectedPost ? 'hidden' : 'unset';
   }, [selectedPost]);
 
+  // DATE FORMATTING HELPER
+  const formatDate = (post: BlogPost) => {
+    const dateToUse = post.publishedAt || post.createdAt;
+    if (!dateToUse) return "Date TBD";
+    
+    return new Date(dateToUse).toLocaleDateString('en-GB', {
+      day: 'numeric', month: 'long', year: 'numeric'
+    });
+  };
+
   const handleShare = async (post: BlogPost, platform?: string) => {
     const shareUrl = `${window.location.origin}/news/${post.slug || post.id}`;
     const shareText = `Check out this article: ${post.title}`;
     if (platform === 'facebook') {
       window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank');
-    } else if (platform === 'twitter') {
-      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
     } else if (platform === 'whatsapp') {
       window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`, '_blank');
     } else {
@@ -86,12 +94,6 @@ function News() {
   const totalPages = Math.ceil(filteredBlogs.length / itemsPerPage);
   const currentBlogs = filteredBlogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-GB', {
-      day: 'numeric', month: 'long', year: 'numeric'
-    });
-  };
-
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 700, behavior: 'smooth' });
@@ -99,7 +101,7 @@ function News() {
 
   return (
     <main className="pt-20 bg-gray-50/30 min-h-screen relative">
-      {/* HERO SECTION - UNCHANGED */}
+      {/* RESTORED HERO SECTION */}
       <div className="relative w-full h-[90dvh] overflow-hidden">
         <img src={pic} alt="News Hero" className="absolute inset-0 w-full h-full object-cover z-0" />
         <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/80 via-blue-700/50 to-red-700/80" />
@@ -117,7 +119,6 @@ function News() {
       <div className="sticky top-20 z-30 w-full bg-white/90 backdrop-blur-xl border-b border-gray-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Search */}
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input 
@@ -126,20 +127,14 @@ function News() {
                 value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            
-            {/* Category Select */}
             <select className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl font-bold text-xs uppercase text-gray-600 outline-none focus:bg-white" onChange={(e) => setActiveCategory(e.target.value)}>
               <option value="All">All Categories</option>
               {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-
-            {/* Language Select */}
             <select className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl font-bold text-xs uppercase text-gray-600 outline-none focus:bg-white" onChange={(e) => setActiveLanguage(e.target.value)}>
               <option value="All">All Languages</option>
               {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
             </select>
-
-            {/* State Select */}
             <select className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl font-bold text-xs uppercase text-gray-600 outline-none focus:bg-white" onChange={(e) => setActiveState(e.target.value)}>
               <option value="All">All States (Nigeria)</option>
               {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
@@ -169,7 +164,7 @@ function News() {
                   
                   <div className="p-8 flex flex-col flex-grow">
                     <div className="flex items-center gap-3 text-[10px] text-gray-400 mb-4 font-black uppercase tracking-widest">
-                      <span className="flex items-center gap-1.5"><Calendar size={14} className="text-red-500" /> {formatDate(post.publishedAt)}</span>
+                      <span className="flex items-center gap-1.5"><Calendar size={14} className="text-red-500" /> {formatDate(post)}</span>
                       <span className="flex items-center gap-1.5 ml-auto"><MapPin size={14} className="text-blue-500" /> {post.state}</span>
                     </div>
                     
@@ -184,7 +179,7 @@ function News() {
               ))}
             </div>
 
-            {/* PAGINATION (Logic remains same) */}
+            {/* PAGINATION */}
             {totalPages > 1 && (
               <div className="mt-20 flex items-center justify-center gap-2">
                 <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="p-4 rounded-2xl border border-gray-200 disabled:opacity-30"><ChevronLeft size={20} /></button>
@@ -192,14 +187,6 @@ function News() {
                   <button key={i} onClick={() => handlePageChange(i + 1)} className={`w-12 h-12 rounded-2xl text-xs font-black ${currentPage === i + 1 ? 'bg-blue-700 text-white shadow-lg' : 'bg-white text-gray-500 border border-gray-100 hover:border-blue-700'}`}>{i + 1}</button>
                 ))}
                 <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="p-4 rounded-2xl border border-gray-200 disabled:opacity-30"><ChevronRight size={20} /></button>
-              </div>
-            )}
-
-            {filteredBlogs.length === 0 && (
-              <div className="text-center py-32 bg-white rounded-[3rem] border border-dashed border-gray-200">
-                <Search size={64} className="mx-auto text-gray-200 mb-6" />
-                <h3 className="text-2xl font-bold text-slate-800">No matches found</h3>
-                <p className="text-gray-500 mt-2">Try changing your filters or search terms.</p>
               </div>
             )}
           </>
@@ -222,7 +209,7 @@ function News() {
                   <div className="flex flex-wrap items-center justify-between gap-6 mb-10">
                     <div className="flex flex-wrap items-center gap-4">
                       <span className="bg-blue-50 text-blue-700 text-[10px] px-5 py-2 rounded-full font-black uppercase tracking-widest">{selectedPost.category}</span>
-                      <span className="flex items-center gap-2 text-gray-400 text-[10px] font-black uppercase"><Calendar size={16} className="text-red-500" /> {formatDate(selectedPost.publishedAt)}</span>
+                      <span className="flex items-center gap-2 text-gray-400 text-[10px] font-black uppercase"><Calendar size={16} className="text-red-500" /> {formatDate(selectedPost)}</span>
                       <span className="flex items-center gap-2 text-gray-400 text-[10px] font-black uppercase"><MapPin size={16} className="text-blue-500" /> {selectedPost.state}</span>
                     </div>
                     
@@ -235,6 +222,7 @@ function News() {
                   </div>
 
                   <h2 className="text-3xl md:text-6xl font-bold text-slate-900 mb-10 leading-[1.1] font-serif">{selectedPost.title}</h2>
+                  {/* QUOTE / EXCERPT SECTION */}
                   <div className="space-y-8 text-gray-600 text-lg md:text-xl leading-relaxed font-light italic bg-slate-50 p-8 rounded-[2rem] border-l-4 border-blue-600 mb-10">
                     {selectedPost.excerpt}
                   </div>
