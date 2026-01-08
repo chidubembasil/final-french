@@ -1,28 +1,29 @@
-import { Newspaper, Search, Calendar, X, ChevronRight, ChevronLeft, Share2, Facebook, MessageCircle, MapPin, Globe } from "lucide-react";
-import pic from "../assets/img/_A1A4760.jpg";
-import { useState, useEffect, useMemo } from 'react';
+import { Newspaper, Search, Loader2, X, Calendar, MapPin, Globe, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useEffect, useCallback } from 'react';
 
 interface BlogPost {
   id: number;
   title: string;
-  slug: string;
   excerpt: string;
   content: string;
   coverImage: string;
   category: string;
-  publishedAt: string; 
-  createdAt?: string;   
+  publishedAt: string;
   language: string;
   state: string;
 }
 
-const NIGERIAN_STATES = ["Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno", "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "FCT", "Gombe", "Imo", "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos", "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers", "Sokoto", "Taraba", "Yobe", "Zamfara"];
-const CATEGORIES = ['News', 'Announcement', 'Tutorial', 'Event', 'Update'];
-const LANGUAGES = ['English', 'French'];
+interface GalleryHero {
+  title: string;
+  description: string;
+  mediaUrl: string;
+}
 
 function News() {
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
+  const [heroData, setHeroData] = useState<GalleryHero | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [loadingHero, setLoadingHero] = useState<boolean>(true);
   
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeCategory, setActiveCategory] = useState<string>('All');
@@ -34,205 +35,184 @@ function News() {
   const itemsPerPage = 6;
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
+  // --- Fetch Dynamic Hero ---
   useEffect(() => {
-    fetch(`${CLIENT_KEY}api/news`)
+    fetch(`${CLIENT_KEY}api/galleries`)
       .then(res => res.json())
-      .then((data: any) => {
-        const finalData = Array.isArray(data) ? data : (data.data || []);
-        setBlogs(finalData);
-        setLoading(false);
+      .then((data: any[]) => {
+        const hero = data.find(item => item.purpose === "Other Page" && item.subPurpose === "News");
+        if (hero) setHeroData(hero);
       })
-      .catch(err => {
-        console.error("Fetch error:", err);
-        setLoading(false);
-      });
+      .finally(() => setLoadingHero(false));
   }, [CLIENT_KEY]);
 
-  useEffect(() => {
-    document.body.style.overflow = selectedPost ? 'hidden' : 'unset';
-  }, [selectedPost]);
+  // --- API Filtered Fetch ---
+  const fetchBlogs = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (searchQuery) params.append('search', searchQuery);
+      if (activeCategory !== 'All') params.append('category', activeCategory);
+      if (activeState !== 'All') params.append('state', activeState);
+      if (activeLanguage !== 'All') params.append('language', activeLanguage);
 
-  // DATE FORMATTING HELPER
-  const formatDate = (post: BlogPost) => {
-    const dateToUse = post.publishedAt || post.createdAt;
-    if (!dateToUse) return "Date TBD";
-    
-    return new Date(dateToUse).toLocaleDateString('en-GB', {
-      day: 'numeric', month: 'long', year: 'numeric'
-    });
-  };
-
-  const handleShare = async (post: BlogPost, platform?: string) => {
-    const shareUrl = `${window.location.origin}/news/${post.slug || post.id}`;
-    const shareText = `Check out this article: ${post.title}`;
-    if (platform === 'facebook') {
-      window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}`, '_blank');
-    } else if (platform === 'whatsapp') {
-      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`, '_blank');
-    } else {
-      if (navigator.share) {
-        try { await navigator.share({ title: post.title, text: post.excerpt, url: shareUrl }); } catch (err) {}
-      } else {
-        navigator.clipboard.writeText(shareUrl);
-        alert("Link copied!");
-      }
+      const res = await fetch(`${CLIENT_KEY}api/news?${params.toString()}`);
+      const data = await res.json();
+      setBlogs(Array.isArray(data) ? data : (data.data || []));
+    } catch (err) {
+      console.error("News Fetch error:", err);
+    } finally {
+      setLoading(false);
     }
-  };
+  }, [CLIENT_KEY, searchQuery, activeCategory, activeState, activeLanguage]);
 
-  const filteredBlogs = useMemo(() => {
-    return blogs.filter((post) => {
-      const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) || post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCategory = activeCategory === 'All' || post.category === activeCategory;
-      const matchesState = activeState === 'All' || post.state === activeState;
-      const matchesLang = activeLanguage === 'All' || post.language === activeLanguage;
-      return matchesSearch && matchesCategory && matchesState && matchesLang;
-    });
-  }, [blogs, searchQuery, activeCategory, activeState, activeLanguage]);
+  useEffect(() => {
+    fetchBlogs();
+  }, [fetchBlogs]);
 
-  useEffect(() => { setCurrentPage(1); }, [searchQuery, activeCategory, activeState, activeLanguage]);
+  // FIX: Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, activeCategory, activeState, activeLanguage]);
 
-  const totalPages = Math.ceil(filteredBlogs.length / itemsPerPage);
-  const currentBlogs = filteredBlogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-    window.scrollTo({ top: 700, behavior: 'smooth' });
-  };
+  // FIX: Pagination Logic
+  const totalPages = Math.ceil(blogs.length / itemsPerPage);
+  const currentBlogs = blogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   return (
     <main className="pt-20 bg-gray-50/30 min-h-screen relative">
-      {/* RESTORED HERO SECTION */}
-      <div className="relative w-full h-[90dvh] overflow-hidden">
-        <img src={pic} alt="News Hero" className="absolute inset-0 w-full h-full object-cover z-0" />
-        <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/80 via-blue-700/50 to-red-700/80" />
-        <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-20 gap-5">
-          <div className="flex flex-row items-center gap-2 px-4 py-2 text-white bg-white/20 backdrop-blur-md border border-white/30 rounded-3xl">
-            <Newspaper color="white" size={17} />
-            <p className="text-sm font-medium tracking-wide">Stay updated</p>
-          </div>
-          <h1 className="text-white text-5xl md:text-7xl font-bold font-serif max-w-3xl leading-tight">News & Blog</h1>
-          <p className="text-white/90 text-lg md:text-xl max-w-xl">Latest updates, success stories, and educational events from the Bilingual & Competitive project.</p>
-        </div>
+      {/* Dynamic Hero */}
+      <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
+        {loadingHero ? <div className="absolute inset-0 animate-pulse bg-slate-800" /> : (
+          <>
+            <img src={heroData?.mediaUrl} alt="News Hero" className="absolute inset-0 w-full h-full object-cover z-0" />
+            <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/80 via-blue-700/50 to-red-700/80" />
+            <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-20 gap-5">
+              <div className="flex flex-row items-center gap-2 px-4 py-2 text-white bg-white/20 backdrop-blur-md border border-white/30 rounded-3xl">
+                <Newspaper color="white" size={17} />
+                <p className="text-sm font-medium tracking-wide uppercase">Stay updated</p>
+              </div>
+              <h1 className="text-white text-5xl md:text-7xl font-bold font-serif max-w-3xl leading-tight">{heroData?.title}</h1>
+              <p className="text-white/90 text-lg md:text-xl max-w-xl">{heroData?.description}</p>
+            </div>
+          </>
+        )}
       </div>
 
-      {/* ENHANCED FILTER BAR */}
+      {/* Filter Bar */}
       <div className="sticky top-20 z-30 w-full bg-white/90 backdrop-blur-xl border-b border-gray-100 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6 space-y-4">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <input 
-                type="text" placeholder="Search news..." 
-                className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-transparent rounded-2xl outline-none focus:bg-white focus:ring-2 focus:ring-blue-500/20 transition-all"
-                value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-              />
+              <input type="text" placeholder="Search news..." className="w-full pl-12 pr-4 py-3 bg-gray-50 rounded-2xl outline-none" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             </div>
-            <select className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl font-bold text-xs uppercase text-gray-600 outline-none focus:bg-white" onChange={(e) => setActiveCategory(e.target.value)}>
+            <select className="w-full px-4 py-3 bg-gray-50 rounded-2xl font-bold text-xs uppercase cursor-pointer" onChange={(e) => setActiveCategory(e.target.value)}>
               <option value="All">All Categories</option>
-              {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
+              {['News', 'Announcement', 'Tutorial', 'Event', 'Update'].map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-            <select className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl font-bold text-xs uppercase text-gray-600 outline-none focus:bg-white" onChange={(e) => setActiveLanguage(e.target.value)}>
+            <select className="w-full px-4 py-3 bg-gray-50 rounded-2xl font-bold text-xs uppercase cursor-pointer" onChange={(e) => setActiveLanguage(e.target.value)}>
               <option value="All">All Languages</option>
-              {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
+              {['English', 'French'].map(l => <option key={l} value={l}>{l}</option>)}
             </select>
-            <select className="w-full px-4 py-3 bg-gray-50 border border-transparent rounded-2xl font-bold text-xs uppercase text-gray-600 outline-none focus:bg-white" onChange={(e) => setActiveState(e.target.value)}>
-              <option value="All">All States (Nigeria)</option>
-              {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+            <select className="w-full px-4 py-3 bg-gray-50 rounded-2xl font-bold text-xs uppercase cursor-pointer" onChange={(e) => setActiveState(e.target.value)}>
+              <option value="All">All States</option>
+              {["Lagos", "Abuja", "Rivers", "Oyo", "Kano"].map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
         </div>
       </div>
 
-      {/* ARTICLES GRID */}
+      {/* Results */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-16">
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-            {[1, 2, 3].map(n => <div key={n} className="h-96 bg-gray-200 animate-pulse rounded-[2rem]" />)}
-          </div>
+           <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-600" size={40}/></div>
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
               {currentBlogs.map((post) => (
-                <article key={post.id} className="group cursor-pointer flex flex-col bg-white rounded-[2.5rem] border border-gray-50 shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden" onClick={() => setSelectedPost(post)}>
-                  <div className="relative aspect-[16/10] overflow-hidden">
-                    <img src={post.coverImage} className="w-full h-full object-cover group-hover:scale-110 transition duration-700" alt={post.title} />
-                    <div className="absolute top-4 left-4 flex gap-2">
-                      <span className="bg-white/90 backdrop-blur px-3 py-1 rounded-lg text-[10px] font-black uppercase text-blue-700 shadow-sm">{post.category}</span>
-                      <span className="bg-blue-700 px-3 py-1 rounded-lg text-[10px] font-black uppercase text-white shadow-sm flex items-center gap-1"><Globe size={10}/> {post.language}</span>
+                <article key={post.id} className="group bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-500" onClick={() => setSelectedPost(post)}>
+                  <div className="relative h-60 overflow-hidden">
+                    <img src={post.coverImage} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={post.title} />
+                    <div className="absolute top-4 left-4 px-4 py-1.5 bg-white/90 backdrop-blur-md rounded-full text-[10px] font-black uppercase tracking-widest text-blue-600">
+                      {post.category}
                     </div>
                   </div>
-                  
-                  <div className="p-8 flex flex-col flex-grow">
-                    <div className="flex items-center gap-3 text-[10px] text-gray-400 mb-4 font-black uppercase tracking-widest">
-                      <span className="flex items-center gap-1.5"><Calendar size={14} className="text-red-500" /> {formatDate(post)}</span>
-                      <span className="flex items-center gap-1.5 ml-auto"><MapPin size={14} className="text-blue-500" /> {post.state}</span>
+                  <div className="p-8">
+                    <div className="flex items-center gap-4 text-gray-400 text-[10px] font-bold uppercase tracking-widest mb-4">
+                       <span className="flex items-center gap-1"><Calendar size={12}/> {new Date(post.publishedAt).toLocaleDateString()}</span>
+                       <span className="flex items-center gap-1"><MapPin size={12}/> {post.state}</span>
                     </div>
-                    
-                    <h3 className="text-xl font-bold text-slate-800 mb-4 group-hover:text-blue-700 transition-colors line-clamp-2 leading-snug">{post.title}</h3>
-                    <p className="text-gray-500 text-sm leading-relaxed line-clamp-3 mb-8 flex-grow">{post.excerpt}</p>
-                    
-                    <div className="flex items-center gap-2 text-blue-700 font-black text-[10px] uppercase tracking-[0.2em] group-hover:gap-4 transition-all pt-4 border-t border-gray-50">
-                      Read Article <ChevronRight size={16} />
-                    </div>
+                    <h3 className="text-2xl font-bold mb-4 line-clamp-2 group-hover:text-blue-600 transition-colors">{post.title}</h3>
+                    <p className="text-gray-500 text-sm line-clamp-3 leading-relaxed">{post.excerpt}</p>
                   </div>
                 </article>
               ))}
             </div>
 
-            {/* PAGINATION */}
+            {/* FIX: Pagination UI */}
             {totalPages > 1 && (
-              <div className="mt-20 flex items-center justify-center gap-2">
-                <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="p-4 rounded-2xl border border-gray-200 disabled:opacity-30"><ChevronLeft size={20} /></button>
-                {[...Array(totalPages)].map((_, i) => (
-                  <button key={i} onClick={() => handlePageChange(i + 1)} className={`w-12 h-12 rounded-2xl text-xs font-black ${currentPage === i + 1 ? 'bg-blue-700 text-white shadow-lg' : 'bg-white text-gray-500 border border-gray-100 hover:border-blue-700'}`}>{i + 1}</button>
-                ))}
-                <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="p-4 rounded-2xl border border-gray-200 disabled:opacity-30"><ChevronRight size={20} /></button>
+              <div className="mt-20 flex justify-center items-center gap-3">
+                <button 
+                  disabled={currentPage === 1} 
+                  onClick={() => setCurrentPage(prev => prev - 1)}
+                  className="p-4 bg-white rounded-2xl border border-gray-200 disabled:opacity-20 hover:bg-gray-50 transition-all shadow-sm"
+                >
+                  <ChevronLeft size={20} />
+                </button>
+                <div className="flex gap-2">
+                  {[...Array(totalPages)].map((_, i) => (
+                    <button 
+                      key={i} 
+                      onClick={() => setCurrentPage(i + 1)}
+                      className={`w-12 h-12 rounded-2xl font-bold transition-all ${currentPage === i + 1 ? "bg-blue-600 text-white shadow-lg" : "bg-white border border-gray-200 text-gray-500 hover:bg-gray-50"}`}
+                    >
+                      {i + 1}
+                    </button>
+                  ))}
+                </div>
+                <button 
+                  disabled={currentPage === totalPages} 
+                  onClick={() => setCurrentPage(prev => prev + 1)}
+                  className="p-4 bg-white rounded-2xl border border-gray-200 disabled:opacity-20 hover:bg-gray-50 transition-all shadow-sm"
+                >
+                  <ChevronRight size={20} />
+                </button>
               </div>
             )}
           </>
         )}
       </div>
 
-      {/* ARTICLE MODAL */}
+      {/* FIX: Full Post Modal - Reads selectedPost */}
       {selectedPost && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-6 lg:p-10">
-          <div className="absolute inset-0 bg-slate-900/95 backdrop-blur-md" onClick={() => setSelectedPost(null)} />
-          <div className="relative bg-white w-full max-w-5xl h-full md:h-auto md:max-h-[90vh] rounded-none md:rounded-[3rem] overflow-hidden shadow-2xl flex flex-col">
-            <button onClick={() => setSelectedPost(null)} className="absolute top-6 right-6 z-50 p-3 bg-white/90 hover:bg-white rounded-full text-slate-800 shadow-xl"><X size={20} /></button>
-            <div className="overflow-y-auto">
-              <div className="relative w-full h-64 md:h-[450px]">
-                <img src={selectedPost.coverImage} className="w-full h-full object-cover" alt={selectedPost.title} />
-                <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
-              </div>
-              <div className="px-6 md:px-16 pb-20 -mt-24 relative z-10">
-                <div className="bg-white rounded-[3rem] p-8 md:p-16 shadow-2xl border border-gray-100">
-                  <div className="flex flex-wrap items-center justify-between gap-6 mb-10">
-                    <div className="flex flex-wrap items-center gap-4">
-                      <span className="bg-blue-50 text-blue-700 text-[10px] px-5 py-2 rounded-full font-black uppercase tracking-widest">{selectedPost.category}</span>
-                      <span className="flex items-center gap-2 text-gray-400 text-[10px] font-black uppercase"><Calendar size={16} className="text-red-500" /> {formatDate(selectedPost)}</span>
-                      <span className="flex items-center gap-2 text-gray-400 text-[10px] font-black uppercase"><MapPin size={16} className="text-blue-500" /> {selectedPost.state}</span>
-                    </div>
-                    
-                    <div className="flex items-center gap-3">
-                      <p className="text-[10px] font-black uppercase text-gray-400 mr-2">Share Article:</p>
-                      <button onClick={() => handleShare(selectedPost, 'facebook')} className="p-2.5 bg-[#1877F2] text-white rounded-xl hover:scale-110 transition shadow-lg"><Facebook size={16}/></button>
-                      <button onClick={() => handleShare(selectedPost, 'whatsapp')} className="p-2.5 bg-[#25D366] text-white rounded-xl hover:scale-110 transition shadow-lg"><MessageCircle size={16}/></button>
-                      <button onClick={() => handleShare(selectedPost)} className="p-2.5 bg-gray-100 text-gray-600 rounded-xl hover:scale-110 transition"><Share2 size={16}/></button>
-                    </div>
-                  </div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 backdrop-blur-md p-4 overflow-y-auto">
+          <div className="relative bg-white w-full max-w-4xl rounded-[3rem] overflow-hidden shadow-2xl my-auto">
+            <button 
+              onClick={() => setSelectedPost(null)} 
+              className="absolute top-6 right-6 z-10 p-3 bg-black/5 hover:bg-black/10 rounded-full transition-colors"
+            >
+              <X size={24} />
+            </button>
+            
+            <div className="h-[40vh] relative">
+              <img src={selectedPost.coverImage} className="w-full h-full object-cover" alt={selectedPost.title} />
+              <div className="absolute inset-0 bg-gradient-to-t from-white via-transparent to-transparent" />
+            </div>
 
-                  <h2 className="text-3xl md:text-6xl font-bold text-slate-900 mb-10 leading-[1.1] font-serif">{selectedPost.title}</h2>
-                  {/* QUOTE / EXCERPT SECTION */}
-                  <div className="space-y-8 text-gray-600 text-lg md:text-xl leading-relaxed font-light italic bg-slate-50 p-8 rounded-[2rem] border-l-4 border-blue-600 mb-10">
-                    {selectedPost.excerpt}
-                  </div>
-                  <div className="space-y-6 text-gray-700 text-lg leading-[1.8] article-content">
-                    {selectedPost.content.split('\n').map((paragraph, i) => paragraph.trim() && <p key={i} className="mb-4">{paragraph}</p>)}
-                  </div>
-                  <div className="mt-16 pt-8 border-t border-gray-100">
-                    <button onClick={() => setSelectedPost(null)} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-blue-700 transition-all shadow-xl">Close Article</button>
-                  </div>
-                </div>
+            <div className="p-8 md:p-16 -mt-20 relative bg-white rounded-t-[3rem]">
+              <div className="flex flex-wrap gap-4 mb-8">
+                <span className="px-4 py-2 bg-blue-50 text-blue-600 rounded-xl text-xs font-black uppercase tracking-widest">{selectedPost.category}</span>
+                <span className="flex items-center gap-2 text-gray-400 text-xs font-bold uppercase tracking-widest border-l pl-4 border-gray-200"><Globe size={14}/> {selectedPost.language}</span>
+                <span className="flex items-center gap-2 text-gray-400 text-xs font-bold uppercase tracking-widest border-l pl-4 border-gray-200"><MapPin size={14}/> {selectedPost.state}</span>
+              </div>
+              
+              <h2 className="text-4xl md:text-5xl font-bold font-serif mb-8 text-slate-900 leading-tight">{selectedPost.title}</h2>
+              
+              <div className="prose prose-lg max-w-none text-gray-600 leading-relaxed space-y-6">
+                {selectedPost.content.split('\n').map((para, i) => (
+                  <p key={i}>{para}</p>
+                ))}
               </div>
             </div>
           </div>
