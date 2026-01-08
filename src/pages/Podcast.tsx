@@ -50,7 +50,7 @@ function Podcast() {
       .then((res) => res.json())
       .then((data: GalleryHero[]) => {
         const podcastHero = data.find(
-          (item) => item.purpose === "Other Page" && item.subPurpose === "Podcast"
+          (item) => item.purpose === "Other Page" && item.subPurpose === "Podcasts"
         );
         if (podcastHero) setHeroData(podcastHero);
       })
