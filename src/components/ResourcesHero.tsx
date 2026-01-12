@@ -9,7 +9,7 @@ export default function ResourceHero() {
     const navigate = useNavigate();
     
     // Ensure the key exists or fallback to empty string
-    const CLIENT_KEY = import.meta.env.VITE_CLIENT_ENV || "";
+    const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || "";
 
     useEffect(() => {
         setLoading(true);

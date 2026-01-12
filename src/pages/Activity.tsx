@@ -35,7 +35,7 @@ function Activites() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const exercisesPerPage = 8;
-  const CLIENT_KEY = import.meta.env.VITE_CLIENT_ENV;
+  const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
   const EXERCISE_TYPES = ['Multiple Choice', 'Gap Filling', 'Matching', 'Sequencing', 'True or False'];
   const DIFFICULTIES = ['Basic', 'Intermediate', 'Advanced'];
 

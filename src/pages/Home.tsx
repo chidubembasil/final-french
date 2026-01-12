@@ -2,7 +2,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay } from "swiper/modules";
 import "swiper/css";
 import pic from "../assets/img/_A1A4704.jpg"
-import pic2 from "../assets/img/_A1A4640.jpg"
+import pic2 from "../assets/img/hero-image.jpg"
 import pic3 from "../assets/img/_A1A4739.jpg"
 import { motion } from 'framer-motion';
 import GalleryHero from "../components/Gallery-Hero"

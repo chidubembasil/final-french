@@ -37,7 +37,7 @@ function Resources() {
   const itemsPerPage = 6;
   const [viewingResource, setViewingResource] = useState<Resource | null>(null);
   
-  const CLIENT_KEY = import.meta.env.VITE_CLIENT_ENV;
+  const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
   // --- RESTORED: Original getResourceType logic ---
   const getResourceType = (url: string) => {

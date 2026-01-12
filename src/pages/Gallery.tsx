@@ -33,7 +33,7 @@ function Gallery() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
-  const CLIENT_KEY = import.meta.env.VITE_CLIENT_ENV;
+  const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
   const CATEGORIES = ["All", "Trainings", "Resource Centres", "French Clubs", "Associations", "Events"];
   const MEDIA_TYPES = ["All", "Image", "Video"];
