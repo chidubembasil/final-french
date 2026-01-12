@@ -1,4 +1,5 @@
 import logo from '../assets/img/logo.png';
+import logo2 from '../assets/img/ambassade de france.png'
 import { Globe, Menu, X } from "lucide-react";
 import { useState, useEffect } from 'react';
 import { Link, NavLink } from "react-router-dom";
@@ -39,9 +40,9 @@ function Header() {
     const navLink = [
         { path: "/", name: "Home" },
         { path: "/bac", name: "Bilingual and Competitive" },
-        { path: "/activities", name: "Activities" },
+        { path: "/activities", name: "Learn French" },
         { path: "/podcast", name: "Podcasts" },
-        { path: "/resource", name: "Resources" },
+        { path: "/resource", name: "If Classe" },
         { path: "/news&blog", name: "News & Blog" },
         { path: "/gallery", name: "Gallery" }
     ];
@@ -61,8 +62,10 @@ function Header() {
 
             <div id="google_translate_element" style={{ display: 'none' }}></div>
 
-            <Link to="/" className="shrink-0">
+            <Link to="/" className="shrink-0 flex flex-row gap-0.5">
+                <img src={logo2} alt="logo" className="w-12 h-12 md:w-14 object-contain" />
                 <img src={logo} alt="logo" className="w-12 h-12 md:w-14 object-contain" />
+                
             </Link>
 
             <nav className='hidden lg:flex items-center gap-2'>

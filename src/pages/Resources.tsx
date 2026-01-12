@@ -1,4 +1,4 @@
-import { Search, Loader2, Library, X, FileText, Video, ExternalLink, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Loader2, Library, X, FileText, Video, ExternalLink, ChevronLeft, ChevronRight, GraduationCap, Music, Link as LinkIcon } from "lucide-react";
 import { useState, useEffect, useCallback } from 'react';
 
 interface Resource {
@@ -39,6 +39,16 @@ function Resources() {
   
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
+  // --- RESTORED: Original getResourceType logic ---
+  const getResourceType = (url: string) => {
+    if (!url) return 'Link';
+    const lowerUrl = url.toLowerCase();
+    if (lowerUrl.endsWith('.pdf')) return 'PDF';
+    if (lowerUrl.match(/\.(mp4|webm|ogg|mov)$/) || lowerUrl.includes('youtube.com') || lowerUrl.includes('youtu.be')) return 'Video';
+    if (lowerUrl.match(/\.(mp3|wav|aac)$/)) return 'Audio';
+    return 'Link';
+  };
+
   // --- Fetch Dynamic Hero ---
   useEffect(() => {
     fetch(`${CLIENT_KEY}api/galleries`)
@@ -50,20 +60,15 @@ function Resources() {
       .finally(() => setLoadingHero(false));
   }, [CLIENT_KEY]);
 
-  const getResourceType = (url: string) => {
-    if (!url) return 'Link';
-    const lowerUrl = url.toLowerCase();
-    if (lowerUrl.endsWith('.pdf')) return 'PDF';
-    if (lowerUrl.match(/\.(mp4|webm|ogg)$/) || lowerUrl.includes('youtube.com') || lowerUrl.includes('vimeo.com') || lowerUrl.includes('youtu.be')) return 'Video';
-    return 'Link';
-  };
-
-  // --- API Filtered Fetch ---
+  // --- API Filtered Fetch: CONNECTED TO ALL FILTERS ---
   const fetchFilteredData = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
+      
+      // Every filter is now part of the API request
       if (searchQuery) params.append('search', searchQuery);
+      if (activeType !== 'All') params.append('mediaType', activeType.toLowerCase());
       if (resCategory !== 'All') params.append('category', resCategory);
       if (pedLevel !== 'All') params.append('level', pedLevel);
       if (pedSkill !== 'All') params.append('skillType', pedSkill);
@@ -84,24 +89,19 @@ function Resources() {
         ...p, sourceType: 'Pedagogy'
       }));
 
-      let combined = [...normalizedResources, ...normalizedPedagogies];
-      if (activeType !== 'All') {
-          combined = combined.filter(item => getResourceType(item.url) === activeType);
-      }
-
-      setData(combined);
+      // Combined data is already pre-filtered by the API params above
+      setData([...normalizedResources, ...normalizedPedagogies]);
     } catch (err) {
       console.error("Fetch error:", err);
     } finally {
       setLoading(false);
     }
-  }, [CLIENT_KEY, searchQuery, resCategory, pedLevel, pedSkill, pedTheme, activeType]);
+  }, [CLIENT_KEY, searchQuery, activeType, resCategory, pedLevel, pedSkill, pedTheme]);
 
   useEffect(() => {
     fetchFilteredData();
   }, [fetchFilteredData]);
 
-  // Reset page when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchQuery, activeType, resCategory, pedLevel, pedSkill, pedTheme]);
@@ -111,7 +111,7 @@ function Resources() {
 
   return (
     <main className="pt-20 bg-gray-50/30 min-h-screen relative">
-      {/* Dynamic Hero */}
+      {/* RESTORED: Original Dynamic Hero with h-[90dvh] */}
       <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
         {loadingHero ? <div className="absolute inset-0 animate-pulse bg-slate-800" /> : (
           <>
@@ -129,16 +129,48 @@ function Resources() {
         )}
       </div>
 
-      <div className="px-4 md:px-8 py-12 max-w-7xl mx-auto">
+      {/* IF CLASSE & 365 LOGIN SECTION */}
+      <section className="max-w-7xl mx-auto px-4 md:px-8 -mt-16 relative z-30 grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* IF Classe Card */}
+        <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-gray-100 flex flex-col items-start gap-4 hover:translate-y-[-5px] transition-transform">
+          <div className="w-14 h-14 bg-blue-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+            <GraduationCap size={30} />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-slate-900">IF Classe</h2>
+            <p className="text-gray-500 text-sm mt-1">Plateforme pédagogique de l'Institut Français.</p>
+          </div>
+          <a href="https://ifclasse.institutfrancais.com" target="_blank" rel="noopener noreferrer" className="mt-2 flex items-center gap-2 text-blue-600 font-black text-[11px] uppercase tracking-widest hover:gap-3 transition-all">
+            Visit ifclasse.institutfrancais.com <ExternalLink size={14} />
+          </a>
+        </div>
+
+        {/* Office 365 Login Card */}
+        <div className="bg-slate-900 p-8 rounded-[2.5rem] shadow-xl border border-white/5 flex flex-col items-start gap-4 hover:translate-y-[-5px] transition-transform">
+          <div className="w-14 h-14 bg-red-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/4/44/Microsoft_Office_logo_%282018%E2%80%93present%29.svg" className="w-8 h-8" alt="Office 365" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-white">LMS Login</h2>
+            <p className="text-gray-400 text-sm mt-1">Access Office 365 for Lecturers & Students.</p>
+          </div>
+          <a href="https://login.microsoftonline.com" target="_blank" rel="noopener noreferrer" className="mt-2 py-3 px-6 bg-white/10 text-white rounded-xl font-black text-[11px] uppercase tracking-widest hover:bg-red-600 transition-all">
+            Sign In to 365
+          </a>
+        </div>
+      </section>
+
+      <div className="px-4 md:px-8 py-20 max-w-7xl mx-auto">
         {/* Filter Bar */}
         <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-gray-100 mb-12 space-y-8">
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="relative flex-1">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-              <input type="text" placeholder="Search by title..." className="w-full pl-14 pr-6 py-4 rounded-2xl bg-gray-50 border-none outline-none focus:ring-2 focus:ring-blue-500" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+              <input type="text" placeholder="Search resources..." className="w-full pl-14 pr-6 py-4 rounded-2xl bg-gray-50 border-none outline-none focus:ring-2 focus:ring-blue-500" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             </div>
-            <div className="flex bg-gray-100 p-1.5 rounded-2xl overflow-x-auto">
-              {['All', 'PDF', 'Video', 'Link'].map((t) => (
+            {/* TYPE FILTER: NOW CONNECTED TO API */}
+            <div className="flex bg-gray-100 p-1.5 rounded-2xl overflow-x-auto no-scrollbar">
+              {['All', 'PDF', 'Video', 'Audio', 'Link'].map((t) => (
                 <button key={t} onClick={() => setActiveType(t)} className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all whitespace-nowrap ${activeType === t ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>{t}</button>
               ))}
             </div>
@@ -167,7 +199,7 @@ function Resources() {
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
             <Loader2 className="animate-spin text-blue-700" size={48} />
-            <p className="font-bold text-slate-400 uppercase tracking-widest text-[10px]">Updating Results...</p>
+            <p className="font-bold text-slate-400 uppercase tracking-widest text-[10px]">Syncing with API...</p>
           </div>
         ) : (
           <>
@@ -179,7 +211,8 @@ function Resources() {
                     <div className="mb-6">
                        {getResourceType(res.url) === 'PDF' && <FileText className="text-red-500" size={32} />}
                        {getResourceType(res.url) === 'Video' && <Video className="text-blue-500" size={32} />}
-                       {getResourceType(res.url) === 'Link' && <ExternalLink className="text-emerald-500" size={32} />}
+                       {getResourceType(res.url) === 'Audio' && <Music className="text-purple-500" size={32} />}
+                       {getResourceType(res.url) === 'Link' && <LinkIcon className="text-emerald-500" size={32} />}
                     </div>
 
                     <h3 className="font-bold text-xl text-slate-900 mb-4 group-hover:text-blue-700 transition-colors">{res.title}</h3>
@@ -191,7 +224,6 @@ function Resources() {
               )}
             </div>
 
-            {/* FIX: Pagination Controls */}
             {totalPages > 1 && (
               <div className="mt-20 flex justify-center items-center gap-4">
                 <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-4 bg-white border border-gray-100 rounded-2xl disabled:opacity-20 hover:bg-gray-50 transition-all">
@@ -207,7 +239,7 @@ function Resources() {
         )}
       </div>
 
-      {/* FIX: Modal for viewing resource details */}
+      {/* Modal for viewing resource details */}
       {viewingResource && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/90 backdrop-blur-md p-4">
           <div className="bg-white w-full max-w-2xl rounded-[3rem] p-10 md:p-16 relative shadow-2xl animate-in fade-in zoom-in duration-300">
