@@ -41,7 +41,7 @@ function Podcast() {
   const [activePodcast, setActivePodcast] = useState<Podcast | null>(null);
   const itemsPerPage = 6;
 
-  const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
+  const CLIENT_KEY = import.meta.env.VITE_CLIENT_ENV;
 
   // --- Fetch Hero ---
   useEffect(() => {

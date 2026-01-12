@@ -14,7 +14,7 @@ function BAC() {
     const navigate = useNavigate();
     const [heroData, setHeroData] = useState<GalleryHero | null>(null);
     const [loadingHero, setLoadingHero] = useState(true);
-    const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
+    const CLIENT_KEY = import.meta.env.VITE_CLIENT_ENV;
 
     // --- Fetch Dynamic Hero for BAC ---
     useEffect(() => {

@@ -6,7 +6,7 @@ export default function NewsHero() {
     // ✅ Initialize as empty array
     const [news, setNews] = useState([]);
     const navigate = useNavigate();
-    const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || "";
+    const CLIENT_KEY = import.meta.env.VITE_CLIENT_ENV || "";
 
     useEffect(() => {
         fetch(`${CLIENT_KEY}api/news?limit=4`)

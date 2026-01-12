@@ -34,7 +34,7 @@ function News() {
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
-  const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
+  const CLIENT_KEY = import.meta.env.VITE_CLIENT_ENV;
 
   // --- Fetch Hero ---
   useEffect(() => {

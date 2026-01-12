@@ -37,7 +37,7 @@ function Resources() {
   const itemsPerPage = 6;
   const [viewingResource, setViewingResource] = useState<Resource | null>(null);
   
-  const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
+  const CLIENT_KEY = import.meta.env.VITE_CLIENT_ENV;
 
   // --- RESTORED: Original getResourceType logic ---
   const getResourceType = (url: string) => {
@@ -130,7 +130,7 @@ function Resources() {
       </div>
 
       {/* IF CLASSE & 365 LOGIN SECTION */}
-      
+
       <section className="max-w-7xl mx-auto px-4 md:px-8 -mt-16 relative z-30 grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* IF Classe Card */}
         <div className="bg-white p-8 rounded-[2.5rem] shadow-xl border border-gray-100 flex flex-col items-start gap-4 hover:translate-y-[-5px] transition-transform">

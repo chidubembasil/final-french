@@ -9,7 +9,7 @@ export default function PodcastHero() {
     
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const navigate = useNavigate();
-    const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || "";
+    const CLIENT_KEY = import.meta.env.VITE_CLIENT_ENV || "";
 
     useEffect(() => {
         fetch(`${CLIENT_KEY}api/podcasts?limit=4`)
