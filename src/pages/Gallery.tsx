@@ -38,7 +38,6 @@ function Gallery() {
   const CATEGORIES = ["All", "Trainings", "Resource Centres", "French Clubs", "Associations", "Events"];
   const MEDIA_TYPES = ["All", "Image", "Video"];
 
-  // --- Modal Navigation Logic ---
   const handleNext = (e: React.MouseEvent) => {
     e.stopPropagation();
     const currentIndex = currentImages.findIndex(img => img.id === selectedImage?.id);
@@ -53,7 +52,6 @@ function Gallery() {
     setSelectedImage(currentImages[prevIndex]);
   };
 
-  // --- Fetch Dynamic Hero ---
   useEffect(() => {
     fetch(`${CLIENT_KEY}api/galleries`)
       .then(res => res.json())
@@ -65,7 +63,6 @@ function Gallery() {
       .finally(() => setLoadingHero(false));
   }, [CLIENT_KEY]);
 
-  // --- API Filtered Fetch ---
   const fetchFilteredGallery = useCallback(async () => {
     setLoading(true);
     try {
@@ -89,11 +86,8 @@ function Gallery() {
 
   useEffect(() => {
     fetchFilteredGallery();
-  }, [fetchFilteredGallery]);
-
-  useEffect(() => {
     setCurrentPage(1);
-  }, [activeCategory, activeMediaType]);
+  }, [fetchFilteredGallery]);
 
   const totalPages = Math.ceil(images.length / itemsPerPage);
   const currentImages = images.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -110,7 +104,13 @@ function Gallery() {
           <div className="absolute inset-0 animate-pulse bg-slate-800" />
         ) : (
           <>
-            <img src={heroData?.mediaUrl} alt="Gallery Hero" className="absolute inset-0 w-full h-full object-cover z-0" />
+            <img
+              src={heroData?.mediaUrl}
+              alt="Gallery Hero"
+              className="absolute inset-0 w-full h-full object-cover z-0"
+              loading="eager"
+              decoding="async"
+            />
             <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/80 via-blue-800/40 to-red-700/70" />
             <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-16 gap-5">
               <div className="flex flex-row items-center gap-2 px-4 py-2 text-white bg-white/10 backdrop-blur-md border border-white/20 rounded-3xl">
@@ -167,17 +167,32 @@ function Gallery() {
           <>
             <div className={view === "grid" ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8" : "flex flex-col gap-6"}>
               {currentImages.map((img) => (
-                <div key={img.id} className={view === "grid" ? "relative aspect-square rounded-[2.5rem] overflow-hidden group cursor-pointer bg-white shadow-sm border-4 border-white hover:shadow-2xl hover:-translate-y-2 transition-all duration-500" : "flex flex-col md:flex-row items-center gap-6 p-6 bg-white rounded-[2.5rem] border border-gray-100 hover:shadow-xl transition-all cursor-pointer group"} onClick={() => setSelectedImage(img)}>
+                <div
+                  key={img.id}
+                  className={
+                    view === "grid"
+                      ? "relative aspect-square rounded-[2.5rem] overflow-hidden group cursor-pointer bg-white shadow-sm border-4 border-white hover:shadow-2xl hover:-translate-y-2 transition-all duration-500"
+                      : "flex flex-col md:flex-row items-center gap-6 p-6 bg-white rounded-[2.5rem] border border-gray-100 hover:shadow-xl transition-all cursor-pointer group"
+                  }
+                  onClick={() => setSelectedImage(img)}
+                >
                   <div className={view === "grid" ? "w-full h-full" : "relative w-full md:w-60 h-60 overflow-hidden rounded-[2rem] shrink-0"}>
-                    <img src={img.mediaUrl} className="w-full h-full object-cover transition duration-700 group-hover:scale-110" alt={img.title} />
+                    <img
+                      src={img.mediaUrl}
+                      alt={img.title}
+                      className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
+                      loading="lazy"
+                      decoding="async"
+                    />
                   </div>
+
                   {view === "grid" ? (
                     <>
                       <div className="absolute top-6 left-6 z-10">
                         {img.mediaType === "video" ? (
-                           <div className="bg-red-600 p-2 rounded-full text-white shadow-lg"><PlayCircle size={16}/></div>
+                          <div className="bg-red-600 p-2 rounded-full text-white shadow-lg"><PlayCircle size={16}/></div>
                         ) : (
-                           <div className="bg-blue-600 p-2 rounded-full text-white shadow-lg"><ImageIcon size={16}/></div>
+                          <div className="bg-blue-600 p-2 rounded-full text-white shadow-lg"><ImageIcon size={16}/></div>
                         )}
                       </div>
                       <div className="absolute inset-0 bg-blue-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
@@ -193,10 +208,11 @@ function Gallery() {
                 </div>
               ))}
             </div>
+
             {totalPages > 1 && (
               <div className="mt-16 flex justify-center items-center gap-2">
-                <button disabled={currentPage === 1} onClick={() => handlePaginate(currentPage - 1)} className="p-3 rounded-2xl border border-gray-200 disabled:opacity-30"><ChevronLeft size={20} /></button>
-                <button disabled={currentPage === totalPages} onClick={() => handlePaginate(currentPage + 1)} className="p-3 rounded-2xl border border-gray-200 disabled:opacity-30"><ChevronRight size={20} /></button>
+                <button disabled={currentPage === 1} onClick={() => handlePaginate(currentPage - 1)} className="p-3 rounded-2xl border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-colors"><ChevronLeft size={20} /></button>
+                <button disabled={currentPage === totalPages} onClick={() => handlePaginate(currentPage + 1)} className="p-3 rounded-2xl border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-colors"><ChevronRight size={20} /></button>
               </div>
             )}
           </>
@@ -204,25 +220,65 @@ function Gallery() {
       </div>
 
       {selectedImage && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/95 backdrop-blur-lg p-4 transition-all">
-          <div className="absolute top-8 left-8 right-8 flex justify-between items-center z-[120]">
-            <button onClick={() => setSelectedImage(null)} className="flex items-center gap-2 text-white/70 hover:text-white transition-colors group">
-              <ArrowLeft size={24} className="group-hover:-translate-x-1 transition-transform"/><span className="text-xs font-black uppercase tracking-widest">Back to Gallery</span>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/95 backdrop-blur-lg p-4 overflow-hidden">
+          <div className="absolute top-6 left-6 md:top-8 md:left-8 z-[120]">
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="flex items-center gap-2 text-white/80 hover:text-white transition-all group text-sm font-medium"
+            >
+              <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
+              <span className="font-black uppercase tracking-wider text-xs">Back to Gallery</span>
             </button>
-            <button onClick={() => setSelectedImage(null)} className="p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"><X size={28} /></button>
           </div>
-          <button onClick={handlePrev} className="absolute left-4 md:left-10 z-[110] p-4 bg-white/5 hover:bg-white/10 rounded-full text-white transition-all hidden sm:block"><ChevronLeft size={40} /></button>
-          <button onClick={handleNext} className="absolute right-4 md:right-10 z-[110] p-4 bg-white/5 hover:bg-white/10 rounded-full text-white transition-all hidden sm:block"><ChevronRight size={40} /></button>
-          <div className="max-w-5xl w-full flex flex-col gap-6 items-center">
-            {selectedImage.mediaType === "video" ? (
-              <video src={selectedImage.mediaUrl} controls autoPlay className="w-full max-h-[70vh] rounded-3xl shadow-2xl" />
-            ) : (
-              <img src={selectedImage.mediaUrl} alt={selectedImage.title} className="max-w-full max-h-[70vh] object-contain rounded-3xl shadow-2xl" />
-            )}
-            <div className="text-center text-white max-w-2xl">
-              <h2 className="text-3xl font-bold font-serif mb-2">{selectedImage.title}</h2>
-              <p className="text-white/60 text-sm leading-relaxed">{selectedImage.description}</p>
-              <div className="mt-4 inline-block px-4 py-1 bg-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest">{selectedImage.category}</div>
+
+          <button
+            onClick={() => setSelectedImage(null)}
+            className="absolute top-6 right-6 md:top-8 md:right-8 z-[120] p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+          >
+            <X size={28} />
+          </button>
+
+          <button
+            onClick={handlePrev}
+            className="absolute left-4 md:left-10 top-1/2 -translate-y-1/2 z-[110] p-4 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all hidden sm:block"
+          >
+            <ChevronLeft size={40} />
+          </button>
+
+          <button
+            onClick={handleNext}
+            className="absolute right-4 md:right-10 top-1/2 -translate-y-1/2 z-[110] p-4 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all hidden sm:block"
+          >
+            <ChevronRight size={40} />
+          </button>
+
+          <div className="w-full max-w-6xl max-h-[85vh] overflow-y-auto px-4 py-12 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
+            <div className="flex flex-col items-center gap-6">
+              {selectedImage.mediaType === "video" ? (
+                <video
+                  src={selectedImage.mediaUrl}
+                  controls
+                  autoPlay
+                  className="w-full max-h-[70vh] rounded-3xl shadow-2xl"
+                  preload="metadata"
+                />
+              ) : (
+                <img
+                  src={selectedImage.mediaUrl}
+                  alt={selectedImage.title}
+                  className="max-w-full object-contain rounded-3xl shadow-2xl"
+                  loading="lazy"
+                  decoding="async"
+                />
+              )}
+
+              <div className="text-center text-white max-w-3xl">
+                <h2 className="text-3xl md:text-4xl font-bold font-serif mb-3">{selectedImage.title}</h2>
+                <p className="text-white/70 text-base leading-relaxed mb-4">{selectedImage.description}</p>
+                <div className="inline-block px-5 py-1.5 bg-blue-600 rounded-full text-xs font-black uppercase tracking-widest">
+                  {selectedImage.category}
+                </div>
+              </div>
             </div>
           </div>
         </div>
