@@ -67,7 +67,7 @@ function Activites() {
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
 
   // Replace with your actual API base URL
-  const CLIENT_KEY = "https://your-api-url.com/";
+  const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
   // ── 1. Initial Data Fetch (Hero & List) ────────────────────────
   useEffect(() => {
