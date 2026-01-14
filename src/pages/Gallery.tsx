@@ -1,5 +1,5 @@
-import { Camera, Grid3X3, List, ZoomIn, ChevronRight, ChevronLeft, PlayCircle, Loader2, Image as ImageIcon, X, ArrowLeft } from "lucide-react";
-import { useEffect, useState, useCallback } from "react";
+import { useState, useEffect, useMemo } from "react";
+import { Camera, Grid3X3, List, ZoomIn, ChevronRight, ChevronLeft, PlayCircle, Loader2, Image, X, ArrowLeft } from "lucide-react";
 
 interface GalleryImage {
   id: number;
@@ -21,7 +21,7 @@ interface GalleryHero {
 }
 
 function Gallery() {
-  const [images, setImages] = useState<GalleryImage[]>([]);
+  const [allImages, setAllImages] = useState<GalleryImage[]>([]);
   const [heroData, setHeroData] = useState<GalleryHero | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [loadingHero, setLoadingHero] = useState<boolean>(true);
@@ -33,26 +33,35 @@ function Gallery() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
-  const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
+  const CLIENT_KEY = "https://your-api-url.com/";
 
   const CATEGORIES = ["All", "Trainings", "Resource Centres", "French Clubs", "Associations", "Events"];
   const MEDIA_TYPES = ["All", "Image", "Video"];
 
+  // --- Client-Side Filtering with useMemo ---
+  const filteredImages = useMemo(() => {
+    return allImages.filter((img) => {
+      const matchesCategory = activeCategory === "All" || img.category === activeCategory;
+      const matchesMediaType = activeMediaType === "All" || img.mediaType.toLowerCase() === activeMediaType.toLowerCase();
+      return matchesCategory && matchesMediaType;
+    });
+  }, [allImages, activeCategory, activeMediaType]);
+
   // --- Handlers ---
   const handleNext = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    const currentIndex = images.findIndex(img => img.id === selectedImage?.id);
+    const currentIndex = filteredImages.findIndex(img => img.id === selectedImage?.id);
     if (currentIndex === -1) return;
-    const nextIndex = (currentIndex + 1) % images.length;
-    setSelectedImage(images[nextIndex]);
+    const nextIndex = (currentIndex + 1) % filteredImages.length;
+    setSelectedImage(filteredImages[nextIndex]);
   };
 
   const handlePrev = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    const currentIndex = images.findIndex(img => img.id === selectedImage?.id);
+    const currentIndex = filteredImages.findIndex(img => img.id === selectedImage?.id);
     if (currentIndex === -1) return;
-    const prevIndex = (currentIndex - 1 + images.length) % images.length;
-    setSelectedImage(images[prevIndex]);
+    const prevIndex = (currentIndex - 1 + filteredImages.length) % filteredImages.length;
+    setSelectedImage(filteredImages[prevIndex]);
   };
 
   // Close modal on Escape key and prevent body scroll
@@ -72,48 +81,41 @@ function Gallery() {
       window.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "unset";
     };
-  }, [selectedImage, images]);
+  }, [selectedImage, filteredImages]);
 
-  // --- Data Fetching ---
+  // --- Data Fetching (Fetch once) ---
   useEffect(() => {
-    fetch(`${CLIENT_KEY}api/galleries`)
-      .then(res => res.json())
-      .then((data: any[]) => {
-        const hero = data.find(item => item.purpose === "Other Page" && item.subPurpose === "Gallery");
+    const fetchData = async () => {
+      try {
+        const response = await fetch(`${CLIENT_KEY}api/galleries`);
+        const data = await response.json();
+        
+        // Separate hero and gallery items
+        const hero = data.find((item: GalleryImage) => item.purpose === "Other Page" && item.subPurpose === "Gallery");
         if (hero) setHeroData(hero);
-      })
-      .catch(err => console.error("Hero fetch error:", err))
-      .finally(() => setLoadingHero(false));
+        
+        const displayItems = (Array.isArray(data) ? data : (data.data || []))
+          .filter((item: GalleryImage) => item.purpose !== "Other Page");
+          
+        setAllImages(displayItems);
+      } catch (err) {
+        console.error("Gallery fetch error:", err);
+      } finally {
+        setLoading(false);
+        setLoadingHero(false);
+      }
+    };
+
+    fetchData();
   }, [CLIENT_KEY]);
 
-  const fetchFilteredGallery = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (activeCategory !== "All") params.append('category', activeCategory);
-      if (activeMediaType !== "All") params.append('mediaType', activeMediaType.toLowerCase());
-
-      const response = await fetch(`${CLIENT_KEY}api/galleries?${params.toString()}`);
-      const data = await response.json();
-      
-      const displayItems = (Array.isArray(data) ? data : (data.data || []))
-        .filter((item: GalleryImage) => item.purpose !== "Other Page");
-        
-      setImages(displayItems);
-    } catch (err) {
-      console.error("Gallery fetch error:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [CLIENT_KEY, activeCategory, activeMediaType]);
-
+  // Reset to page 1 when filters change
   useEffect(() => {
-    fetchFilteredGallery();
     setCurrentPage(1);
-  }, [fetchFilteredGallery]);
+  }, [activeCategory, activeMediaType]);
 
-  const totalPages = Math.ceil(images.length / itemsPerPage);
-  const currentImages = images.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const totalPages = Math.ceil(filteredImages.length / itemsPerPage);
+  const currentImages = filteredImages.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   const handlePaginate = (pageNumber: number) => {
     setCurrentPage(pageNumber);
@@ -188,8 +190,28 @@ function Gallery() {
             <Loader2 className="animate-spin text-blue-600" size={40} />
             <p className="text-[10px] font-black uppercase text-gray-400 tracking-tighter">Syncing Gallery...</p>
           </div>
+        ) : filteredImages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <Image className="text-gray-300" size={60} />
+            <p className="text-gray-400 text-lg font-medium">No items match your filters</p>
+            <button 
+              onClick={() => {
+                setActiveCategory("All");
+                setActiveMediaType("All");
+              }}
+              className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-full text-sm font-bold hover:bg-blue-700 transition-all"
+            >
+              Reset Filters
+            </button>
+          </div>
         ) : (
           <>
+            <div className="mb-6 text-center">
+              <p className="text-sm text-gray-500">
+                Showing <span className="font-bold text-blue-600">{filteredImages.length}</span> {filteredImages.length === 1 ? 'item' : 'items'}
+              </p>
+            </div>
+            
             <div className={view === "grid" ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8" : "flex flex-col gap-6"}>
               {currentImages.map((img) => (
                 <div
@@ -215,7 +237,7 @@ function Gallery() {
                         {img.mediaType === "video" ? (
                           <div className="bg-red-600 p-2 rounded-full text-white shadow-lg"><PlayCircle size={16}/></div>
                         ) : (
-                          <div className="bg-blue-600 p-2 rounded-full text-white shadow-lg"><ImageIcon size={16}/></div>
+                          <div className="bg-blue-600 p-2 rounded-full text-white shadow-lg"><Image size={16}/></div>
                         )}
                       </div>
                       <div className="absolute inset-0 bg-blue-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
@@ -250,7 +272,7 @@ function Gallery() {
           className="fixed inset-0 z-[9999] flex flex-col bg-slate-900 overflow-y-auto"
           onClick={() => setSelectedImage(null)} 
         >
-          {/* Top Bar - Sticky to top of modal */}
+          {/* Top Bar */}
           <div className="sticky top-0 left-0 w-full p-6 md:p-10 flex justify-between items-center bg-gradient-to-b from-slate-900 via-slate-900/80 to-transparent z-[100]">
             <button
               onClick={(e) => { e.stopPropagation(); setSelectedImage(null); }}
@@ -269,7 +291,7 @@ function Gallery() {
             </button>
           </div>
 
-          {/* Modal Content Wrapper */}
+          {/* Modal Content */}
           <div 
             className="flex-1 w-full max-w-6xl mx-auto px-4 py-4 flex flex-col items-center justify-center min-h-max"
             onClick={(e) => e.stopPropagation()} 
@@ -307,7 +329,7 @@ function Gallery() {
                   />
                 )}
                 
-                {/* Mobile Navigation Arrows */}
+                {/* Mobile Navigation */}
                 <div className="flex lg:hidden justify-between w-full absolute top-1/2 -translate-y-1/2 px-2 pointer-events-none">
                    <button 
                     onClick={handlePrev} 
@@ -324,7 +346,7 @@ function Gallery() {
                 </div>
               </div>
 
-              {/* Information Section - Scrollable if content is long */}
+              {/* Information Section */}
               <div className="mt-10 mb-20 text-center max-w-3xl">
                 <div className="inline-block px-4 py-1 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
                   {selectedImage.category}

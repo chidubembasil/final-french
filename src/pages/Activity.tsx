@@ -1,3 +1,4 @@
+import { useState, useEffect, useMemo } from "react";
 import {
   SplitSquareHorizontal,
   ArrowRight,
@@ -12,8 +13,6 @@ import {
   Search,
   Check
 } from "lucide-react";
-// REMOVED: useCallback (unused)
-import { useState, useEffect, useMemo } from "react";
 
 // --- Interfaces ---
 interface Exercise {
@@ -58,14 +57,17 @@ function Activites() {
   const [isPopupLoading, setIsPopupLoading] = useState(false);
   
   // Filter States
-  // FIXED: Added underscore to setter to signal intentional non-use for now
-  const [activeType, _setActiveType] = useState<string>("All");
+  const [activeType, setActiveType] = useState<string>("All");
   const [activeDifficulty, setActiveDifficulty] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const exercisesPerPage = 8;
+  
+  // Answer Tracking
+  const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
 
-  const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
+  // Replace with your actual API base URL
+  const CLIENT_KEY = "https://your-api-url.com/";
 
   // ── 1. Initial Data Fetch (Hero & List) ────────────────────────
   useEffect(() => {
@@ -102,8 +104,9 @@ function Activites() {
   // ── 2. Detailed Fetch (Triggered on Start) ──────────────────────
   const handleOpenExercise = async (id: number) => {
     setIsPopupLoading(true);
-    setModalStage('info'); // Always start with Description
-    setSubmitted(false);   // Reset answer state
+    setModalStage('info');
+    setSubmitted(false);
+    setUserAnswers({});
     
     try {
       const res = await fetch(`${CLIENT_KEY}api/exercises/${id}`);
@@ -154,7 +157,7 @@ function Activites() {
   return (
     <main className="pt-20 bg-[#fcfaf8] min-h-screen">
       {/* --- HERO SECTION --- */}
-      <div className="relative w-full h-[85dvh] overflow-hidden bg-slate-900">
+      <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
         {loadingHero ? (
           <div className="absolute inset-0 animate-pulse bg-slate-800 flex items-center justify-center">
             <Loader2 className="animate-spin text-white/20" size={40} />
@@ -181,7 +184,7 @@ function Activites() {
 
       <section className="py-12 px-6 md:px-20 max-w-7xl mx-auto">
         {/* --- FILTER BAR --- */}
-        <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 mb-12 flex flex-col lg:flex-row gap-6 items-center">
+        <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 mb-12 flex flex-col lg:flex-row gap-6 items-start">
           <div className="flex-1 w-full relative">
             <p className="text-[10px] font-black uppercase text-blue-600 mb-2 ml-1">Search Activity</p>
             <div className="relative">
@@ -193,6 +196,23 @@ function Activites() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
+            </div>
+          </div>
+
+          <div className="w-full lg:w-auto">
+            <p className="text-[10px] font-black uppercase text-blue-600 mb-2 ml-1">Type</p>
+            <div className="flex gap-2 flex-wrap">
+              {["All", "Multiple Choice", "Gap Filling", "Matching", "True or False"].map((t) => (
+                <button
+                  key={t}
+                  onClick={() => setActiveType(t)}
+                  className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${
+                    activeType === t ? "bg-blue-600 text-white shadow-lg" : "bg-gray-100 text-gray-400 hover:bg-gray-200"
+                  }`}
+                >
+                  {t}
+                </button>
+              ))}
             </div>
           </div>
 
@@ -293,6 +313,7 @@ function Activites() {
                   {selectedEx.content?.questions?.map((q: any, idx: number) => {
                     const qKey = `q${idx + 1}`;
                     const correctVal = selectedEx.answerKey?.[qKey];
+                    const userAnswer = userAnswers[qKey];
 
                     return (
                       <div key={idx} className="p-8 bg-gray-50/50 rounded-[2.5rem] border border-gray-100">
@@ -302,13 +323,27 @@ function Activites() {
                         </p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {q.options?.map((opt: string, i: number) => {
+                            const isSelected = userAnswer === opt;
                             const isCorrect = submitted && opt === correctVal;
+                            const isWrong = submitted && isSelected && opt !== correctVal;
+                            
                             return (
-                              <div key={i} className={`px-6 py-4 border-2 rounded-2xl text-sm font-bold transition-all ${
-                                isCorrect ? "bg-green-500 border-green-500 text-white shadow-lg" : "bg-white border-gray-100 text-slate-600"
-                              }`}>
+                              <button
+                                key={i}
+                                onClick={() => !submitted && setUserAnswers(prev => ({ ...prev, [qKey]: opt }))}
+                                disabled={submitted}
+                                className={`px-6 py-4 border-2 rounded-2xl text-sm font-bold transition-all text-left ${
+                                  isCorrect 
+                                    ? "bg-green-500 border-green-500 text-white shadow-lg" 
+                                    : isWrong
+                                    ? "bg-red-500 border-red-500 text-white shadow-lg"
+                                    : isSelected
+                                    ? "bg-blue-500 border-blue-500 text-white shadow-md"
+                                    : "bg-white border-gray-200 text-slate-600 hover:border-blue-400 hover:bg-blue-50"
+                                } ${submitted ? "cursor-default" : "cursor-pointer"}`}
+                              >
                                 {opt}
-                              </div>
+                              </button>
                             );
                           })}
                         </div>
