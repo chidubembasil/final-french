@@ -51,7 +51,7 @@ export default function ResourceHero() {
     };
 
     return (
-        <main className="w-full py-20 flex flex-col items-center bg-[#fcfaf8]">
+        <main className="w-full py-20 flex flex-col items-center bg-[#fcfaf8]" id='resource'>
             <div className="flex flex-col items-center gap-3 mb-16 text-center">
                 <span className='px-4 py-1.5 rounded-full flex items-center gap-2 bg-blue-100 text-blue-700 text-sm font-bold border border-blue-200'>
                     <BookOpen size={16}/> Tools for educators

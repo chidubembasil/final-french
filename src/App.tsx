@@ -14,14 +14,18 @@ import News from "./pages/News";
 import BAC from "./pages/Bac";
 import Activites from "./pages/Activity";
 
+
+import ScrollToTop from "./components/ScrollTop"
+
 const App: React.FC = () => {
   return (
     // ✅ Switched to HashRouter to prevent "disappearing" pages on live servers
     <HashRouter>
+      <ScrollToTop />
       <Header />
 
       <main>
-        <Routes>
+        <Routes>          
           <Route path="/" element={<Home />} />
           <Route path="/podcast" element={<Podcast />} />
           <Route path="/resource" element={<Pedagogies />} />

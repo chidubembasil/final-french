@@ -1,6 +1,8 @@
 import { Newspaper, Laptop, Users, Briefcase, ChevronRight, Target, ExternalLink, LayoutDashboard } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
+import map from "../assets/img/map.png"
+import logo from "../assets/img/vecteezy_ms-office-logo-on-transparent-background_14018577.jpg"
 
 interface GalleryHero {
     title: string;
@@ -78,7 +80,7 @@ function BAC() {
                                     onClick={() => navigate("/activities")}
                                     className="px-8 py-4 bg-white text-blue-900 font-bold rounded-2xl hover:bg-blue-50 transition-all flex items-center gap-2 group shadow-xl active:scale-95"
                                 >
-                                    Start Learning <ChevronRight className="group-hover:translate-x-1 transition-transform" />
+                                    See Events<ChevronRight className="group-hover:translate-x-1 transition-transform" />
                                 </button>
                                 
                                 {/* FIX: handleRedirect usage for External Link */}
@@ -86,7 +88,7 @@ function BAC() {
                                     onClick={() => handleRedirect(true)}
                                     className="px-8 py-4 bg-blue-600/20 text-white backdrop-blur-md border border-white/30 font-bold rounded-2xl hover:bg-blue-600 transition-all flex items-center gap-2 group active:scale-95"
                                 >
-                                    Visit Portal <ExternalLink size={18} />
+                                    About BAC <ExternalLink size={18} />
                                 </button>
                             </div>
                         </div>
@@ -123,6 +125,34 @@ function BAC() {
                     >
                         <LayoutDashboard size={18} /> Access Internal Dashboard
                     </button>
+                </div>
+                
+                {/* Office 365 / LMS */}
+                        <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-8 rounded-[2.5rem] shadow-xl border border-white/5 flex flex-col  gap-4 hover:translate-y-[-5px] transition-transform w-[90%] justify-center items-center ">
+                          <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
+                            <img
+                              src={logo}
+                              alt="Microsoft 365"
+                              className="w-10 h-10"
+                            />
+                          </div>
+                          <div className="text-center">
+                            <h2 className="text-2xl font-bold text-white">LMS Login</h2>
+                            <p className="text-gray-300 text-sm mt-1">Access Office 365 for Lecturers & Students</p>
+                          </div>
+                          <a
+                            href="https://login.microsoftonline.com"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="mt-4 py-3 px-8 bg-white text-slate-900 rounded-2xl font-black text-sm uppercase tracking-wider hover:bg-gray-100 transition-colors shadow-lg"
+                          >
+                            Access Learning Resources
+                          </a>
+                        </div>
+
+                <div className="w-full h-auto flex justify-center items-center flex-col gap-4">
+                    <h1 className="text-5xl font-sans ">Our Presence</h1>
+                   <img src={map} alt="Map" className="w-[60%] h-auto" />
                 </div>
             </div>
         </main>

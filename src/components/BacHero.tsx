@@ -1,4 +1,5 @@
 import { GraduationCap, Building2, Globe2 } from "lucide-react";
+import { Link } from "react-router-dom";
 
 export default function BACSection() {
   const pillars = [
@@ -22,13 +23,20 @@ export default function BACSection() {
     }
   ];
 
+  // Abbreviations updated based on the provided map data
   const universities = {
-    gold: ["UniAbuja", "RSU", "KASU", "Unilorin", "LASU", "OAU"],
-    silver: ["UI", "ABU", "UniPort", "UniCal"]
+    gold: [
+      "UNIABUJA", "RSU", "KASU", "UNILORIN", "LASU", 
+      "OAU", "MAAUN", "UNIZIK", "UNIMAID"
+    ],
+    silver: [
+      "UNISOK", "ABU", "EBSU", "UNIBADAN", "LCU", "FUNAAB", 
+      "OOU", "ACHIEVERS", "UNILAG", "UNN", "UNIPORT", "UNICAL"
+    ]
   };
 
   return (
-    <section className="py-24 bg-[#fcfaf8]">
+    <section className="py-24 bg-[#fcfaf8]" id="bac">
       <div className="max-w-7xl mx-auto px-6">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start mb-16 gap-8">
@@ -44,21 +52,12 @@ export default function BACSection() {
               and global competitiveness. Positioning French as a professional asset for the 21st century.
             </p>
           </div>
-          
-          {/* <a 
-            href="https://bac-retour-ng.vercel.app/" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex items-center gap-2 px-6 py-4 bg-slate-900 text-white rounded-2xl font-bold text-sm hover:bg-blue-700 transition-all shadow-xl shadow-slate-200 shrink-0"
-          >
-            Technical Officer Evaluation <ExternalLink size={16} />
-          </a> */}
         </div>
 
         {/* Pillars Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {pillars.map((pillar, i) => (
-            <div key={i} className="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all group">
+            <Link to={"/bac"} key={i} className="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all group">
               <div className={`w-14 h-14 ${pillar.color} rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform shadow-lg shadow-gray-200`}>
                 {pillar.icon}
               </div>
@@ -66,7 +65,7 @@ export default function BACSection() {
               <p className="text-gray-500 leading-relaxed">
                 {pillar.desc}
               </p>
-            </div>
+            </Link>
           ))}
         </div>
 
@@ -94,7 +93,7 @@ export default function BACSection() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {universities.gold.map(uni => (
-                    <span key={uni} className="text-sm font-medium bg-blue-800/50 px-3 py-1 rounded-lg">{uni}</span>
+                    <span key={uni} className="text-[10px] font-bold bg-blue-800/50 px-2 py-1 rounded-lg border border-white/5">{uni}</span>
                   ))}
                 </div>
               </div>
@@ -107,14 +106,13 @@ export default function BACSection() {
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {universities.silver.map(uni => (
-                    <span key={uni} className="text-sm font-medium bg-blue-800/50 px-3 py-1 rounded-lg">{uni}</span>
+                    <span key={uni} className="text-[10px] font-bold bg-blue-800/50 px-2 py-1 rounded-lg border border-white/5">{uni}</span>
                   ))}
                 </div>
               </div>
             </div>
           </div>
           
-          {/* Decorative Background Icon */}
           <Building2 className="absolute -bottom-10 -right-10 w-64 h-64 text-white/5 rotate-12" />
         </div>
       </div>

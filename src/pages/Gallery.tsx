@@ -38,20 +38,43 @@ function Gallery() {
   const CATEGORIES = ["All", "Trainings", "Resource Centres", "French Clubs", "Associations", "Events"];
   const MEDIA_TYPES = ["All", "Image", "Video"];
 
-  const handleNext = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const currentIndex = currentImages.findIndex(img => img.id === selectedImage?.id);
-    const nextIndex = (currentIndex + 1) % currentImages.length;
-    setSelectedImage(currentImages[nextIndex]);
+  // --- Handlers ---
+  const handleNext = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const currentIndex = images.findIndex(img => img.id === selectedImage?.id);
+    if (currentIndex === -1) return;
+    const nextIndex = (currentIndex + 1) % images.length;
+    setSelectedImage(images[nextIndex]);
   };
 
-  const handlePrev = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    const currentIndex = currentImages.findIndex(img => img.id === selectedImage?.id);
-    const prevIndex = (currentIndex - 1 + currentImages.length) % currentImages.length;
-    setSelectedImage(currentImages[prevIndex]);
+  const handlePrev = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    const currentIndex = images.findIndex(img => img.id === selectedImage?.id);
+    if (currentIndex === -1) return;
+    const prevIndex = (currentIndex - 1 + images.length) % images.length;
+    setSelectedImage(images[prevIndex]);
   };
 
+  // Close modal on Escape key and prevent body scroll
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelectedImage(null);
+      if (e.key === "ArrowRight") handleNext();
+      if (e.key === "ArrowLeft") handlePrev();
+    };
+
+    if (selectedImage) {
+      window.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "hidden";
+    }
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "unset";
+    };
+  }, [selectedImage, images]);
+
+  // --- Data Fetching ---
   useEffect(() => {
     fetch(`${CLIENT_KEY}api/galleries`)
       .then(res => res.json())
@@ -99,7 +122,8 @@ function Gallery() {
 
   return (
     <main className="pt-20 bg-gray-50/30 min-h-screen relative">
-      <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
+      {/* Hero Section */}
+      <div className="relative w-full h-[90dvh] md:h-[90dvh] overflow-hidden bg-slate-900">
         {loadingHero ? (
           <div className="absolute inset-0 animate-pulse bg-slate-800" />
         ) : (
@@ -108,8 +132,7 @@ function Gallery() {
               src={heroData?.mediaUrl}
               alt="Gallery Hero"
               className="absolute inset-0 w-full h-full object-cover z-0"
-              loading="eager"
-              decoding="async"
+              loading="lazy"
             />
             <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/80 via-blue-800/40 to-red-700/70" />
             <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-16 gap-5">
@@ -124,6 +147,7 @@ function Gallery() {
         )}
       </div>
 
+      {/* Filter Bar */}
       <div className="sticky top-20 z-30 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
           <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
@@ -157,6 +181,7 @@ function Gallery() {
         </div>
       </div>
 
+      {/* Gallery Grid */}
       <div id="gallery-grid" className="max-w-7xl mx-auto px-4 md:px-8 py-12">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-4">
@@ -181,8 +206,6 @@ function Gallery() {
                       src={img.mediaUrl}
                       alt={img.title}
                       className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
-                      loading="lazy"
-                      decoding="async"
                     />
                   </div>
 
@@ -209,9 +232,11 @@ function Gallery() {
               ))}
             </div>
 
+            {/* Pagination */}
             {totalPages > 1 && (
               <div className="mt-16 flex justify-center items-center gap-2">
                 <button disabled={currentPage === 1} onClick={() => handlePaginate(currentPage - 1)} className="p-3 rounded-2xl border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-colors"><ChevronLeft size={20} /></button>
+                <div className="px-4 text-xs font-bold text-gray-400">Page {currentPage} of {totalPages}</div>
                 <button disabled={currentPage === totalPages} onClick={() => handlePaginate(currentPage + 1)} className="p-3 rounded-2xl border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-colors"><ChevronRight size={20} /></button>
               </div>
             )}
@@ -219,65 +244,98 @@ function Gallery() {
         )}
       </div>
 
+      {/* --- FULL SCREEN LIGHTBOX MODAL --- */}
       {selectedImage && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-900/95 backdrop-blur-lg p-4 overflow-hidden">
-          <div className="absolute top-6 left-6 md:top-8 md:left-8 z-[120]">
+        <div 
+          className="fixed inset-0 z-[9999] flex flex-col bg-slate-900 overflow-y-auto"
+          onClick={() => setSelectedImage(null)} 
+        >
+          {/* Top Bar - Sticky to top of modal */}
+          <div className="sticky top-0 left-0 w-full p-6 md:p-10 flex justify-between items-center bg-gradient-to-b from-slate-900 via-slate-900/80 to-transparent z-[100]">
             <button
-              onClick={() => setSelectedImage(null)}
-              className="flex items-center gap-2 text-white/80 hover:text-white transition-all group text-sm font-medium"
+              onClick={(e) => { e.stopPropagation(); setSelectedImage(null); }}
+              className="flex items-center gap-2 text-white/70 hover:text-white transition-all group"
             >
               <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
-              <span className="font-black uppercase tracking-wider text-xs">Back to Gallery</span>
+              <span className="font-black uppercase tracking-widest text-[10px] hidden sm:inline">Back to Gallery</span>
+            </button>
+
+            <button
+              onClick={(e) => { e.stopPropagation(); setSelectedImage(null); }}
+              className="flex items-center gap-3 px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-full transition-all shadow-lg group"
+            >
+              <span className="font-bold text-xs uppercase tracking-tighter">Close</span>
+              <X size={20} className="group-hover:rotate-90 transition-transform" />
             </button>
           </div>
 
-          <button
-            onClick={() => setSelectedImage(null)}
-            className="absolute top-6 right-6 md:top-8 md:right-8 z-[120] p-3 bg-white/10 hover:bg-white/20 rounded-full text-white transition-colors"
+          {/* Modal Content Wrapper */}
+          <div 
+            className="flex-1 w-full max-w-6xl mx-auto px-4 py-4 flex flex-col items-center justify-center min-h-max"
+            onClick={(e) => e.stopPropagation()} 
           >
-            <X size={28} />
-          </button>
+            {/* Navigation Arrows (Desktop) */}
+            <button
+              onClick={handlePrev}
+              className="fixed left-6 top-1/2 -translate-y-1/2 z-[110] p-4 bg-white/5 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-all hidden lg:block border border-white/10"
+            >
+              <ChevronLeft size={40} />
+            </button>
 
-          <button
-            onClick={handlePrev}
-            className="absolute left-4 md:left-10 top-1/2 -translate-y-1/2 z-[110] p-4 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all hidden sm:block"
-          >
-            <ChevronLeft size={40} />
-          </button>
+            <button
+              onClick={handleNext}
+              className="fixed right-6 top-1/2 -translate-y-1/2 z-[110] p-4 bg-white/5 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-all hidden lg:block border border-white/10"
+            >
+              <ChevronRight size={40} />
+            </button>
 
-          <button
-            onClick={handleNext}
-            className="absolute right-4 md:right-10 top-1/2 -translate-y-1/2 z-[110] p-4 bg-white/10 hover:bg-white/20 rounded-full text-white transition-all hidden sm:block"
-          >
-            <ChevronRight size={40} />
-          </button>
+            {/* Media Area */}
+            <div className="relative w-full flex flex-col items-center">
+              <div className="relative group max-w-full">
+                {selectedImage.mediaType === "video" ? (
+                  <video
+                    src={selectedImage.mediaUrl}
+                    controls
+                    autoPlay
+                    className="max-w-full max-h-[70vh] rounded-2xl shadow-2xl border border-white/10"
+                  />
+                ) : (
+                  <img
+                    src={selectedImage.mediaUrl}
+                    alt={selectedImage.title}
+                    className="max-w-full max-h-[70vh] object-contain rounded-2xl shadow-2xl border border-white/10"
+                  />
+                )}
+                
+                {/* Mobile Navigation Arrows */}
+                <div className="flex lg:hidden justify-between w-full absolute top-1/2 -translate-y-1/2 px-2 pointer-events-none">
+                   <button 
+                    onClick={handlePrev} 
+                    className="p-3 bg-black/50 backdrop-blur-sm rounded-full text-white pointer-events-auto active:scale-95"
+                   >
+                    <ChevronLeft size={24}/>
+                   </button>
+                   <button 
+                    onClick={handleNext} 
+                    className="p-3 bg-black/50 backdrop-blur-sm rounded-full text-white pointer-events-auto active:scale-95"
+                   >
+                    <ChevronRight size={24}/>
+                   </button>
+                </div>
+              </div>
 
-          <div className="w-full max-w-6xl max-h-[85vh] overflow-y-auto px-4 py-12 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent">
-            <div className="flex flex-col items-center gap-6">
-              {selectedImage.mediaType === "video" ? (
-                <video
-                  src={selectedImage.mediaUrl}
-                  controls
-                  autoPlay
-                  className="w-full max-h-[70vh] rounded-3xl shadow-2xl"
-                  preload="metadata"
-                />
-              ) : (
-                <img
-                  src={selectedImage.mediaUrl}
-                  alt={selectedImage.title}
-                  className="max-w-full object-contain rounded-3xl shadow-2xl"
-                  loading="lazy"
-                  decoding="async"
-                />
-              )}
-
-              <div className="text-center text-white max-w-3xl">
-                <h2 className="text-3xl md:text-4xl font-bold font-serif mb-3">{selectedImage.title}</h2>
-                <p className="text-white/70 text-base leading-relaxed mb-4">{selectedImage.description}</p>
-                <div className="inline-block px-5 py-1.5 bg-blue-600 rounded-full text-xs font-black uppercase tracking-widest">
+              {/* Information Section - Scrollable if content is long */}
+              <div className="mt-10 mb-20 text-center max-w-3xl">
+                <div className="inline-block px-4 py-1 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
                   {selectedImage.category}
                 </div>
+                <h2 className="text-3xl md:text-5xl font-bold text-white font-serif mb-6 leading-tight">
+                  {selectedImage.title}
+                </h2>
+                <div className="h-px w-20 bg-gradient-to-r from-transparent via-blue-500 to-transparent mx-auto mb-6" />
+                <p className="text-white/70 text-base md:text-lg leading-relaxed px-4">
+                  {selectedImage.description}
+                </p>
               </div>
             </div>
           </div>

@@ -5,7 +5,7 @@ export default function InteractiveActivities() {
   const navigate = useNavigate();
 
   return (
-    <main className="min-h-screen bg-[#fcfaf8] pt-32 pb-20 px-6">
+    <main className="min-h-screen bg-[#fcfaf8] pt-32 pb-20 px-6" id="activities">
       {/* Header Section */}
       <div className="max-w-7xl mx-auto text-center mb-16">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-50 text-orange-600 text-sm font-bold mb-6">
@@ -36,7 +36,7 @@ export default function InteractiveActivities() {
             onClick={() => navigate('/activities')}
             className="group relative bg-red-600 hover:bg-red-700 text-white px-12 py-5 rounded-2xl font-bold text-lg shadow-xl shadow-red-100 transition-all active:scale-95 flex items-center gap-3"
           >
-            Go to Activities Page
+            Explore
             <ArrowRight className="group-hover:translate-x-1 transition-transform" />
           </button>
 

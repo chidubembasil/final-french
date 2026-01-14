@@ -10,6 +10,7 @@ import UniCaen from "../assets/img/UNICAEN_logo.jpg";
 import TV5Monde from "../assets/img/tv5.jpeg";
 import FranceEducation from "../assets/img/fef.jpg";
 import FrenchBusiness from "../assets/img/image1.png";
+import logo2 from '../assets/img/ambassade de france.png'
 
 const partners = [
 { name: "France Éducation International", logo: FranceEducation },
@@ -61,6 +62,7 @@ export default function PartnersSection() {
             <div className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm shrink-0">
               Project Funders
             </div>
+            <img src={logo2} alt="" />
             <p className="text-sm text-blue-900 leading-relaxed">
               This initiative is led by the <strong>Embassy of France in Nigeria</strong> and funded 
               through the <strong>French Embassy Fund (FEF)</strong> of the French Ministry for 
