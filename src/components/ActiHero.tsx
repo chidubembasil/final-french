@@ -12,7 +12,7 @@ export default function InteractiveActivities() {
           <Sparkles size={16} /> Practice with our exercises
         </div>
         <h1 className="text-4xl md:text-5xl font-serif font-bold text-slate-900 mb-4">
-          Interactive Activities
+          Learn French
         </h1>
         <div className="w-24 h-1 bg-blue-600 mx-auto rounded-full"></div>
       </div>

@@ -27,11 +27,11 @@ export default function BACSection() {
   const universities = {
     gold: [
       "UNIABUJA", "RSU", "KASU", "UNILORIN", "LASU", 
-      "OAU", "MAAUN", "UNIZIK", "UNIMAID"
+      "OAU", "MAAUN", "UNIZIK", "UNIMAID", "LCU","MOUAU"
     ],
     silver: [
-      "UNISOK", "ABU", "EBSU", "UNIBADAN", "LCU", "FUNAAB", 
-      "OOU", "ACHIEVERS", "UNILAG", "UNN", "UNIPORT", "UNICAL"
+      "UNISOK", "ABU", "EBSU", "UI", 
+      "OOU", "ACHIEVERS", "UNILAG", "UNN", "UNIPORT", "UNICAL", "UDUS"
     ]
   };
 
@@ -75,7 +75,7 @@ export default function BACSection() {
             <div>
               <h3 className="text-3xl font-bold mb-6">Participating Universities</h3>
               <p className="text-blue-100 mb-8">
-                The project provides multi-level support to strengthen French departments 
+                The Bilingual and Competitive project provides multi-level support to strengthen French departments 
                 and establish Resource and Employability Centres across Nigeria.
               </p>
               <div className="flex flex-wrap gap-3">

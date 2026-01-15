@@ -35,14 +35,21 @@ function Gallery() {
   const itemsPerPage = 8;
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
-  const CATEGORIES = ["All", "Trainings", "Resource Centres", "French Clubs", "Associations", "Events"];
   const MEDIA_TYPES = ["All", "Image", "Video"];
+
+  // --- Dynamically generate categories from data ---
+  const categories = useMemo(() => {
+    const uniqueCategories = Array.from(new Set(allImages.map(img => img.category).filter(Boolean)));
+    return ["All", ...uniqueCategories.sort()];
+  }, [allImages]);
 
   // --- Client-Side Filtering with useMemo ---
   const filteredImages = useMemo(() => {
     return allImages.filter((img) => {
-      const matchesCategory = activeCategory === "All" || img.category === activeCategory;
-      const matchesMediaType = activeMediaType === "All" || img.mediaType.toLowerCase() === activeMediaType.toLowerCase();
+      const matchesCategory = activeCategory === "All" || 
+        img.category?.toLowerCase() === activeCategory.toLowerCase();
+      const matchesMediaType = activeMediaType === "All" || 
+        img.mediaType?.toLowerCase() === activeMediaType.toLowerCase();
       return matchesCategory && matchesMediaType;
     });
   }, [allImages, activeCategory, activeMediaType]);
@@ -97,6 +104,9 @@ function Gallery() {
         const displayItems = (Array.isArray(data) ? data : (data.data || []))
           .filter((item: GalleryImage) => item.purpose !== "Other Page");
           
+        console.log("Gallery items loaded:", displayItems);
+        console.log("Unique categories:", Array.from(new Set(displayItems.map((i: GalleryImage) => i.category))));
+        
         setAllImages(displayItems);
       } catch (err) {
         console.error("Gallery fetch error:", err);
@@ -166,7 +176,7 @@ function Gallery() {
               <div className="flex items-center gap-3 overflow-x-auto no-scrollbar w-full">
                 <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest shrink-0">Category</span>
                 <div className="flex gap-2">
-                  {CATEGORIES.map((cat) => (
+                  {categories.map((cat) => (
                     <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-5 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap ${activeCategory === cat ? "bg-blue-600 text-white shadow-md" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>{cat}</button>
                   ))}
                 </div>
@@ -349,14 +359,14 @@ function Gallery() {
               {/* Information Section */}
               <div className="mt-10 mb-20 text-center max-w-3xl">
                 <div className="inline-block px-4 py-1 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
-                  {selectedImage.category}
+                  {selectedImage.category || 'Uncategorized'}
                 </div>
                 <h2 className="text-3xl md:text-5xl font-bold text-white font-serif mb-6 leading-tight">
                   {selectedImage.title}
                 </h2>
                 <div className="h-px w-20 bg-gradient-to-r from-transparent via-blue-500 to-transparent mx-auto mb-6" />
                 <p className="text-white/70 text-base md:text-lg leading-relaxed px-4">
-                  {selectedImage.description}
+                  {selectedImage.description || 'No description available'}
                 </p>
               </div>
             </div>

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'; // Added hooks
+import { useState, useEffect } from 'react';
 import logo from '../assets/img/logo.png';
 import logo2 from '../assets/img/ambassade de france.png'
-import { Instagram, Facebook, Twitter, Youtube, Mail, MapPin, Linkedin, ArrowUp } from "lucide-react"; // Added ArrowUp
+import { Instagram, Facebook, Twitter, Youtube, Mail, MapPin, Linkedin, ArrowUp } from "lucide-react";
 import { Link } from "react-router-dom";
 
 function Footer() {
@@ -17,7 +17,6 @@ function Footer() {
         }
     };
 
-    // Set the scroll event listener
     useEffect(() => {
         window.addEventListener("scroll", toggleVisibility);
         return () => window.removeEventListener("scroll", toggleVisibility);
@@ -29,7 +28,6 @@ function Footer() {
             behavior: "smooth"
         });
     };
-    // ---------------------------
 
     return (
         <footer className="w-full bg-[#1d2330] pt-16 pb-8 px-6 md:px-12 lg:px-24 text-[#b2bdb8] relative">
@@ -39,9 +37,8 @@ function Footer() {
                 <div className="flex flex-col items-start gap-5">
                     <div className="flex items-center gap-3">
                          <Link to="/" className="shrink-0 flex flex-row gap-0.5">
-                            <img src={logo2} alt="logo" className="w-12 h-12 md:w-14 object-contain" />
-                            <img src={logo} alt="logo" className="w-12 h-12 md:w-14 object-contain" />
-                           
+                            <img src={logo2} alt="French Embassy" className="w-12 h-12 md:w-14 object-contain" />
+                            <img src={logo} alt="Atlm Logo" className="w-12 h-12 md:w-14 object-contain" />
                         </Link>
                         <div className="flex flex-col">
                             <h1 className="text-xl text-white font-bold font-serif leading-tight">
@@ -55,6 +52,7 @@ function Footer() {
                         A French Education Fund Initiative. Empowering Nigerian learners through digital storytelling.
                     </p>
 
+                    {/* Social Icons - Now opening in new pages */}
                     <div className="flex flex-row gap-2.5">
                         {[
                             { icon: <Facebook size={18} />, link: "https://www.facebook.com/profile.php?id=100095181674120" },
@@ -62,11 +60,12 @@ function Footer() {
                             { icon: <Linkedin size={18} />, link: "https://www.linkedin.com/company/embassy-of-france-in-nigeria/" },
                             { icon: <Twitter size={18} />, link: "https://x.com/ATLM_Naija" },
                             { icon: <Youtube size={18} />, link: "https://www.youtube.com/@ATLM_Naija" }
-                            
                         ].map((social, i) => (
                             <a 
                                 key={i} 
                                 href={social.link} 
+                                target="_blank"
+                                rel="noopener noreferrer"
                                 className="w-9 h-9 rounded-full bg-white/5 flex justify-center items-center hover:bg-blue-600 hover:text-white transition-all duration-300 border border-white/10"
                             >
                                 {social.icon}
@@ -86,7 +85,6 @@ function Footer() {
                         <Link to="/resource" className="hover:text-blue-400 transition-colors">If Classe</Link>
                         <Link to="/news&blog" className="hover:text-blue-400 transition-colors">News & Blog</Link>
                         <Link to="/gallery" className="hover:text-blue-400 transition-colors">Gallery</Link>
-
                     </nav>
                 </div>
 
@@ -94,10 +92,10 @@ function Footer() {
                 <div className="flex flex-col gap-6">
                     <h2 className="text-white font-bold text-sm uppercase tracking-widest">Resources</h2>
                     <div className="flex flex-col gap-3 text-sm">
-                        <a href="https://enseigner.tv5monde.com/" target="_blank" rel="noreferrer" className="hover:text-blue-400 transition-colors">TV5 Monde</a>
-                        <a href="https://savoirs.rfi.fr/" target="_blank" rel="noreferrer" className="hover:text-blue-400 transition-colors">RFI Savoirs</a>
-                        <a href="https://www.ifprofs.org/" target="_blank" rel="noreferrer" className="hover:text-blue-400 transition-colors">IFprofs</a>
-                        <a href="https://www.afnigeria.org/lagos/" className="hover:text-blue-400 transition-colors">Alliance Française</a>
+                        <a href="https://enseigner.tv5monde.com/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">TV5 Monde</a>
+                        <a href="https://savoirs.rfi.fr/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">RFI Savoirs</a>
+                        <a href="https://www.ifprofs.org/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">IFprofs</a>
+                        <a href="https://www.afnigeria.org/lagos/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">Alliance Française</a>
                     </div>
                 </div>
 
@@ -128,16 +126,16 @@ function Footer() {
                 <p>© 2026 À TOI LE MICRO NAIJA. ALL RIGHTS RESERVED.</p>
             </div>
 
-            {/* Scroll to Top Button */}
-            {isVisible && (
-                <button
-                    onClick={scrollToTop}
-                    className="fixed bottom-8 right-8 z-50 p-3 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-all duration-300 animate-bounce md:animate-none"
-                    aria-label="Scroll to top"
-                >
-                    <ArrowUp size={24} />
-                </button>
-            )}
+            {/* Scroll to Top Button with Smooth Entrance */}
+            <button
+                onClick={scrollToTop}
+                className={`fixed bottom-8 right-8 z-50 p-3 rounded-full bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-all duration-500 ${
+                    isVisible ? 'opacity-100 translate-y-0 visible' : 'opacity-0 translate-y-10 invisible'
+                }`}
+                aria-label="Scroll to top"
+            >
+                <ArrowUp size={24} />
+            </button>
         </footer>
     );
 }

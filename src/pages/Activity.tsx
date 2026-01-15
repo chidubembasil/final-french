@@ -41,7 +41,7 @@ interface GalleryHero {
   mediaUrl: string;
 }
 
-function Activites() {
+function Activities() {
   // Data Arrays (Populated from API)
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [heroData, setHeroData] = useState<GalleryHero | null>(null);
@@ -87,9 +87,19 @@ function Activites() {
         );
         if (matchingHero) setHeroData(matchingHero);
 
-        // Store all exercises in our local array
-        const rawExercises = Array.isArray(exJson) ? exJson : exJson.data || [];
-        setExercises(rawExercises);
+        // Store all exercises - handle both array and object responses
+        const rawExercises = Array.isArray(exJson) ? exJson : (exJson.data || []);
+        
+        // Map and normalize the exercise data
+        const normalizedExercises = rawExercises.map((ex: any) => ({
+          ...ex,
+          // Normalize exerciseType for display
+          exerciseType: ex.exerciseType || 'Unknown',
+          difficulty: ex.difficulty || 'Beginner'
+        }));
+        
+        console.log("Fetched exercises:", normalizedExercises);
+        setExercises(normalizedExercises);
       } catch (err) {
         console.error("Initialization Error:", err);
       } finally {
@@ -113,11 +123,32 @@ function Activites() {
       const json = await res.json();
       const rawData = json.data || json;
 
+      // Parse JSON strings safely
+      let parsedContent = rawData.content;
+      let parsedAnswerKey = rawData.answerKey;
+
+      try {
+        parsedContent = typeof rawData.content === "string" ? JSON.parse(rawData.content) : rawData.content;
+      } catch (e) {
+        console.error("Failed to parse content:", e);
+        parsedContent = { questions: [] };
+      }
+
+      try {
+        parsedAnswerKey = typeof rawData.answerKey === "string" ? JSON.parse(rawData.answerKey) : rawData.answerKey;
+      } catch (e) {
+        console.error("Failed to parse answerKey:", e);
+        parsedAnswerKey = {};
+      }
+
       const parsedExercise: DetailedExercise = {
         ...rawData,
-        content: typeof rawData.content === "string" ? JSON.parse(rawData.content) : rawData.content,
-        answerKey: typeof rawData.answerKey === "string" ? JSON.parse(rawData.answerKey) : rawData.answerKey,
+        content: parsedContent,
+        answerKey: parsedAnswerKey,
       };
+
+      console.log("Parsed Exercise:", parsedExercise);
+      console.log("Questions:", parsedExercise.content?.questions);
 
       setSelectedEx(parsedExercise);
     } catch (err) {
@@ -130,10 +161,18 @@ function Activites() {
   // ── 3. Local Search & Filter Logic ──────────────────────────────
   const filteredExercises = useMemo(() => {
     return exercises.filter((ex) => {
-      const matchesSearch = ex.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            ex.description.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesType = activeType === "All" || ex.exerciseType === activeType;
-      const matchesDiff = activeDifficulty === "All" || ex.difficulty === activeDifficulty;
+      const matchesSearch = ex.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                            ex.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      // Normalize types for comparison
+      const normalizedExType = ex.exerciseType?.toLowerCase().trim() || '';
+      const normalizedActiveType = activeType.toLowerCase().trim();
+      
+      const matchesType = activeType === "All" || normalizedExType === normalizedActiveType;
+      
+      const matchesDiff = activeDifficulty === "All" || 
+                          ex.difficulty?.toLowerCase() === activeDifficulty.toLowerCase();
+      
       return matchesSearch && matchesType && matchesDiff;
     });
   }, [exercises, searchQuery, activeType, activeDifficulty]);
@@ -145,13 +184,19 @@ function Activites() {
   const totalPages = Math.ceil(filteredExercises.length / exercisesPerPage);
 
   const getIcon = (type: string) => {
-    switch (type?.toLowerCase()) {
-      case "multiple choice": return <PlayCircle size={32} />;
-      case "gap filling": return <PenTool size={32} />;
-      case "matching": return <SplitSquareHorizontal size={32} />;
-      case "true or false": return <CheckCircle2 size={32} />;
-      default: return <Book size={32} />;
-    }
+    const lowerType = type?.toLowerCase() || '';
+    if (lowerType.includes('multiple') || lowerType === 'mcq') return <PlayCircle size={32} />;
+    if (lowerType.includes('gap') || lowerType.includes('fill')) return <PenTool size={32} />;
+    if (lowerType.includes('match')) return <SplitSquareHorizontal size={32} />;
+    if (lowerType.includes('true') || lowerType.includes('false')) return <CheckCircle2 size={32} />;
+    return <Book size={32} />;
+  };
+
+  const formatExerciseType = (type: string) => {
+    if (!type) return 'Exercise';
+    const lowerType = type.toLowerCase();
+    if (lowerType === 'mcq') return 'Multiple Choice';
+    return type.split(/[-_]/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
   };
 
   return (
@@ -202,7 +247,7 @@ function Activites() {
           <div className="w-full lg:w-auto">
             <p className="text-[10px] font-black uppercase text-blue-600 mb-2 ml-1">Type</p>
             <div className="flex gap-2 flex-wrap">
-              {["All", "Multiple Choice", "Gap Filling", "Matching", "True or False"].map((t) => (
+              {["All", "MCQ", "Gap Filling", "Matching", "True or False"].map((t) => (
                 <button
                   key={t}
                   onClick={() => setActiveType(t)}
@@ -243,16 +288,20 @@ function Activites() {
           ) : currentExercises.length > 0 ? (
             currentExercises.map((item) => (
               <div key={item.id} className="group bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm hover:shadow-2xl transition-all flex flex-col justify-between relative overflow-hidden">
-                <div className={`absolute top-0 right-8 px-3 py-1 rounded-b-lg text-[8px] font-black uppercase text-white z-10 ${item.difficulty === "Advanced" ? "bg-red-600" : "bg-blue-600"}`}>
-                  {item.difficulty}
+                <div className={`absolute top-0 right-8 px-3 py-1 rounded-b-lg text-[8px] font-black uppercase text-white z-10 ${
+                  item.difficulty?.toLowerCase() === "advanced" ? "bg-red-600" : 
+                  item.difficulty?.toLowerCase() === "intermediate" ? "bg-orange-600" : 
+                  "bg-blue-600"
+                }`}>
+                  {item.difficulty || 'Beginner'}
                 </div>
                 <div>
                   <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-6 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500">
                     {getIcon(item.exerciseType)}
                   </div>
-                  <h3 className="text-2xl font-bold text-slate-800 mb-1 group-hover:text-blue-600 transition-colors">{item.title}</h3>
-                  <p className="text-[10px] font-black text-blue-500 uppercase mb-4 tracking-widest">{item.exerciseType}</p>
-                  <p className="text-gray-500 text-sm line-clamp-3 mb-6 leading-relaxed">{item.description}</p>
+                  <h3 className="text-2xl font-bold text-slate-800 mb-1 group-hover:text-blue-600 transition-colors">{item.title || 'Untitled Exercise'}</h3>
+                  <p className="text-[10px] font-black text-blue-500 uppercase mb-4 tracking-widest">{formatExerciseType(item.exerciseType)}</p>
+                  <p className="text-gray-500 text-sm line-clamp-3 mb-6 leading-relaxed">{item.description || 'No description available'}</p>
                 </div>
                 <button
                   onClick={() => handleOpenExercise(item.id)}
@@ -291,10 +340,10 @@ function Activites() {
                 </div>
                 <h2 className="text-3xl font-bold text-slate-900 mb-4">{selectedEx.title}</h2>
                 <div className="flex justify-center gap-3 mb-8">
-                  <span className="px-3 py-1 bg-gray-100 rounded-full text-[10px] font-black uppercase text-gray-500">{selectedEx.difficulty}</span>
-                  <span className="px-3 py-1 bg-blue-100 rounded-full text-[10px] font-black uppercase text-blue-600">{selectedEx.exerciseType}</span>
+                  <span className="px-3 py-1 bg-gray-100 rounded-full text-[10px] font-black uppercase text-gray-500">{selectedEx.difficulty || 'Beginner'}</span>
+                  <span className="px-3 py-1 bg-blue-100 rounded-full text-[10px] font-black uppercase text-blue-600">{formatExerciseType(selectedEx.exerciseType)}</span>
                 </div>
-                <p className="text-gray-600 text-lg leading-relaxed mb-10">{selectedEx.description}</p>
+                <p className="text-gray-600 text-lg leading-relaxed mb-10">{selectedEx.description || 'No description available'}</p>
                 <button 
                   onClick={() => setModalStage('test')}
                   className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-bold text-lg hover:bg-blue-700 transition-all shadow-xl flex items-center justify-center gap-3"
@@ -310,46 +359,53 @@ function Activites() {
                 </div>
 
                 <div className="space-y-6">
-                  {selectedEx.content?.questions?.map((q: any, idx: number) => {
-                    const qKey = `q${idx + 1}`;
-                    const correctVal = selectedEx.answerKey?.[qKey];
-                    const userAnswer = userAnswers[qKey];
+                  {selectedEx.content?.questions?.length > 0 ? (
+                    selectedEx.content.questions.map((q: any, idx: number) => {
+                      const qKey = `q${idx + 1}`;
+                      const correctVal = selectedEx.answerKey?.[qKey];
+                      const userAnswer = userAnswers[qKey];
 
-                    return (
-                      <div key={idx} className="p-8 bg-gray-50/50 rounded-[2.5rem] border border-gray-100">
-                        <p className="font-bold text-xl text-slate-800 mb-6 flex gap-4">
-                          <span className="text-blue-600 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0">{idx + 1}</span>
-                          {q.questionText}
-                        </p>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          {q.options?.map((opt: string, i: number) => {
-                            const isSelected = userAnswer === opt;
-                            const isCorrect = submitted && opt === correctVal;
-                            const isWrong = submitted && isSelected && opt !== correctVal;
-                            
-                            return (
-                              <button
-                                key={i}
-                                onClick={() => !submitted && setUserAnswers(prev => ({ ...prev, [qKey]: opt }))}
-                                disabled={submitted}
-                                className={`px-6 py-4 border-2 rounded-2xl text-sm font-bold transition-all text-left ${
-                                  isCorrect 
-                                    ? "bg-green-500 border-green-500 text-white shadow-lg" 
-                                    : isWrong
-                                    ? "bg-red-500 border-red-500 text-white shadow-lg"
-                                    : isSelected
-                                    ? "bg-blue-500 border-blue-500 text-white shadow-md"
-                                    : "bg-white border-gray-200 text-slate-600 hover:border-blue-400 hover:bg-blue-50"
-                                } ${submitted ? "cursor-default" : "cursor-pointer"}`}
-                              >
-                                {opt}
-                              </button>
-                            );
-                          })}
+                      return (
+                        <div key={idx} className="p-8 bg-gray-50/50 rounded-[2.5rem] border border-gray-100">
+                          <p className="font-bold text-xl text-slate-800 mb-6 flex gap-4">
+                            <span className="text-blue-600 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0">{idx + 1}</span>
+                            {q.questionText || q.question || 'Question not available'}
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {(q.options || []).map((opt: string, i: number) => {
+                              const isSelected = userAnswer === opt;
+                              const isCorrect = submitted && opt === correctVal;
+                              const isWrong = submitted && isSelected && opt !== correctVal;
+                              
+                              return (
+                                <button
+                                  key={i}
+                                  onClick={() => !submitted && setUserAnswers(prev => ({ ...prev, [qKey]: opt }))}
+                                  disabled={submitted}
+                                  className={`px-6 py-4 border-2 rounded-2xl text-sm font-bold transition-all text-left ${
+                                    isCorrect 
+                                      ? "bg-green-500 border-green-500 text-white shadow-lg" 
+                                      : isWrong
+                                      ? "bg-red-500 border-red-500 text-white shadow-lg"
+                                      : isSelected
+                                      ? "bg-blue-500 border-blue-500 text-white shadow-md"
+                                      : "bg-white border-gray-200 text-slate-600 hover:border-blue-400 hover:bg-blue-50"
+                                  } ${submitted ? "cursor-default" : "cursor-pointer"}`}
+                                >
+                                  {opt}
+                                </button>
+                              );
+                            })}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })
+                  ) : (
+                    <div className="text-center py-12 text-gray-400">
+                      <p className="text-lg font-semibold mb-2">No questions available</p>
+                      <p className="text-sm">This exercise hasn't been set up yet.</p>
+                    </div>
+                  )}
                 </div>
 
                 {!submitted ? (
@@ -383,4 +439,4 @@ function Activites() {
   );
 }
 
-export default Activites;
+export default Activities;

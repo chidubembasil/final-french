@@ -1,8 +1,11 @@
-import { Newspaper, Laptop, Users, Briefcase, ChevronRight, Target, ExternalLink, LayoutDashboard } from "lucide-react";
+import { 
+    Newspaper, Laptop, Users, Briefcase, ChevronRight, 
+    Target, ExternalLink, LayoutDashboard 
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect } from "react";
-import map from "../assets/img/map.png"
-import logo from "../assets/img/vecteezy_ms-office-logo-on-transparent-background_14018577.jpg"
+import { useState, useEffect, useRef } from "react";
+import map from "../assets/img/map.png";
+import logo from "../assets/img/vecteezy_ms-office-logo-on-transparent-background_14018577.jpg";
 
 interface GalleryHero {
     title: string;
@@ -14,6 +17,7 @@ interface GalleryHero {
 
 function BAC() {
     const navigate = useNavigate();
+    const projectGoalsRef = useRef<HTMLDivElement>(null); // Ref for internal scroll
     const [heroData, setHeroData] = useState<GalleryHero | null>(null);
     const [loadingHero, setLoadingHero] = useState(true);
     const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
@@ -32,7 +36,12 @@ function BAC() {
             .finally(() => setLoadingHero(false));
     }, [CLIENT_KEY]);
 
-    // FIX: handleRedirect is now connected to buttons below
+    // Handle smooth scroll to Project Goals
+    const scrollToProjectGoals = () => {
+        projectGoalsRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    // Handle redirects for external portals vs internal dashboard
     const handleRedirect = (isExternal: boolean) => {
         if (isExternal) {
             window.open("https://bac-retour-ng.vercel.app/", "_blank", "noopener,noreferrer");
@@ -83,12 +92,11 @@ function BAC() {
                                     See Events<ChevronRight className="group-hover:translate-x-1 transition-transform" />
                                 </button>
                                 
-                                {/* FIX: handleRedirect usage for External Link */}
                                 <button 
-                                    onClick={() => handleRedirect(true)}
+                                    onClick={scrollToProjectGoals}
                                     className="px-8 py-4 bg-blue-600/20 text-white backdrop-blur-md border border-white/30 font-bold rounded-2xl hover:bg-blue-600 transition-all flex items-center gap-2 group active:scale-95"
                                 >
-                                    About BAC <ExternalLink size={18} />
+                                    About BAC <ChevronRight size={18} className="rotate-90 group-hover:translate-y-1 transition-transform" />
                                 </button>
                             </div>
                         </div>
@@ -97,7 +105,10 @@ function BAC() {
             </div>
 
             {/* PROJECT GOALS */}
-            <div className="w-full flex flex-col justify-center items-center py-24 gap-16 bg-gray-50/50">
+            <div 
+                ref={projectGoalsRef} 
+                className="w-full flex flex-col justify-center items-center py-24 gap-16 bg-gray-50/50 scroll-mt-24"
+            >
                 <div className="w-[90%] flex justify-center items-center flex-col gap-4 text-center">
                     <div className="w-12 h-1 bg-blue-600 rounded-full mb-2"></div>
                     <h1 className="text-4xl md:text-5xl font-serif font-bold text-slate-900">Project Goals</h1>
@@ -117,7 +128,6 @@ function BAC() {
                     ))}
                 </div>
 
-                {/* FIX: handleRedirect usage for Internal Dashboard */}
                 <div className="mt-8">
                     <button 
                         onClick={() => handleRedirect(false)}
@@ -128,31 +138,57 @@ function BAC() {
                 </div>
                 
                 {/* Office 365 / LMS */}
-                        <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-8 rounded-[2.5rem] shadow-xl border border-white/5 flex flex-col  gap-4 hover:translate-y-[-5px] transition-transform w-[90%] justify-center items-center ">
-                          <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
-                            <img
-                              src={logo}
-                              alt="Microsoft 365"
-                              className="w-10 h-10"
-                            />
-                          </div>
-                          <div className="text-center">
-                            <h2 className="text-2xl font-bold text-white">LMS Login</h2>
-                            <p className="text-gray-300 text-sm mt-1">Access Office 365 for Lecturers & Students</p>
-                          </div>
-                          <a
-                            href="https://login.microsoftonline.com"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="mt-4 py-3 px-8 bg-white text-slate-900 rounded-2xl font-black text-sm uppercase tracking-wider hover:bg-gray-100 transition-colors shadow-lg"
-                          >
-                            Access Learning Resources
-                          </a>
+                <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-8 rounded-[2.5rem] shadow-xl border border-white/5 flex flex-col gap-4 hover:translate-y-[-5px] transition-transform w-[90%] max-w-6xl justify-center items-center">
+                    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
+                        <img src={logo} alt="Microsoft 365" className="w-10 h-10" />
+                    </div>
+                    <div className="text-center">
+                        <h2 className="text-2xl font-bold text-white">LMS Login</h2>
+                        <p className="text-gray-300 text-sm mt-1">Access Office 365 for Lecturers & Students</p>
+                    </div>
+                    <a
+                        href="https://login.microsoftonline.com"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="mt-4 py-3 px-8 bg-white text-slate-900 rounded-2xl font-black text-sm uppercase tracking-wider hover:bg-gray-100 transition-colors shadow-lg"
+                    >
+                        Access Learning Resources
+                    </a>
+                </div>
+
+                <div className="w-full h-auto flex justify-center items-center flex-col gap-8 py-10">
+                    <h1 className="text-5xl font-serif font-bold text-slate-900">Our Presence</h1>
+                    <img src={map} alt="Map" className="w-[80%] md:w-[60%] h-auto opacity-90" />
+                </div>
+
+                {/* EVALUATION FORM SECTION */}
+                <div className="w-[90%] max-w-6xl overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-red-600 to-red-700 text-white shadow-2xl relative group">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-white/20 transition-colors" />
+                    
+                    <div className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
+                        <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
+                            <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-3xl flex items-center justify-center border border-white/30 shadow-inner">
+                                <Target size={40} className="text-white" />
+                            </div>
+                            
+                            <div className="max-w-md">
+                                <h1 className="text-3xl md:text-4xl font-serif font-bold mb-3">Evaluation Form</h1>
+                                <p className="text-red-50/90 text-lg leading-relaxed">
+                                    For technical officers: Access the official evaluation portal to submit reports, 
+                                    track observations, and manage project data.
+                                </p>
+                            </div>
                         </div>
 
-                <div className="w-full h-auto flex justify-center items-center flex-col gap-4">
-                    <h1 className="text-5xl font-sans ">Our Presence</h1>
-                   <img src={map} alt="Map" className="w-[60%] h-auto" />
+                        <button 
+                            className="whitespace-nowrap py-5 px-10 bg-white text-red-600 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center gap-3"
+                            onClick={() => handleRedirect(true)}
+                        >
+                            Access Evaluation Portal
+                            <ExternalLink size={18} />
+                        </button>
+                    </div>
+                    <div className="w-full h-px bg-white/30 my-4"></div>
                 </div>
             </div>
         </main>

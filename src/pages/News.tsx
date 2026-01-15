@@ -40,6 +40,7 @@ function News() {
   const shareMenuRef = useRef<HTMLDivElement>(null);
 
   const FILTER_OPTIONS = {
+    // Categories matching your API string values
     categories: ['News', 'Announcement', 'Tutorial', 'Event', 'Update'],
     languages: ['English', 'French'],
     states: [
@@ -85,13 +86,17 @@ function News() {
 
   useEffect(() => { fetchBlogs(); }, [fetchBlogs]);
 
+  // CATEGORY FILTER LOGIC REFINED
   const filteredBlogs = useMemo(() => {
     return blogs.filter(post => {
       const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                          post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesCat = activeCategory === 'All' || post.category === activeCategory;
+                            post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      // Strict matching with the API 'category' field
+      const matchesCat = activeCategory === 'All' || post.category.toLowerCase() === activeCategory.toLowerCase();
       const matchesState = activeState === 'All' || post.state === activeState;
       const matchesLang = activeLanguage === 'All' || post.language === activeLanguage;
+      
       return matchesSearch && matchesCat && matchesState && matchesLang;
     });
   }, [blogs, searchQuery, activeCategory, activeState, activeLanguage]);
@@ -99,8 +104,8 @@ function News() {
   const totalPages = Math.ceil(filteredBlogs.length / itemsPerPage);
   const currentBlogs = filteredBlogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const handleShare = (e: React.MouseEvent, platform: string, post: BlogPost) => {
-    e.stopPropagation();
+  const handleShare = (e: React.MouseEvent | undefined, platform: string, post: BlogPost) => {
+    if (e) e.stopPropagation();
     const url = `${window.location.origin}/news/${post.id}`;
     const text = `Read this article: ${post.title}`;
 
@@ -126,7 +131,7 @@ function News() {
 
   return (
     <main className="pt-20 bg-gray-50/30 min-h-screen relative">
-      {/* RESTORED HERO SECTION (70dvh) */}
+      {/* HERO SECTION */}
       <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
         {loadingHero ? (
           <div className="absolute inset-0 animate-pulse bg-slate-800" />
@@ -160,7 +165,7 @@ function News() {
                 onChange={(e) => setSearchQuery(e.target.value)} 
               />
             </div>
-            <select className="px-4 py-3 bg-gray-100/50 rounded-2xl font-bold text-[10px] uppercase cursor-pointer outline-none focus:ring-2 focus:ring-blue-500" value={activeCategory} onChange={(e) => setActiveCategory(e.target.value)}>
+            <select className="px-4 py-3 bg-gray-100/50 rounded-2xl font-bold text-[10px] uppercase cursor-pointer outline-none focus:ring-2 focus:ring-blue-500" value={activeCategory} onChange={(e) => {setActiveCategory(e.target.value); setCurrentPage(1);}}>
               <option value="All">All Categories</option>
               {FILTER_OPTIONS.categories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
@@ -185,54 +190,60 @@ function News() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-              {currentBlogs.map((post) => (
-                <article key={post.id} className="group bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden cursor-pointer hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 relative" onClick={() => setSelectedPost(post)}>
-                  
-                  {/* Share Trigger */}
-                  <div className="absolute top-4 right-4 z-40" ref={sharingId === post.id ? shareMenuRef : null}>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setSharingId(sharingId === post.id ? null : post.id); }}
-                      className="p-3 bg-white/20 backdrop-blur-md border border-white/30 text-white rounded-full hover:bg-white hover:text-blue-600 transition-all"
-                    >
-                      <Share2 size={16} />
-                    </button>
-                    {sharingId === post.id && (
-                      <div className="absolute right-0 mt-2 w-44 bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 z-50 flex flex-col gap-1 animate-in fade-in zoom-in duration-200">
-                        <button onClick={(e) => handleShare(e, 'whatsapp', post)} className="flex items-center gap-3 w-full p-3 hover:bg-green-50 text-green-600 rounded-xl transition-colors">
-                          <MessageCircle size={14} /> <span className="text-[10px] font-bold uppercase">WhatsApp</span>
-                        </button>
-                        <button onClick={(e) => handleShare(e, 'twitter', post)} className="flex items-center gap-3 w-full p-3 hover:bg-blue-50 text-blue-400 rounded-xl transition-colors">
-                          <Twitter size={14} /> <span className="text-[10px] font-bold uppercase">Twitter</span>
-                        </button>
-                        <button onClick={(e) => handleShare(e, 'linkedin', post)} className="flex items-center gap-3 w-full p-3 hover:bg-blue-50 text-blue-700 rounded-xl transition-colors">
-                          <Linkedin size={14} /> <span className="text-[10px] font-bold uppercase">LinkedIn</span>
-                        </button>
-                        <button onClick={(e) => handleShare(e, 'copy', post)} className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 text-gray-600 rounded-xl transition-colors">
-                          {copiedId === post.id ? <Check size={14} className="text-green-500" /> : <Copy size={14} />} 
-                          <span className="text-[10px] font-bold uppercase">{copiedId === post.id ? 'Copied' : 'Copy Link'}</span>
-                        </button>
-                      </div>
-                    )}
-                  </div>
+            {currentBlogs.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+                {currentBlogs.map((post) => (
+                  <article key={post.id} className="group bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden cursor-pointer hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 relative" onClick={() => setSelectedPost(post)}>
+                    
+                    {/* Share Trigger */}
+                    <div className="absolute top-4 right-4 z-40" ref={sharingId === post.id ? shareMenuRef : null}>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); setSharingId(sharingId === post.id ? null : post.id); }}
+                        className="p-3 bg-white/20 backdrop-blur-md border border-white/30 text-white rounded-full hover:bg-white hover:text-blue-600 transition-all"
+                      >
+                        <Share2 size={16} />
+                      </button>
+                      {sharingId === post.id && (
+                        <div className="absolute right-0 mt-2 w-44 bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 z-50 flex flex-col gap-1 animate-in fade-in zoom-in duration-200" onClick={(e) => e.stopPropagation()}>
+                          <button onClick={(e) => handleShare(e, 'whatsapp', post)} className="flex items-center gap-3 w-full p-3 hover:bg-green-50 text-green-600 rounded-xl transition-colors">
+                            <MessageCircle size={14} /> <span className="text-[10px] font-bold uppercase">WhatsApp</span>
+                          </button>
+                          <button onClick={(e) => handleShare(e, 'twitter', post)} className="flex items-center gap-3 w-full p-3 hover:bg-blue-50 text-blue-400 rounded-xl transition-colors">
+                            <Twitter size={14} /> <span className="text-[10px] font-bold uppercase">Twitter</span>
+                          </button>
+                          <button onClick={(e) => handleShare(e, 'linkedin', post)} className="flex items-center gap-3 w-full p-3 hover:bg-blue-50 text-blue-700 rounded-xl transition-colors">
+                            <Linkedin size={14} /> <span className="text-[10px] font-bold uppercase">LinkedIn</span>
+                          </button>
+                          <button onClick={(e) => handleShare(e, 'copy', post)} className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 text-gray-600 rounded-xl transition-colors">
+                            {copiedId === post.id ? <Check size={14} className="text-green-500" /> : <Copy size={14} />} 
+                            <span className="text-[10px] font-bold uppercase">{copiedId === post.id ? 'Copied' : 'Copy Link'}</span>
+                          </button>
+                        </div>
+                      )}
+                    </div>
 
-                  <div className="relative h-60 overflow-hidden">
-                    <img src={post.coverImage} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={post.title} />
-                    <div className="absolute top-4 left-4 bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase">
-                      {post.category}
+                    <div className="relative h-60 overflow-hidden">
+                      <img src={post.coverImage} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={post.title} />
+                      <div className="absolute top-4 left-4 bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase">
+                        {post.category}
+                      </div>
                     </div>
-                  </div>
-                  <div className="p-8">
-                    <div className="flex items-center gap-4 text-gray-400 text-[10px] font-black uppercase mb-4">
-                      <span className="flex items-center gap-1"><Calendar size={12}/> {new Date(post.updatedAt).toLocaleDateString()}</span>
-                      <span className="flex items-center gap-1"><MapPin size={12}/> {post.state}</span>
+                    <div className="p-8">
+                      <div className="flex items-center gap-4 text-gray-400 text-[10px] font-black uppercase mb-4">
+                        <span className="flex items-center gap-1"><Calendar size={12}/> {new Date(post.updatedAt).toLocaleDateString()}</span>
+                        <span className="flex items-center gap-1"><MapPin size={12}/> {post.state}</span>
+                      </div>
+                      <h3 className="text-xl font-bold mb-4 line-clamp-2 group-hover:text-blue-600 transition-colors leading-snug">{post.title}</h3>
+                      <p className="text-gray-500 text-sm line-clamp-3 leading-relaxed">{post.excerpt}</p>
                     </div>
-                    <h3 className="text-xl font-bold mb-4 line-clamp-2 group-hover:text-blue-600 transition-colors leading-snug">{post.title}</h3>
-                    <p className="text-gray-500 text-sm line-clamp-3 leading-relaxed">{post.excerpt}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
+                  </article>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-200">
+                <p className="text-gray-400 font-bold uppercase tracking-widest">No articles found matching your criteria</p>
+              </div>
+            )}
 
             {totalPages > 1 && (
               <div className="mt-20 flex justify-center items-center gap-3">
@@ -268,9 +279,30 @@ function News() {
                   <span>{selectedPost.language}</span>
                 </div>
                 <h2 className="text-4xl md:text-6xl font-bold font-serif text-slate-900 leading-[1.1]">{selectedPost.title}</h2>
-                <div className="flex items-center justify-center gap-6 text-gray-400 text-xs font-bold uppercase tracking-widest">
-                  <span className="flex items-center gap-2"><Calendar size={14}/> {new Date(selectedPost.updatedAt).toLocaleDateString(undefined, { dateStyle: 'long' })}</span>
-                  <span className="flex items-center gap-2"><MapPin size={14}/> {selectedPost.state}</span>
+                
+                {/* METADATA & MODAL SHARE BAR */}
+                <div className="flex flex-col md:flex-row items-center justify-center gap-6 pt-4 border-t border-gray-100">
+                   <div className="flex items-center gap-6 text-gray-400 text-xs font-bold uppercase tracking-widest">
+                    <span className="flex items-center gap-2"><Calendar size={14}/> {new Date(selectedPost.updatedAt).toLocaleDateString(undefined, { dateStyle: 'long' })}</span>
+                    <span className="flex items-center gap-2"><MapPin size={14}/> {selectedPost.state}</span>
+                  </div>
+
+                  {/* Share Icons inside Modal */}
+                  <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-2xl border border-gray-100">
+                    <button onClick={() => handleShare(undefined, 'whatsapp', selectedPost)} className="p-2 hover:bg-green-100 text-green-600 rounded-lg transition-colors" title="Share on WhatsApp">
+                      <MessageCircle size={18} />
+                    </button>
+                    <button onClick={() => handleShare(undefined, 'twitter', selectedPost)} className="p-2 hover:bg-blue-100 text-blue-400 rounded-lg transition-colors" title="Share on Twitter">
+                      <Twitter size={18} />
+                    </button>
+                    <button onClick={() => handleShare(undefined, 'linkedin', selectedPost)} className="p-2 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors" title="Share on LinkedIn">
+                      <Linkedin size={18} />
+                    </button>
+                    <button onClick={() => handleShare(undefined, 'copy', selectedPost)} className="flex items-center gap-2 p-2 hover:bg-gray-200 text-gray-600 rounded-lg transition-colors">
+                      {copiedId === selectedPost.id ? <Check size={18} className="text-green-500" /> : <Copy size={18} />}
+                      <span className="text-[10px] font-black uppercase">{copiedId === selectedPost.id ? 'Copied' : 'Link'}</span>
+                    </button>
+                  </div>
                 </div>
               </div>
 
