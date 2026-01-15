@@ -85,12 +85,12 @@ function BAC() {
                             </p>
                             
                             <div className="flex flex-wrap gap-4">
-                                <button 
-                                    onClick={() => navigate("/activities")}
+                                <a 
+                                    href="#image-gallery"
                                     className="px-8 py-4 bg-white text-blue-900 font-bold rounded-2xl hover:bg-blue-50 transition-all flex items-center gap-2 group shadow-xl active:scale-95"
                                 >
                                     See Events<ChevronRight className="group-hover:translate-x-1 transition-transform" />
-                                </button>
+                                </a>
                                 
                                 <button 
                                     onClick={scrollToProjectGoals}
@@ -188,7 +188,7 @@ function BAC() {
                             <ExternalLink size={18} />
                         </button>
                     </div>
-                    <div className="w-full h-px bg-white/30 my-4"></div>
+                    <div className="w-full h-px bg-white/30 my-4" id="image-gallery"></div>
                 </div>
             </div>
         </main>
