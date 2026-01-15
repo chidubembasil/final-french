@@ -1,6 +1,7 @@
 import { 
     Newspaper, Laptop, Users, Briefcase, ChevronRight, 
-    Target, ExternalLink, LayoutDashboard 
+    Target, ExternalLink, Image as ImageIcon,
+    Loader2, Maximize2, X
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
@@ -15,15 +16,28 @@ interface GalleryHero {
     subPurpose: string;
 }
 
+interface EventImage {
+    id: number;
+    title: string;
+    coverImage: string;
+    category: string;
+}
+
 function BAC() {
     const navigate = useNavigate();
-    const projectGoalsRef = useRef<HTMLDivElement>(null); // Ref for internal scroll
+    const projectGoalsRef = useRef<HTMLDivElement>(null);
+    const galleryRef = useRef<HTMLDivElement>(null); 
+    
     const [heroData, setHeroData] = useState<GalleryHero | null>(null);
+    const [eventImages, setEventImages] = useState<EventImage[]>([]);
     const [loadingHero, setLoadingHero] = useState(true);
+    const [loadingGallery, setLoadingGallery] = useState(true);
+    const [selectedImg, setSelectedImg] = useState<string | null>(null); 
+    
     const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
-    // --- Fetch Dynamic Hero for BAC ---
     useEffect(() => {
+        // Fetch Hero
         fetch(`${CLIENT_KEY}api/galleries`)
             .then((res) => res.json())
             .then((data: GalleryHero[]) => {
@@ -32,16 +46,24 @@ function BAC() {
                 );
                 if (matchingHero) setHeroData(matchingHero);
             })
-            .catch((err) => console.error("BAC Hero Error:", err))
             .finally(() => setLoadingHero(false));
+
+        // Fetch Event Images - REMOVED SLICE for infinite columns
+        fetch(`${CLIENT_KEY}api/news`)
+            .then(res => res.json())
+            .then((data: any) => {
+                const rawData = Array.isArray(data) ? data : (data.data || []);
+                // Filters for events and shows ALL of them in the grid
+                const eventsOnly = rawData.filter((item: any) => item.category === "Event");
+                setEventImages(eventsOnly);
+            })
+            .catch(err => console.error("Gallery Error:", err))
+            .finally(() => setLoadingGallery(false));
     }, [CLIENT_KEY]);
 
-    // Handle smooth scroll to Project Goals
-    const scrollToProjectGoals = () => {
-        projectGoalsRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
+    const scrollToProjectGoals = () => projectGoalsRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const scrollToGallery = () => galleryRef.current?.scrollIntoView({ behavior: 'smooth' });
 
-    // Handle redirects for external portals vs internal dashboard
     const handleRedirect = (isExternal: boolean) => {
         if (isExternal) {
             window.open("https://bac-retour-ng.vercel.app/", "_blank", "noopener,noreferrer");
@@ -53,17 +75,27 @@ function BAC() {
     const card = [
         { icon: Target, title: 'French for Specific Purposes', sub: 'Specialized language training for sectors like business, diplomacy, healthcare, and technology.' },
         { icon: Briefcase, title: 'Enhanced Employability', sub: 'Helping students gain international certifications (DELF/DALF) and prepare for global job markets.' },
-        { icon: Laptop, title: 'Modern Resource Centres', sub: 'Upgrading digital employability centres in "Gold" and "Silver" beneficiary universities.' },
-        { icon: Users, title: 'Professional Networking', sub: 'Promoting student clubs and events that establish French as a key professional asset in Nigeria.' }
+        { icon: Laptop, title: 'Modern Resource Centres', sub: 'Upgrading digital employability centres in universities.' },
+        { icon: Users, title: 'Professional Networking', sub: 'Promoting student clubs and events that establish French as a key professional asset.' }
     ];
 
     return (
         <main className="pt-20 bg-white">
+            {/* LIGHTBOX MODAL */}
+            {selectedImg && (
+                <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 md:p-10" onClick={() => setSelectedImg(null)}>
+                    <button className="absolute top-10 right-10 text-white hover:rotate-90 transition-transform">
+                        <X size={40} />
+                    </button>
+                    <img src={selectedImg} className="max-w-full max-h-full rounded-lg shadow-2xl animate-in zoom-in duration-300" alt="Full view" />
+                </div>
+            )}
+
             {/* HERO SECTION */}
             <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
                 {loadingHero ? (
                     <div className="absolute inset-0 animate-pulse bg-slate-800 flex items-center justify-center">
-                        <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+                        <Loader2 className="text-blue-600 animate-spin" size={40} />
                     </div>
                 ) : (
                     <>
@@ -75,23 +107,16 @@ function BAC() {
                                 <Newspaper color="white" size={16} />
                                 <p className="text-xs md:text-sm font-bold tracking-wide uppercase">French Embassy Fund (FEF)</p>
                             </div>
-
-                            <h1 className="text-white text-4xl md:text-7xl font-bold font-serif max-w-4xl leading-tight">
-                                {heroData?.title}
-                            </h1>
-
-                            <p className="text-white/90 text-lg md:text-xl max-w-xl leading-relaxed">
-                                {heroData?.description}
-                            </p>
+                            <h1 className="text-white text-4xl md:text-7xl font-bold font-serif max-w-4xl leading-tight">{heroData?.title}</h1>
+                            <p className="text-white/90 text-lg md:text-xl max-w-xl leading-relaxed">{heroData?.description}</p>
                             
                             <div className="flex flex-wrap gap-4">
-                                <a 
-                                    href="#image-gallery"
+                                <button 
+                                    onClick={scrollToGallery}
                                     className="px-8 py-4 bg-white text-blue-900 font-bold rounded-2xl hover:bg-blue-50 transition-all flex items-center gap-2 group shadow-xl active:scale-95"
                                 >
                                     See Events<ChevronRight className="group-hover:translate-x-1 transition-transform" />
-                                </a>
-                                
+                                </button>
                                 <button 
                                     onClick={scrollToProjectGoals}
                                     className="px-8 py-4 bg-blue-600/20 text-white backdrop-blur-md border border-white/30 font-bold rounded-2xl hover:bg-blue-600 transition-all flex items-center gap-2 group active:scale-95"
@@ -105,10 +130,7 @@ function BAC() {
             </div>
 
             {/* PROJECT GOALS */}
-            <div 
-                ref={projectGoalsRef} 
-                className="w-full flex flex-col justify-center items-center py-24 gap-16 bg-gray-50/50 scroll-mt-24"
-            >
+            <div ref={projectGoalsRef} className="w-full flex flex-col justify-center items-center py-24 gap-16 bg-gray-50/50 scroll-mt-24">
                 <div className="w-[90%] flex justify-center items-center flex-col gap-4 text-center">
                     <div className="w-12 h-1 bg-blue-600 rounded-full mb-2"></div>
                     <h1 className="text-4xl md:text-5xl font-serif font-bold text-slate-900">Project Goals</h1>
@@ -128,31 +150,18 @@ function BAC() {
                     ))}
                 </div>
 
-                <div className="mt-8">
-                    <button 
-                        onClick={() => handleRedirect(false)}
-                        className="flex items-center gap-2 text-slate-500 font-bold hover:text-blue-600 transition-colors"
-                    >
-                        <LayoutDashboard size={18} /> Access Internal Dashboard
-                    </button>
-                </div>
-                
-                {/* Office 365 / LMS */}
-                <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-8 rounded-[2.5rem] shadow-xl border border-white/5 flex flex-col gap-4 hover:translate-y-[-5px] transition-transform w-[90%] max-w-6xl justify-center items-center">
-                    <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden">
-                        <img src={logo} alt="Microsoft 365" className="w-10 h-10" />
+                <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-10 rounded-[3rem] shadow-xl border border-white/5 flex flex-col md:flex-row gap-8 w-[90%] max-w-6xl justify-between items-center">
+                    <div className="flex items-center gap-6">
+                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden shrink-0">
+                            <img src={logo} alt="Microsoft 365" className="w-12 h-12" />
+                        </div>
+                        <div>
+                            <h2 className="text-2xl font-bold text-white">LMS Login Portal</h2>
+                            <p className="text-gray-400 text-sm mt-1">Microsoft 365 Resources for Lecturers & Students</p>
+                        </div>
                     </div>
-                    <div className="text-center">
-                        <h2 className="text-2xl font-bold text-white">LMS Login</h2>
-                        <p className="text-gray-300 text-sm mt-1">Access Office 365 for Lecturers & Students</p>
-                    </div>
-                    <a
-                        href="https://login.microsoftonline.com"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="mt-4 py-3 px-8 bg-white text-slate-900 rounded-2xl font-black text-sm uppercase tracking-wider hover:bg-gray-100 transition-colors shadow-lg"
-                    >
-                        Access Learning Resources
+                    <a href="https://login.microsoftonline.com" target="_blank" className="py-4 px-10 bg-white text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-100 transition-all shadow-lg active:scale-95">
+                        Access Resources
                     </a>
                 </div>
 
@@ -161,34 +170,67 @@ function BAC() {
                     <img src={map} alt="Map" className="w-[80%] md:w-[60%] h-auto opacity-90" />
                 </div>
 
-                {/* EVALUATION FORM SECTION */}
-                <div className="w-[90%] max-w-6xl overflow-hidden rounded-[2.5rem] bg-gradient-to-r from-red-600 to-red-700 text-white shadow-2xl relative group">
-                    <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-3xl group-hover:bg-white/20 transition-colors" />
-                    
+                <div className="w-[90%] max-w-6xl overflow-hidden rounded-[3rem] bg-gradient-to-r from-red-600 to-red-700 text-white shadow-2xl relative group mb-12">
                     <div className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
                         <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
                             <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-3xl flex items-center justify-center border border-white/30 shadow-inner">
                                 <Target size={40} className="text-white" />
                             </div>
-                            
                             <div className="max-w-md">
                                 <h1 className="text-3xl md:text-4xl font-serif font-bold mb-3">Evaluation Form</h1>
-                                <p className="text-red-50/90 text-lg leading-relaxed">
-                                    For technical officers: Access the official evaluation portal to submit reports, 
-                                    track observations, and manage project data.
-                                </p>
+                                <p className="text-red-50/90 text-lg leading-relaxed">Access the official evaluation portal for technical officers.</p>
                             </div>
                         </div>
-
-                        <button 
-                            className="whitespace-nowrap py-5 px-10 bg-white text-red-600 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center gap-3"
-                            onClick={() => handleRedirect(true)}
-                        >
-                            Access Evaluation Portal
-                            <ExternalLink size={18} />
+                        <button onClick={() => handleRedirect(true)} className="whitespace-nowrap py-5 px-10 bg-white text-red-600 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center gap-3">
+                            Access Portal <ExternalLink size={18} />
                         </button>
                     </div>
-                    <div className="w-full h-px bg-white/30 my-4" id="image-gallery"></div>
+                </div>
+
+                {/* IMAGE GALLERY: 3 per row (lg:grid-cols-3) and Unlimited columns (no slice) */}
+                <div ref={galleryRef} className="w-[90%] max-w-7xl py-20 scroll-mt-24">
+                    <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2 text-blue-600 font-black text-xs uppercase tracking-widest">
+                                <ImageIcon size={14} /> <span>Event Visuals</span>
+                            </div>
+                            <h2 className="text-4xl md:text-5xl font-serif font-bold text-slate-900">Project Highlight</h2>
+                        </div>
+                        <p className="text-gray-500 max-w-sm text-sm">A visual journey through our latest French Embassy Fund workshops and events across Nigeria.</p>
+                    </div>
+
+                    {loadingGallery ? (
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            {[1, 2, 3].map(i => (
+                                <div key={i} className="aspect-square bg-gray-200 animate-pulse rounded-[2.5rem]" />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                            {eventImages.map((img) => (
+                                <div 
+                                    key={img.id} 
+                                    className="group relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-slate-100 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-700"
+                                    onClick={() => setSelectedImg(img.coverImage)}
+                                >
+                                    <img 
+                                        src={img.coverImage} 
+                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
+                                        alt={img.title} 
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-8">
+                                        <div className="translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                                            <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2">{img.category}</p>
+                                            <h3 className="text-white text-xl font-bold leading-tight">{img.title}</h3>
+                                        </div>
+                                    </div>
+                                    <div className="absolute top-6 right-6 w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-white hover:text-blue-600">
+                                        <Maximize2 size={20} />
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </main>
