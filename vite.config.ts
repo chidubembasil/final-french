@@ -21,7 +21,9 @@ export default defineConfig({
         manualChunks(id) {
           if (id.includes('node_modules')) {
             return 'vendor';
+            
           }
+          
         },
       },
     },

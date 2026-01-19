@@ -17,6 +17,7 @@ import Activites from "./pages/Activity";
 
 import ScrollToTop from "./components/ScrollTop"
 
+
 const App: React.FC = () => {
   return (
     // ✅ Switched to HashRouter to prevent "disappearing" pages on live servers
@@ -41,6 +42,7 @@ const App: React.FC = () => {
       <Footer />
       <CookieConsent />
     </HashRouter>
+    
   );
 };
 
