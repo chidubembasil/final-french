@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import {
+import { 
   SplitSquareHorizontal,
   ArrowRight,
   PlayCircle,
@@ -32,7 +32,6 @@ interface DetailedExercise extends Exercise {
     }>;
   };
   answerKey: Record<string, string>;
-  showAnswerKey: boolean;
 }
 
 interface GalleryHero {
@@ -42,7 +41,7 @@ interface GalleryHero {
 }
 
 function Activities() {
-  // Data Arrays (Populated from API)
+  // Data States
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [heroData, setHeroData] = useState<GalleryHero | null>(null);
   
@@ -66,10 +65,9 @@ function Activities() {
   // Answer Tracking
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
 
-  // API base URL - update this with your actual API endpoint
-  const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;;
+  const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
-  // ── 1. Initial Data Fetch (Hero & List) ────────────────────────
+  // 1. Initial Data Fetch
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -81,24 +79,18 @@ function Activities() {
         const heroJson = await heroRes.json();
         const exJson = await exRes.json();
 
-        // Find specific hero
         const matchingHero = heroJson.find(
           (item: any) => item.purpose === "Other Page" && item.subPurpose === "Activities"
         );
         if (matchingHero) setHeroData(matchingHero);
 
-        // Store all exercises - handle both array and object responses
         const rawExercises = Array.isArray(exJson) ? exJson : (exJson.data || []);
-        
-        // Map and normalize the exercise data
         const normalizedExercises = rawExercises.map((ex: any) => ({
           ...ex,
-          // Normalize exerciseType for display
           exerciseType: ex.exerciseType || 'Unknown',
           difficulty: ex.difficulty || 'Beginner'
         }));
         
-        console.log("Fetched exercises:", normalizedExercises);
         setExercises(normalizedExercises);
       } catch (err) {
         console.error("Initialization Error:", err);
@@ -107,87 +99,81 @@ function Activities() {
         setLoading(false);
       }
     };
-
     fetchData();
   }, [CLIENT_KEY]);
 
-  // ── 2. Detailed Fetch (Triggered on Start) ──────────────────────
+  // 2. Detailed Fetch (Fixed Popup Logic)
   const handleOpenExercise = async (id: number) => {
     setIsPopupLoading(true);
+    // Reset modal states before opening new one
     setModalStage('info');
     setSubmitted(false);
     setUserAnswers({});
+    setSelectedEx(null); 
     
     try {
       const res = await fetch(`${CLIENT_KEY}api/exercises/${id}`);
+      if (!res.ok) throw new Error("Network response was not ok");
+      
       const json = await res.json();
       const rawData = json.data || json;
 
-      // Parse the content string which contains an array of questions
-      let questionsArray = [];
+      // Safe Content Parsing
+      let rawQuestions = [];
       try {
-        questionsArray = typeof rawData.content === "string" ? JSON.parse(rawData.content) : rawData.content;
+        rawQuestions = typeof rawData.content === "string" 
+          ? JSON.parse(rawData.content) 
+          : (rawData.content || []);
       } catch (e) {
-        console.error("Failed to parse content:", e);
-        questionsArray = [];
+        console.error("JSON Parse Error on content field:", e);
+        rawQuestions = [];
       }
 
-      // Transform the questions to match expected format and build answerKey
-      const transformedQuestions: Array<{
-        questionText: string;
-        options: string[];
-      }> = [];
+      const transformedQuestions: any[] = [];
       const answerKey: Record<string, string> = {};
 
-      questionsArray.forEach((q: any, idx: number) => {
-        const qKey = `q${idx + 1}`;
-        
-        // Transform question structure
-        transformedQuestions.push({
-          questionText: q.question,
-          options: q.options || []
+      if (Array.isArray(rawQuestions)) {
+        rawQuestions.forEach((q: any, idx: number) => {
+          const qKey = `q${idx + 1}`;
+          const options = q.options || q.choices || [];
+          
+          transformedQuestions.push({
+            questionText: q.question || q.questionText || "Untitled Question",
+            options: options
+          });
+          
+          // Map Correct Answer (Handle 1-based index or string)
+          const correctIdx = parseInt(q.correctAnswer) - 1;
+          if (options[correctIdx]) {
+            answerKey[qKey] = options[correctIdx];
+          } else if (typeof q.correctAnswer === 'string') {
+            answerKey[qKey] = q.correctAnswer;
+          }
         });
-        
-        // Build answer key - correctAnswer is 1-indexed in API, array is 0-indexed
-        const correctIndex = q.correctAnswer - 1;
-        if (q.options && q.options[correctIndex]) {
-          answerKey[qKey] = q.options[correctIndex];
-        }
-      });
+      }
 
-      const parsedExercise: DetailedExercise = {
+      setSelectedEx({
         ...rawData,
         content: { questions: transformedQuestions },
         answerKey: answerKey,
-      };
-
-      console.log("Parsed Exercise:", parsedExercise);
-      console.log("Questions:", parsedExercise.content?.questions);
-      console.log("Answer Key:", parsedExercise.answerKey);
-
-      setSelectedEx(parsedExercise);
+      });
     } catch (err) {
       console.error("Error fetching details:", err);
+      alert("Failed to load activity details. Please check your connection.");
     } finally {
       setIsPopupLoading(false);
     }
   };
 
-  // ── 3. Local Search & Filter Logic ──────────────────────────────
+  // 3. Search & Filter Logic
   const filteredExercises = useMemo(() => {
     return exercises.filter((ex) => {
       const matchesSearch = ex.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
                             ex.description?.toLowerCase().includes(searchQuery.toLowerCase());
-      
-      // Normalize types for comparison
       const normalizedExType = ex.exerciseType?.toLowerCase().trim() || '';
-      const normalizedActiveType = activeType.toLowerCase().trim();
-      
-      const matchesType = activeType === "All" || normalizedExType === normalizedActiveType;
-      
+      const matchesType = activeType === "All" || normalizedExType.includes(activeType.toLowerCase());
       const matchesDiff = activeDifficulty === "All" || 
                           ex.difficulty?.toLowerCase() === activeDifficulty.toLowerCase();
-      
       return matchesSearch && matchesType && matchesDiff;
     });
   }, [exercises, searchQuery, activeType, activeDifficulty]);
@@ -199,27 +185,26 @@ function Activities() {
   const totalPages = Math.ceil(filteredExercises.length / exercisesPerPage);
 
   const getIcon = (type: string) => {
-    const lowerType = type?.toLowerCase() || '';
-    if (lowerType.includes('multiple') || lowerType === 'mcq') return <PlayCircle size={32} />;
-    if (lowerType.includes('gap') || lowerType.includes('fill')) return <PenTool size={32} />;
-    if (lowerType.includes('match')) return <SplitSquareHorizontal size={32} />;
-    if (lowerType.includes('true') || lowerType.includes('false')) return <CheckCircle2 size={32} />;
+    const t = type?.toLowerCase() || '';
+    if (t.includes('multiple') || t === 'mcq') return <PlayCircle size={32} />;
+    if (t.includes('gap') || t.includes('fill')) return <PenTool size={32} />;
+    if (t.includes('match')) return <SplitSquareHorizontal size={32} />;
+    if (t.includes('true') || t.includes('false')) return <CheckCircle2 size={32} />;
     return <Book size={32} />;
   };
 
   const formatExerciseType = (type: string) => {
-    if (!type) return 'Exercise';
-    const lowerType = type.toLowerCase();
-    if (lowerType === 'mcq') return 'Multiple Choice';
-    return type.split(/[-_]/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    if (!type || type === 'Unknown') return 'Exercise';
+    if (type.toLowerCase() === 'mcq') return 'Multiple Choice';
+    return type.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
   return (
     <main className="pt-20 bg-[#fcfaf8] min-h-screen">
       {/* --- HERO SECTION --- */}
-      <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
+      <div className="relative w-full h-[60dvh] md:h-[90dvh] overflow-hidden bg-slate-900">
         {loadingHero ? (
-          <div className="absolute inset-0 animate-pulse bg-slate-800 flex items-center justify-center">
+          <div className="absolute inset-0 bg-slate-800 flex items-center justify-center">
             <Loader2 className="animate-spin text-white/20" size={40} />
           </div>
         ) : (
@@ -231,10 +216,10 @@ function Activities() {
                 <SplitSquareHorizontal size={17} />
                 <p className="text-sm font-bold uppercase tracking-wider">Interactive Learning</p>
               </div>
-              <h1 className="text-white text-5xl md:text-7xl font-bold font-serif leading-tight drop-shadow-2xl">
-                {heroData?.title}
+              <h1 className="text-white text-4xl md:text-7xl font-bold font-serif leading-tight drop-shadow-2xl">
+                {heroData?.title || "Educational Activities"}
               </h1>
-              <p className="text-white text-xl max-w-xl opacity-90 leading-relaxed drop-shadow-md">
+              <p className="text-white text-lg md:text-xl max-w-xl opacity-90 leading-relaxed drop-shadow-md">
                 {heroData?.description}
               </p>
             </div>
@@ -244,7 +229,7 @@ function Activities() {
 
       <section className="py-12 px-6 md:px-20 max-w-7xl mx-auto">
         {/* --- FILTER BAR --- */}
-        <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 mb-12 flex flex-col lg:flex-row gap-6 items-start">
+        <div className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-sm border border-gray-100 mb-12 flex flex-col lg:flex-row gap-6 items-start">
           <div className="flex-1 w-full relative">
             <p className="text-[10px] font-black uppercase text-blue-600 mb-2 ml-1">Search Activity</p>
             <div className="relative">
@@ -327,7 +312,7 @@ function Activities() {
               </div>
             ))
           ) : (
-            <div className="col-span-full py-20 text-center text-gray-400 italic">No activities found.</div>
+            <div className="col-span-full py-20 text-center text-gray-400 italic">No activities found matching your criteria.</div>
           )}
         </div>
 
@@ -345,8 +330,8 @@ function Activities() {
       {selectedEx && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm" onClick={() => setSelectedEx(null)} />
-          <div className="relative bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[3rem] p-10 shadow-2xl">
-            <button onClick={() => setSelectedEx(null)} className="absolute top-8 right-8 p-2 hover:bg-gray-100 rounded-full transition-colors"><X size={24} /></button>
+          <div className="relative bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[3rem] p-6 md:p-10 shadow-2xl">
+            <button onClick={() => setSelectedEx(null)} className="absolute top-6 right-6 p-2 hover:bg-gray-100 rounded-full transition-colors z-20"><X size={24} /></button>
 
             {modalStage === 'info' ? (
               <div className="text-center py-4">
@@ -370,31 +355,31 @@ function Activities() {
               <div className="space-y-8">
                 <div className="border-b pb-6">
                   <h2 className="text-2xl font-bold text-slate-900">{selectedEx.title}</h2>
-                  <p className="text-sm text-gray-400 mt-1">Submit your answers when you are finished.</p>
+                  <p className="text-sm text-gray-400 mt-1">Select the best answer for each question below.</p>
                 </div>
 
                 <div className="space-y-6">
-                  {selectedEx.content?.questions?.length > 0 ? (
-                    selectedEx.content.questions.map((q: any, idx: number) => {
+                  {(selectedEx.content?.questions || []).length > 0 ? (
+                    selectedEx.content.questions.map((q, idx) => {
                       const qKey = `q${idx + 1}`;
                       const correctVal = selectedEx.answerKey?.[qKey];
                       const userAnswer = userAnswers[qKey];
 
                       return (
-                        <div key={idx} className="p-8 bg-gray-50/50 rounded-[2.5rem] border border-gray-100">
-                          <p className="font-bold text-xl text-slate-800 mb-6 flex gap-4">
+                        <div key={qKey} className="p-6 md:p-8 bg-gray-50/50 rounded-[2.5rem] border border-gray-100">
+                          <p className="font-bold text-lg md:text-xl text-slate-800 mb-6 flex gap-4">
                             <span className="text-blue-600 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0">{idx + 1}</span>
-                            {q.questionText || q.question || 'Question not available'}
+                            {q.questionText}
                           </p>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {(q.options || []).map((opt: string, i: number) => {
+                            {(q.options || []).map((opt, i) => {
                               const isSelected = userAnswer === opt;
                               const isCorrect = submitted && opt === correctVal;
                               const isWrong = submitted && isSelected && opt !== correctVal;
                               
                               return (
                                 <button
-                                  key={i}
+                                  key={`${qKey}-opt-${i}`}
                                   onClick={() => !submitted && setUserAnswers(prev => ({ ...prev, [qKey]: opt }))}
                                   disabled={submitted}
                                   className={`px-6 py-4 border-2 rounded-2xl text-sm font-bold transition-all text-left ${
@@ -417,8 +402,8 @@ function Activities() {
                     })
                   ) : (
                     <div className="text-center py-12 text-gray-400">
-                      <p className="text-lg font-semibold mb-2">No questions available</p>
-                      <p className="text-sm">This exercise hasn't been set up yet.</p>
+                      <p className="text-lg font-semibold mb-2">No questions found</p>
+                      <p className="text-sm">Please check back later.</p>
                     </div>
                   )}
                 </div>
@@ -426,7 +411,8 @@ function Activities() {
                 {!submitted ? (
                   <button 
                     onClick={() => setSubmitted(true)}
-                    className="w-full py-5 bg-slate-900 text-white rounded-[2.5rem] font-bold hover:bg-green-600 transition-all shadow-xl flex items-center justify-center gap-2"
+                    disabled={(selectedEx.content?.questions || []).length === 0}
+                    className="w-full py-5 bg-slate-900 text-white rounded-[2.5rem] font-bold hover:bg-green-600 disabled:bg-gray-200 transition-all shadow-xl flex items-center justify-center gap-2"
                   >
                     <Check size={20} /> Submit My Answers
                   </button>

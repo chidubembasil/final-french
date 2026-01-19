@@ -31,7 +31,6 @@ const SCHOOL_DATA: SchoolData = {
 
 const HIGHLIGHTED_STATES = Object.keys(SCHOOL_DATA);
 
-// Helper to handle map centering and searching
 const MapController = ({ geoData, searchQuery }: { geoData: any, searchQuery: string }) => {
   const map = useMap();
 
@@ -93,6 +92,7 @@ const NigeriaMap: React.FC = () => {
     };
   }, []);
 
+  // FIX: Wrapped in useCallback and used e.target._map to avoid the scope error
   const onEachState = useCallback((feature: any, layer: L.Layer) => {
     const stateName = feature.properties.adm1_name;
     const schools = SCHOOL_DATA[stateName];
@@ -122,8 +122,11 @@ const NigeriaMap: React.FC = () => {
         e.target.setStyle(stateStyle(feature)); 
       },
       click: (e) => { 
+        // Accessing the map instance directly from the event target
         const mapInstance = e.target._map;
-        mapInstance.fitBounds(e.target.getBounds()); 
+        if (mapInstance) {
+          mapInstance.fitBounds(e.target.getBounds());
+        }
       }
     });
   }, [stateStyle]);
@@ -137,7 +140,6 @@ const NigeriaMap: React.FC = () => {
 
   return (
     <div className="w-full flex flex-col lg:flex-row gap-6">
-      {/* Map Display */}
       <div className="flex-1 h-[500px] lg:h-[600px] bg-white rounded-[2.5rem] overflow-hidden border border-slate-100 shadow-inner relative group">
         <div className="absolute top-4 left-4 z-[1000] w-64 md:w-80">
           <div className="relative group">
@@ -154,23 +156,22 @@ const NigeriaMap: React.FC = () => {
 
         <MapContainer center={[9.082, 8.675]} zoom={6} className="h-full w-full outline-none">
           <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
-          <GeoJSON 
-            key={geoData ? 'loaded' : 'loading'} 
-            data={geoData} 
-            style={stateStyle} 
-            onEachFeature={onEachState} 
-          />
+          {geoData && (
+            <GeoJSON 
+              data={geoData} 
+              style={stateStyle} 
+              onEachFeature={onEachState} 
+            />
+          )}
           <MapController geoData={geoData} searchQuery={search} />
         </MapContainer>
       </div>
 
-      {/* Modern Legend Sidebar */}
       <div className="w-full lg:w-80 shrink-0 flex flex-col gap-4">
         <div className="bg-white p-6 rounded-[2.5rem] border border-slate-100 shadow-sm">
           <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
             <MapPin size={14} className="text-blue-600" /> Map Key
           </h3>
-          
           <div className="space-y-5">
             <div className="flex items-center gap-4 group cursor-default">
               <div className="w-10 h-10 rounded-2xl bg-amber-500 shadow-lg shadow-amber-500/20 flex items-center justify-center text-white font-bold text-xs italic">G</div>
@@ -179,7 +180,6 @@ const NigeriaMap: React.FC = () => {
                 <p className="text-[11px] text-slate-400 italic font-medium leading-none">Primary Partnership</p>
               </div>
             </div>
-
             <div className="flex items-center gap-4 group cursor-default">
               <div className="w-10 h-10 rounded-2xl bg-slate-400 shadow-lg shadow-slate-400/20 flex items-center justify-center text-white font-bold text-xs italic">S</div>
               <div>
@@ -187,7 +187,6 @@ const NigeriaMap: React.FC = () => {
                 <p className="text-[11px] text-slate-400 italic font-medium leading-none">Associate Partners</p>
               </div>
             </div>
-
             <div className="pt-4 border-t border-slate-50">
                <div className="flex items-center gap-3 mb-3">
                   <div className="w-3 h-3 rounded-full bg-blue-600"></div>
