@@ -113,65 +113,87 @@ function Activities() {
 
   // ── 2. Detailed Fetch (Triggered on Start) ──────────────────────
   const handleOpenExercise = async (id: number) => {
-    setIsPopupLoading(true);
-    setModalStage('info');
-    setSubmitted(false);
-    setUserAnswers({});
-    
-    try {
-      const res = await fetch(`${CLIENT_KEY}api/exercises/${id}`);
-      const json = await res.json();
-      const rawData = json.data || json;
+  setIsPopupLoading(true);
+  setModalStage("info");
+  setSubmitted(false);
+  setUserAnswers({});
+  setSelectedEx(null);
 
-      // Parse the content string which contains an array of questions
-      let questionsArray = [];
+  try {
+    const res = await fetch(`${CLIENT_KEY}api/exercises/${id}`);
+
+    // 🔴 HARD STOP if backend says "not found"
+    if (!res.ok) {
+      console.error("Exercise not found. Status:", res.status);
+      return;
+    }
+
+    const json = await res.json();
+    const rawData = json?.data ?? json;
+
+    if (!rawData || !rawData.content) {
+      console.error("Invalid exercise payload:", rawData);
+      return;
+    }
+
+    // 🧠 SAFELY parse content
+    let questionsArray: any[] = [];
+
+    if (Array.isArray(rawData.content)) {
+      questionsArray = rawData.content;
+    } else if (typeof rawData.content === "string") {
       try {
-        questionsArray = typeof rawData.content === "string" ? JSON.parse(rawData.content) : rawData.content;
+        questionsArray = JSON.parse(rawData.content);
       } catch (e) {
-        console.error("Failed to parse content:", e);
-        questionsArray = [];
+        console.error("JSON parse failed:", e);
+        return;
       }
+    }
 
-      // Transform the questions to match expected format and build answerKey
-      const transformedQuestions: Array<{
-        questionText: string;
-        options: string[];
-      }> = [];
-      const answerKey: Record<string, string> = {};
+    if (!Array.isArray(questionsArray) || questionsArray.length === 0) {
+      console.warn("Exercise has no questions");
+    }
 
-      questionsArray.forEach((q: any, idx: number) => {
-        const qKey = `q${idx + 1}`;
-        
-        // Transform question structure
-        transformedQuestions.push({
-          questionText: q.question,
-          options: q.options || []
-        });
-        
-        // Build answer key - correctAnswer is 1-indexed in API, array is 0-indexed
-        const correctIndex = q.correctAnswer - 1;
-        if (q.options && q.options[correctIndex]) {
-          answerKey[qKey] = q.options[correctIndex];
-        }
+    // 🧠 Normalize questions + build answer key
+    const transformedQuestions: {
+      questionText: string;
+      options: string[];
+    }[] = [];
+
+    const answerKey: Record<string, string> = {};
+
+    questionsArray.forEach((q: any, idx: number) => {
+      const qKey = `q${idx + 1}`;
+
+      transformedQuestions.push({
+        questionText: q.question ?? "Question missing",
+        options: Array.isArray(q.options) ? q.options : [],
       });
 
-      const parsedExercise: DetailedExercise = {
-        ...rawData,
-        content: { questions: transformedQuestions },
-        answerKey: answerKey,
-      };
+      if (
+        Array.isArray(q.options) &&
+        typeof q.correctAnswer === "number" &&
+        q.options[q.correctAnswer - 1]
+      ) {
+        answerKey[qKey] = q.options[q.correctAnswer - 1];
+      }
+    });
 
-      console.log("Parsed Exercise:", parsedExercise);
-      console.log("Questions:", parsedExercise.content?.questions);
-      console.log("Answer Key:", parsedExercise.answerKey);
+    const parsedExercise: DetailedExercise = {
+      ...rawData,
+      content: { questions: transformedQuestions },
+      answerKey,
+      showAnswerKey: false,
+    };
 
-      setSelectedEx(parsedExercise);
-    } catch (err) {
-      console.error("Error fetching details:", err);
-    } finally {
-      setIsPopupLoading(false);
-    }
-  };
+    setSelectedEx(parsedExercise);
+  } catch (err) {
+    console.error("Error fetching exercise details:", err);
+  } finally {
+    setIsPopupLoading(false);
+  }
+};
+
 
   // ── 3. Local Search & Filter Logic ──────────────────────────────
   const filteredExercises = useMemo(() => {
