@@ -1,17 +1,17 @@
 import { useState, useEffect, useMemo } from "react";
 import { 
-  SplitSquareHorizontal,
-  ArrowRight,
-  PlayCircle,
-  Book,
-  PenTool,
-  ChevronLeft,
-  ChevronRight,
-  CheckCircle2,
-  X,
-  Loader2,
-  Search,
-  Check
+  SplitSquareHorizontal, 
+  ArrowRight, 
+  PlayCircle, 
+  Book, 
+  PenTool, 
+  ChevronLeft, 
+  ChevronRight, 
+  CheckCircle2, 
+  X, 
+  Loader2, 
+  Search, 
+  Check 
 } from "lucide-react";
 
 // --- Interfaces ---
@@ -41,31 +41,22 @@ interface GalleryHero {
 }
 
 function Activities() {
-  // Data States
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [heroData, setHeroData] = useState<GalleryHero | null>(null);
-  
-  // Selection & Modal Flow States
   const [selectedEx, setSelectedEx] = useState<DetailedExercise | null>(null);
   const [modalStage, setModalStage] = useState<'info' | 'test'>('info');
   const [submitted, setSubmitted] = useState(false);
-
-  // UI States
   const [loading, setLoading] = useState(true);
   const [loadingHero, setLoadingHero] = useState(true);
   const [isPopupLoading, setIsPopupLoading] = useState(false);
-  
-  // Filter States
   const [activeType, setActiveType] = useState<string>("All");
   const [activeDifficulty, setActiveDifficulty] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
-  const exercisesPerPage = 8;
-  
-  // Answer Tracking
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
 
-  const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
+  const exercisesPerPage = 8;
+  const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || "";
 
   // 1. Initial Data Fetch
   useEffect(() => {
@@ -79,19 +70,28 @@ function Activities() {
         const heroJson = await heroRes.json();
         const exJson = await exRes.json();
 
-        const matchingHero = heroJson.find(
-          (item: any) => item.purpose === "Other Page" && item.subPurpose === "Activities"
+        const heroArray = Array.isArray(heroJson) ? heroJson : (heroJson.data || []);
+        const matchingHero = heroArray.find(
+          (item: any) => (item.attributes?.subPurpose || item.subPurpose) === "Activities"
         );
-        if (matchingHero) setHeroData(matchingHero);
+        if (matchingHero) {
+          setHeroData(matchingHero.attributes || matchingHero);
+        }
 
         const rawExercises = Array.isArray(exJson) ? exJson : (exJson.data || []);
-        const normalizedExercises = rawExercises.map((ex: any) => ({
-          ...ex,
-          exerciseType: ex.exerciseType || 'Unknown',
-          difficulty: ex.difficulty || 'Beginner'
-        }));
+        const normalized = rawExercises.map((ex: any) => {
+          const data = ex.attributes || ex;
+          return {
+            id: ex.id,
+            title: data.title,
+            description: data.description,
+            exerciseType: data.exerciseType || 'Unknown',
+            difficulty: data.difficulty || 'Beginner',
+            publishedAt: data.publishedAt
+          };
+        });
         
-        setExercises(normalizedExercises);
+        setExercises(normalized);
       } catch (err) {
         console.error("Initialization Error:", err);
       } finally {
@@ -102,50 +102,43 @@ function Activities() {
     fetchData();
   }, [CLIENT_KEY]);
 
-  // 2. Detailed Fetch (Fixed Popup Logic)
+  // 2. Detailed Fetch
   const handleOpenExercise = async (id: number) => {
     setIsPopupLoading(true);
-    // Reset modal states before opening new one
     setModalStage('info');
     setSubmitted(false);
     setUserAnswers({});
-    setSelectedEx(null); 
     
     try {
       const res = await fetch(`${CLIENT_KEY}api/exercises/${id}`);
-      if (!res.ok) throw new Error("Network response was not ok");
+      if (!res.ok) throw new Error(`Status ${res.status}: Exercise not found`);
       
       const json = await res.json();
-      const rawData = json.data || json;
+      const rawData = json.data?.attributes ? { id: json.data.id, ...json.data.attributes } : (json.data || json);
 
-      // Safe Content Parsing
-      let rawQuestions = [];
+      let questionsArray = [];
       try {
-        rawQuestions = typeof rawData.content === "string" 
+        questionsArray = typeof rawData.content === "string" 
           ? JSON.parse(rawData.content) 
-          : (rawData.content || []);
+          : (rawData.content?.questions || rawData.content || []);
       } catch (e) {
-        console.error("JSON Parse Error on content field:", e);
-        rawQuestions = [];
+        console.error("JSON Parse Error:", e);
       }
 
       const transformedQuestions: any[] = [];
       const answerKey: Record<string, string> = {};
 
-      if (Array.isArray(rawQuestions)) {
-        rawQuestions.forEach((q: any, idx: number) => {
+      if (Array.isArray(questionsArray)) {
+        questionsArray.forEach((q: any, idx: number) => {
           const qKey = `q${idx + 1}`;
           const options = q.options || q.choices || [];
-          
           transformedQuestions.push({
             questionText: q.question || q.questionText || "Untitled Question",
             options: options
           });
-          
-          // Map Correct Answer (Handle 1-based index or string)
-          const correctIdx = parseInt(q.correctAnswer) - 1;
-          if (options[correctIdx]) {
-            answerKey[qKey] = options[correctIdx];
+          const correctIndex = parseInt(q.correctAnswer) - 1;
+          if (options[correctIndex]) {
+            answerKey[qKey] = options[correctIndex];
           } else if (typeof q.correctAnswer === 'string') {
             answerKey[qKey] = q.correctAnswer;
           }
@@ -157,9 +150,9 @@ function Activities() {
         content: { questions: transformedQuestions },
         answerKey: answerKey,
       });
-    } catch (err) {
-      console.error("Error fetching details:", err);
-      alert("Failed to load activity details. Please check your connection.");
+    } catch (err: any) {
+      console.error("Fetch Error:", err);
+      alert(`Error: ${err.message}`);
     } finally {
       setIsPopupLoading(false);
     }
@@ -168,261 +161,155 @@ function Activities() {
   // 3. Search & Filter Logic
   const filteredExercises = useMemo(() => {
     return exercises.filter((ex) => {
-      const matchesSearch = ex.title?.toLowerCase().includes(searchQuery.toLowerCase()) || 
-                            ex.description?.toLowerCase().includes(searchQuery.toLowerCase());
-      const normalizedExType = ex.exerciseType?.toLowerCase().trim() || '';
-      const matchesType = activeType === "All" || normalizedExType.includes(activeType.toLowerCase());
-      const matchesDiff = activeDifficulty === "All" || 
-                          ex.difficulty?.toLowerCase() === activeDifficulty.toLowerCase();
+      const matchesSearch = (ex.title + ex.description).toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesType = activeType === "All" || ex.exerciseType.toLowerCase() === activeType.toLowerCase();
+      const matchesDiff = activeDifficulty === "All" || ex.difficulty.toLowerCase() === activeDifficulty.toLowerCase();
       return matchesSearch && matchesType && matchesDiff;
     });
   }, [exercises, searchQuery, activeType, activeDifficulty]);
 
-  const currentExercises = filteredExercises.slice(
-    (currentPage - 1) * exercisesPerPage,
-    currentPage * exercisesPerPage
-  );
+  const currentExercises = filteredExercises.slice((currentPage - 1) * exercisesPerPage, currentPage * exercisesPerPage);
   const totalPages = Math.ceil(filteredExercises.length / exercisesPerPage);
 
   const getIcon = (type: string) => {
     const t = type?.toLowerCase() || '';
-    if (t.includes('multiple') || t === 'mcq') return <PlayCircle size={32} />;
-    if (t.includes('gap') || t.includes('fill')) return <PenTool size={32} />;
+    if (t.includes('mcq')) return <PlayCircle size={32} />;
+    if (t.includes('gap')) return <PenTool size={32} />;
     if (t.includes('match')) return <SplitSquareHorizontal size={32} />;
-    if (t.includes('true') || t.includes('false')) return <CheckCircle2 size={32} />;
     return <Book size={32} />;
-  };
-
-  const formatExerciseType = (type: string) => {
-    if (!type || type === 'Unknown') return 'Exercise';
-    if (type.toLowerCase() === 'mcq') return 'Multiple Choice';
-    return type.replace(/[-_]/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
   return (
     <main className="pt-20 bg-[#fcfaf8] min-h-screen">
-      {/* --- HERO SECTION --- */}
-      <div className="relative w-full h-[60dvh] md:h-[90dvh] overflow-hidden bg-slate-900">
-        {loadingHero ? (
-          <div className="absolute inset-0 bg-slate-800 flex items-center justify-center">
-            <Loader2 className="animate-spin text-white/20" size={40} />
-          </div>
-        ) : (
+      {/* Hero */}
+      <div className="relative w-full h-[60dvh] overflow-hidden bg-slate-900">
+        {!loadingHero && heroData && (
           <>
-            <img src={heroData?.mediaUrl} className="absolute inset-0 w-full h-full object-cover z-0" alt="Hero" />
-            <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/80 via-blue-700/60 to-red-700/80" />
-            <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-20 gap-5">
-              <div className="flex items-center gap-2 px-4 py-2 text-white bg-white/20 backdrop-blur-md border border-white/30 rounded-3xl">
-                <SplitSquareHorizontal size={17} />
-                <p className="text-sm font-bold uppercase tracking-wider">Interactive Learning</p>
+            <img src={heroData.mediaUrl} className="absolute inset-0 w-full h-full object-cover z-0" alt="Hero" />
+            <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/80 to-red-700/80" />
+            <div className="relative z-20 h-full flex flex-col items-start justify-center px-10 md:px-20">
+              <div className="flex items-center gap-2 px-4 py-2 text-white bg-white/20 backdrop-blur-md border border-white/30 rounded-3xl mb-4">
+                <CheckCircle2 size={17} />
+                <p className="text-sm font-bold uppercase tracking-wider">Verified Activities</p>
               </div>
-              <h1 className="text-white text-4xl md:text-7xl font-bold font-serif leading-tight drop-shadow-2xl">
-                {heroData?.title || "Educational Activities"}
-              </h1>
-              <p className="text-white text-lg md:text-xl max-w-xl opacity-90 leading-relaxed drop-shadow-md">
-                {heroData?.description}
-              </p>
+              <h1 className="text-white text-5xl md:text-7xl font-bold font-serif mb-4">{heroData.title}</h1>
+              <p className="text-white text-xl max-w-xl opacity-90">{heroData.description}</p>
             </div>
           </>
         )}
       </div>
 
       <section className="py-12 px-6 md:px-20 max-w-7xl mx-auto">
-        {/* --- FILTER BAR --- */}
-        <div className="bg-white p-6 md:p-8 rounded-[2.5rem] shadow-sm border border-gray-100 mb-12 flex flex-col lg:flex-row gap-6 items-start">
-          <div className="flex-1 w-full relative">
-            <p className="text-[10px] font-black uppercase text-blue-600 mb-2 ml-1">Search Activity</p>
-            <div className="relative">
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <input
-                type="text"
-                placeholder="Search activities..."
-                className="w-full pl-14 pr-6 py-4 rounded-2xl bg-gray-50 border-none outline-none focus:ring-2 focus:ring-blue-600 font-medium"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
+        {/* Filter Bar */}
+        <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border mb-10 flex flex-col lg:flex-row gap-6">
+          <div className="flex-1 relative">
+            <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+            <input 
+              className="w-full pl-14 pr-6 py-4 rounded-2xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-600" 
+              placeholder="Search..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
-
-          <div className="w-full lg:w-auto">
-            <p className="text-[10px] font-black uppercase text-blue-600 mb-2 ml-1">Type</p>
-            <div className="flex gap-2 flex-wrap">
-              {["All", "MCQ", "Gap Filling", "Matching", "True or False"].map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setActiveType(t)}
-                  className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${
-                    activeType === t ? "bg-blue-600 text-white shadow-lg" : "bg-gray-100 text-gray-400 hover:bg-gray-200"
-                  }`}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
+          <div className="flex gap-2 items-center">
+            <span className="text-[10px] font-bold uppercase text-gray-400 mr-2">Difficulty:</span>
+            {["All", "Beginner", "Advanced"].map(d => (
+              <button key={d} onClick={() => setActiveDifficulty(d)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase ${activeDifficulty === d ? 'bg-red-600 text-white' : 'bg-gray-100'}`}>{d}</button>
+            ))}
           </div>
-
-          <div className="w-full lg:w-auto">
-            <p className="text-[10px] font-black uppercase text-red-600 mb-2 ml-1">Difficulty</p>
-            <div className="flex gap-2 flex-wrap">
-              {["All", "Beginner", "Intermediate", "Advanced"].map((d) => (
-                <button
-                  key={d}
-                  onClick={() => setActiveDifficulty(d)}
-                  className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${
-                    activeDifficulty === d ? "bg-red-600 text-white shadow-lg" : "bg-gray-100 text-gray-400 hover:bg-gray-200"
-                  }`}
-                >
-                  {d}
-                </button>
-              ))}
-            </div>
+          <div className="flex gap-2">
+            {["All", "MCQ", "Matching"].map(t => (
+              <button key={t} onClick={() => setActiveType(t)} className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase ${activeType === t ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>{t}</button>
+            ))}
           </div>
         </div>
 
-        {/* --- EXERCISE GRID --- */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+        {/* Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {loading ? (
-            [1, 2, 3, 4].map((n) => (
-              <div key={n} className="h-72 bg-white border border-gray-100 animate-pulse rounded-[2.5rem]" />
-            ))
-          ) : currentExercises.length > 0 ? (
-            currentExercises.map((item) => (
-              <div key={item.id} className="group bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm hover:shadow-2xl transition-all flex flex-col justify-between relative overflow-hidden">
-                <div className={`absolute top-0 right-8 px-3 py-1 rounded-b-lg text-[8px] font-black uppercase text-white z-10 ${
-                  item.difficulty?.toLowerCase() === "advanced" ? "bg-red-600" : 
-                  item.difficulty?.toLowerCase() === "intermediate" ? "bg-orange-600" : 
-                  "bg-blue-600"
-                }`}>
-                  {item.difficulty || 'Beginner'}
-                </div>
-                <div>
-                  <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-6 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500">
-                    {getIcon(item.exerciseType)}
-                  </div>
-                  <h3 className="text-2xl font-bold text-slate-800 mb-1 group-hover:text-blue-600 transition-colors">{item.title || 'Untitled Exercise'}</h3>
-                  <p className="text-[10px] font-black text-blue-500 uppercase mb-4 tracking-widest">{formatExerciseType(item.exerciseType)}</p>
-                  <p className="text-gray-500 text-sm line-clamp-3 mb-6 leading-relaxed">{item.description || 'No description available'}</p>
-                </div>
-                <button
-                  onClick={() => handleOpenExercise(item.id)}
-                  className="flex items-center gap-2 font-bold text-blue-700 group/btn mt-auto"
-                >
-                  Start Activity <ArrowRight size={18} className="group-hover/btn:translate-x-2 transition-transform" />
-                </button>
-              </div>
-            ))
-          ) : (
-            <div className="col-span-full py-20 text-center text-gray-400 italic">No activities found matching your criteria.</div>
-          )}
+             <div className="col-span-full flex justify-center py-20"><Loader2 className="animate-spin text-blue-600" size={40} /></div>
+          ) : currentExercises.map(item => (
+            <div key={item.id} className="bg-white rounded-[2rem] p-8 border hover:shadow-xl transition-all flex flex-col">
+              <div className="text-blue-600 mb-6">{getIcon(item.exerciseType)}</div>
+              <h3 className="text-2xl font-bold mb-2">{item.title}</h3>
+              <p className="text-gray-500 text-sm mb-6 line-clamp-3">{item.description}</p>
+              <button onClick={() => handleOpenExercise(item.id)} className="mt-auto flex items-center gap-2 font-bold text-blue-700">
+                Start Activity <ArrowRight size={18} />
+              </button>
+            </div>
+          ))}
         </div>
 
-        {/* PAGINATION */}
+        {/* Pagination Buttons (Fixes the Unused Variable Errors) */}
         {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-3">
-            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-4 rounded-2xl bg-white border border-gray-100 disabled:opacity-30"><ChevronLeft size={20}/></button>
-            <span className="text-sm font-bold text-slate-400">Page {currentPage} of {totalPages}</span>
-            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="p-4 rounded-2xl bg-white border border-gray-100 disabled:opacity-30"><ChevronRight size={20}/></button>
+          <div className="flex justify-center items-center gap-4 mt-12">
+            <button 
+              disabled={currentPage === 1} 
+              onClick={() => setCurrentPage(prev => prev - 1)}
+              className="p-3 rounded-full bg-white border hover:bg-gray-50 disabled:opacity-50"
+            >
+              <ChevronLeft size={24} />
+            </button>
+            <span className="font-bold">Page {currentPage} of {totalPages}</span>
+            <button 
+              disabled={currentPage === totalPages} 
+              onClick={() => setCurrentPage(prev => prev + 1)}
+              className="p-3 rounded-full bg-white border hover:bg-gray-50 disabled:opacity-50"
+            >
+              <ChevronRight size={24} />
+            </button>
           </div>
         )}
       </section>
 
-      {/* --- TWO-STEP POPUP MODAL --- */}
+      {/* Popup Modal */}
       {selectedEx && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm" onClick={() => setSelectedEx(null)} />
-          <div className="relative bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[3rem] p-6 md:p-10 shadow-2xl">
-            <button onClick={() => setSelectedEx(null)} className="absolute top-6 right-6 p-2 hover:bg-gray-100 rounded-full transition-colors z-20"><X size={24} /></button>
-
+          <div className="relative bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[3rem] p-8 md:p-12">
+            <button onClick={() => setSelectedEx(null)} className="absolute top-6 right-6 p-2 hover:bg-gray-100 rounded-full"><X /></button>
+            
             {modalStage === 'info' ? (
-              <div className="text-center py-4">
-                <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-6">
-                  {getIcon(selectedEx.exerciseType)}
-                </div>
-                <h2 className="text-3xl font-bold text-slate-900 mb-4">{selectedEx.title}</h2>
-                <div className="flex justify-center gap-3 mb-8">
-                  <span className="px-3 py-1 bg-gray-100 rounded-full text-[10px] font-black uppercase text-gray-500">{selectedEx.difficulty || 'Beginner'}</span>
-                  <span className="px-3 py-1 bg-blue-100 rounded-full text-[10px] font-black uppercase text-blue-600">{formatExerciseType(selectedEx.exerciseType)}</span>
-                </div>
-                <p className="text-gray-600 text-lg leading-relaxed mb-10">{selectedEx.description || 'No description available'}</p>
-                <button 
-                  onClick={() => setModalStage('test')}
-                  className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-bold text-lg hover:bg-blue-700 transition-all shadow-xl flex items-center justify-center gap-3"
-                >
-                  Proceed to Exercise <ArrowRight size={20} />
-                </button>
+              <div className="text-center">
+                <h2 className="text-4xl font-bold mb-4">{selectedEx.title}</h2>
+                <p className="text-gray-600 text-lg mb-10">{selectedEx.description}</p>
+                <button onClick={() => setModalStage('test')} className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-bold text-lg">Proceed to Exercise</button>
               </div>
             ) : (
               <div className="space-y-8">
-                <div className="border-b pb-6">
-                  <h2 className="text-2xl font-bold text-slate-900">{selectedEx.title}</h2>
-                  <p className="text-sm text-gray-400 mt-1">Select the best answer for each question below.</p>
-                </div>
-
-                <div className="space-y-6">
-                  {(selectedEx.content?.questions || []).length > 0 ? (
-                    selectedEx.content.questions.map((q, idx) => {
-                      const qKey = `q${idx + 1}`;
-                      const correctVal = selectedEx.answerKey?.[qKey];
-                      const userAnswer = userAnswers[qKey];
-
-                      return (
-                        <div key={qKey} className="p-6 md:p-8 bg-gray-50/50 rounded-[2.5rem] border border-gray-100">
-                          <p className="font-bold text-lg md:text-xl text-slate-800 mb-6 flex gap-4">
-                            <span className="text-blue-600 bg-blue-50 w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0">{idx + 1}</span>
-                            {q.questionText}
-                          </p>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {(q.options || []).map((opt, i) => {
-                              const isSelected = userAnswer === opt;
-                              const isCorrect = submitted && opt === correctVal;
-                              const isWrong = submitted && isSelected && opt !== correctVal;
-                              
-                              return (
-                                <button
-                                  key={`${qKey}-opt-${i}`}
-                                  onClick={() => !submitted && setUserAnswers(prev => ({ ...prev, [qKey]: opt }))}
-                                  disabled={submitted}
-                                  className={`px-6 py-4 border-2 rounded-2xl text-sm font-bold transition-all text-left ${
-                                    isCorrect 
-                                      ? "bg-green-500 border-green-500 text-white shadow-lg" 
-                                      : isWrong
-                                      ? "bg-red-500 border-red-500 text-white shadow-lg"
-                                      : isSelected
-                                      ? "bg-blue-500 border-blue-500 text-white shadow-md"
-                                      : "bg-white border-gray-200 text-slate-600 hover:border-blue-400 hover:bg-blue-50"
-                                  } ${submitted ? "cursor-default" : "cursor-pointer"}`}
-                                >
-                                  {opt}
-                                </button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="text-center py-12 text-gray-400">
-                      <p className="text-lg font-semibold mb-2">No questions found</p>
-                      <p className="text-sm">Please check back later.</p>
+                {selectedEx.content.questions.map((q, idx) => {
+                  const qKey = `q${idx + 1}`;
+                  return (
+                    <div key={idx} className="p-6 bg-gray-50 rounded-[2rem] border">
+                      <p className="font-bold text-xl mb-6">{idx + 1}. {q.questionText}</p>
+                      <div className="grid grid-cols-1 gap-3">
+                        {q.options.map((opt: string, i: number) => {
+                          const isCorrect = submitted && opt === selectedEx.answerKey[qKey];
+                          const isSelected = userAnswers[qKey] === opt;
+                          return (
+                            <button 
+                              key={i} 
+                              disabled={submitted}
+                              onClick={() => setUserAnswers({...userAnswers, [qKey]: opt})}
+                              className={`p-4 text-left border-2 rounded-2xl font-bold transition-all ${
+                                isCorrect ? "bg-green-500 border-green-500 text-white" :
+                                isSelected ? "bg-blue-500 border-blue-500 text-white" : "bg-white border-gray-200"
+                              }`}
+                            >
+                              {opt}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  )}
-                </div>
-
+                  );
+                })}
                 {!submitted ? (
-                  <button 
-                    onClick={() => setSubmitted(true)}
-                    disabled={(selectedEx.content?.questions || []).length === 0}
-                    className="w-full py-5 bg-slate-900 text-white rounded-[2.5rem] font-bold hover:bg-green-600 disabled:bg-gray-200 transition-all shadow-xl flex items-center justify-center gap-2"
-                  >
-                    <Check size={20} /> Submit My Answers
+                  <button onClick={() => setSubmitted(true)} className="w-full py-5 bg-black text-white rounded-[2rem] font-bold flex items-center justify-center gap-2">
+                    <Check size={20} /> Submit Answers
                   </button>
                 ) : (
-                  <button 
-                    onClick={() => setSelectedEx(null)}
-                    className="w-full py-5 bg-blue-600 text-white rounded-[2.5rem] font-bold hover:bg-blue-700 transition-all shadow-xl"
-                  >
-                    Finish Lesson
-                  </button>
+                  <button onClick={() => setSelectedEx(null)} className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-bold">Close Lesson</button>
                 )}
               </div>
             )}
@@ -430,7 +317,6 @@ function Activities() {
         </div>
       )}
 
-      {/* GLOBAL POPUP LOADER */}
       {isPopupLoading && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-white/70 backdrop-blur-md">
           <Loader2 className="animate-spin text-blue-600" size={50} />
