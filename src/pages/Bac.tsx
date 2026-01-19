@@ -5,7 +5,7 @@ import {
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
-import map from "../assets/img/map.png";
+import NigeriaMap from "../components/NigeriaMap";
 import logo from "../assets/img/vecteezy_ms-office-logo-on-transparent-background_14018577.jpg";
 
 interface GalleryHero {
@@ -48,12 +48,11 @@ function BAC() {
             })
             .finally(() => setLoadingHero(false));
 
-        // Fetch Event Images - REMOVED SLICE for infinite columns
+        // Fetch Event Images
         fetch(`${CLIENT_KEY}api/news`)
             .then(res => res.json())
             .then((data: any) => {
                 const rawData = Array.isArray(data) ? data : (data.data || []);
-                // Filters for events and shows ALL of them in the grid
                 const eventsOnly = rawData.filter((item: any) => item.category === "Event");
                 setEventImages(eventsOnly);
             })
@@ -150,6 +149,7 @@ function BAC() {
                     ))}
                 </div>
 
+                {/* LMS SECTION */}
                 <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-10 rounded-[3rem] shadow-xl border border-white/5 flex flex-col md:flex-row gap-8 w-[90%] max-w-6xl justify-between items-center">
                     <div className="flex items-center gap-6">
                         <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden shrink-0">
@@ -165,11 +165,18 @@ function BAC() {
                     </a>
                 </div>
 
-                <div className="w-full h-auto flex justify-center items-center flex-col gap-8 py-10">
-                    <h1 className="text-5xl font-serif font-bold text-slate-900">Our Presence</h1>
-                    <img src={map} alt="Map" className="w-[80%] md:w-[60%] h-auto opacity-90" />
+                {/* MAP SECTION - Integrated NigeriaMap here */}
+                <div className="w-[90%] max-w-7xl flex flex-col gap-8 py-10">
+                    <div className="space-y-2">
+                        <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900">Partner Universities</h2>
+                        <p className="text-gray-500">Explore the network of institutions participating in the French Embassy Fund project across Nigeria.</p>
+                    </div>
+                    <div className="rounded-[3rem] overflow-hidden border border-gray-100 shadow-xl bg-white p-2">
+                        <NigeriaMap />
+                    </div>
                 </div>
 
+                {/* EVALUATION SECTION */}
                 <div className="w-[90%] max-w-6xl overflow-hidden rounded-[3rem] bg-gradient-to-r from-red-600 to-red-700 text-white shadow-2xl relative group mb-12">
                     <div className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
                         <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
@@ -178,7 +185,7 @@ function BAC() {
                             </div>
                             <div className="max-w-md">
                                 <h1 className="text-3xl md:text-4xl font-serif font-bold mb-3">Evaluation Form</h1>
-                                <p className="text-red-50/90 text-lg leading-relaxed">Access the official evaluation portal for technical officers.</p>
+                                <p className="text-red-50/90 text-lg leading-relaxed">Access the official evaluation portal for faculty and students.</p>
                             </div>
                         </div>
                         <button onClick={() => handleRedirect(true)} className="whitespace-nowrap py-5 px-10 bg-white text-red-600 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-gray-100 hover:scale-105 active:scale-95 transition-all shadow-xl flex items-center gap-3">
@@ -187,14 +194,14 @@ function BAC() {
                     </div>
                 </div>
 
-                {/* IMAGE GALLERY: 3 per row (lg:grid-cols-3) and Unlimited columns (no slice) */}
+                {/* IMAGE GALLERY */}
                 <div ref={galleryRef} className="w-[90%] max-w-7xl py-20 scroll-mt-24">
                     <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
                         <div className="space-y-4">
                             <div className="flex items-center gap-2 text-blue-600 font-black text-xs uppercase tracking-widest">
                                 <ImageIcon size={14} /> <span>Event Visuals</span>
                             </div>
-                            <h2 className="text-4xl md:text-5xl font-serif font-bold text-slate-900">Project Highlight</h2>
+                            <h2 className="text-4xl md:text-5xl font-serif font-bold text-slate-900">Project Highlights</h2>
                         </div>
                         <p className="text-gray-500 max-w-sm text-sm">A visual journey through our latest French Embassy Fund workshops and events across Nigeria.</p>
                     </div>

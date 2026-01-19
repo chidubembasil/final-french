@@ -66,8 +66,8 @@ function Activities() {
   // Answer Tracking
   const [userAnswers, setUserAnswers] = useState<Record<string, string>>({});
 
-  // Replace with your actual API base URL
-  const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
+  // API base URL - update this with your actual API endpoint
+  const CLIENT_KEY = "";
 
   // ── 1. Initial Data Fetch (Hero & List) ────────────────────────
   useEffect(() => {
@@ -123,32 +123,44 @@ function Activities() {
       const json = await res.json();
       const rawData = json.data || json;
 
-      // Parse JSON strings safely
-      let parsedContent = rawData.content;
-      let parsedAnswerKey = rawData.answerKey;
-
+      // Parse the content string which contains an array of questions
+      let questionsArray = [];
       try {
-        parsedContent = typeof rawData.content === "string" ? JSON.parse(rawData.content) : rawData.content;
+        questionsArray = typeof rawData.content === "string" ? JSON.parse(rawData.content) : rawData.content;
       } catch (e) {
         console.error("Failed to parse content:", e);
-        parsedContent = { questions: [] };
+        questionsArray = [];
       }
 
-      try {
-        parsedAnswerKey = typeof rawData.answerKey === "string" ? JSON.parse(rawData.answerKey) : rawData.answerKey;
-      } catch (e) {
-        console.error("Failed to parse answerKey:", e);
-        parsedAnswerKey = {};
-      }
+      // Transform the questions to match expected format and build answerKey
+      const transformedQuestions = [];
+      const answerKey: Record<string, string> = {};
+
+      questionsArray.forEach((q: any, idx: number) => {
+        const qKey = `q${idx + 1}`;
+        
+        // Transform question structure
+        transformedQuestions.push({
+          questionText: q.question,
+          options: q.options || []
+        });
+        
+        // Build answer key - correctAnswer is 1-indexed in API, array is 0-indexed
+        const correctIndex = q.correctAnswer - 1;
+        if (q.options && q.options[correctIndex]) {
+          answerKey[qKey] = q.options[correctIndex];
+        }
+      });
 
       const parsedExercise: DetailedExercise = {
         ...rawData,
-        content: parsedContent,
-        answerKey: parsedAnswerKey,
+        content: { questions: transformedQuestions },
+        answerKey: answerKey,
       };
 
       console.log("Parsed Exercise:", parsedExercise);
       console.log("Questions:", parsedExercise.content?.questions);
+      console.log("Answer Key:", parsedExercise.answerKey);
 
       setSelectedEx(parsedExercise);
     } catch (err) {
