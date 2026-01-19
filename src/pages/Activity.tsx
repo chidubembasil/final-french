@@ -11,7 +11,8 @@ import {
   Loader2,
   Search,
   Check,
-  Trophy
+  Trophy,
+  AlertCircle
 } from "lucide-react";
 
 // --- Interfaces ---
@@ -55,9 +56,11 @@ function Activities() {
   const [currentPage, setCurrentPage] = useState(1);
   const exercisesPerPage = 8;
   const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
+  // 1. Load List View
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -67,9 +70,18 @@ function Activities() {
         ]);
         const heroJson = await heroRes.json();
         const exJson = await exRes.json();
-        const matchingHero = heroJson.find((item: any) => item.purpose === "Other Page" && item.subPurpose === "Activities");
+
+        const matchingHero = heroJson.find((item: any) => 
+          item.purpose === "Other Page" && item.subPurpose === "Activities"
+        );
         if (matchingHero) setHeroData(matchingHero);
-        setExercises(Array.isArray(exJson) ? exJson : (exJson.data || []));
+
+        // Normalize Strapi array response
+        const rawExercises = Array.isArray(exJson) ? exJson : (exJson.data || []);
+        setExercises(rawExercises.map((item: any) => ({
+            id: item.id,
+            ...(item.attributes || item)
+        })));
       } catch (err) {
         console.error("Fetch Error:", err);
       } finally {
@@ -80,37 +92,48 @@ function Activities() {
     fetchData();
   }, [CLIENT_KEY]);
 
+  // 2. Load Single Exercise (Corrects the 404/Parsing issues)
   const handleOpenExercise = async (id: number) => {
     setIsPopupLoading(true);
+    setFetchError(null);
     setModalStage('info');
     setSubmitted(false);
     setUserAnswers({});
     
     try {
       const res = await fetch(`${CLIENT_KEY}api/exercises/${id}`);
+      
+      if (!res.ok) {
+        throw new Error(`Exercise ${id} not found (404). Check if it's published.`);
+      }
+
       const json = await res.json();
       const rawData = json.data || json;
+      
+      // Flatten Strapi v4 attributes if they exist
+      const data = rawData.attributes ? { id: rawData.id, ...rawData.attributes } : rawData;
 
       let parsedContent: RawQuestion[] = [];
-      if (rawData.content) {
+      if (data.content) {
         try {
-          parsedContent = typeof rawData.content === 'string' 
-            ? JSON.parse(rawData.content) 
-            : rawData.content;
+          parsedContent = typeof data.content === 'string' 
+            ? JSON.parse(data.content) 
+            : data.content;
         } catch (e) {
-          console.error("Failed to parse exercise content:", e);
+          console.error("JSON Parsing failed for exercise content", e);
         }
       }
 
-      setSelectedEx({ ...rawData, content: parsedContent });
-    } catch (err) {
+      setSelectedEx({ ...data, content: parsedContent });
+    } catch (err: any) {
+      setFetchError(err.message || "Failed to load activity");
       console.error("Detail Fetch Error:", err);
     } finally {
       setIsPopupLoading(false);
     }
   };
 
-  // --- Score Calculation ---
+  // 3. Logic & Filtering
   const score = useMemo(() => {
     if (!selectedEx || !submitted) return 0;
     return selectedEx.content.reduce((acc, q, idx) => {
@@ -140,7 +163,7 @@ function Activities() {
   return (
     <main className="pt-20 bg-[#fcfaf8] min-h-screen">
       {/* HERO SECTION */}
-      <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
+      <div className="relative w-full h-[70dvh] overflow-hidden bg-slate-900">
         {!loadingHero && heroData && (
           <>
             <img src={heroData.mediaUrl} className="absolute inset-0 w-full h-full object-cover z-0" alt="Hero" />
@@ -164,17 +187,17 @@ function Activities() {
             <p className="text-[10px] font-black uppercase text-blue-600 mb-2 ml-1">Search Activity</p>
             <div className="relative">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <input type="text" placeholder="Search..." className="w-full pl-14 pr-6 py-4 rounded-2xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-600" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+              <input type="text" placeholder="Search..." className="w-full pl-14 pr-6 py-4 rounded-2xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-600 shadow-inner" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             </div>
           </div>
           <div className="flex gap-2">
             {["All", "MCQ", "Gap Filling"].map((t) => (
-              <button key={t} onClick={() => setActiveType(t)} className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase ${activeType === t ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-400"}`}>{t}</button>
+              <button key={t} onClick={() => {setActiveType(t); setCurrentPage(1);}} className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${activeType === t ? "bg-blue-600 text-white shadow-lg" : "bg-gray-100 text-gray-400"}`}>{t}</button>
             ))}
           </div>
           <div className="flex gap-2">
             {["All", "Beginner", "Advanced"].map((d) => (
-              <button key={d} onClick={() => setActiveDifficulty(d)} className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase ${activeDifficulty === d ? "bg-red-600 text-white" : "bg-gray-100 text-gray-400"}`}>{d}</button>
+              <button key={d} onClick={() => {setActiveDifficulty(d); setCurrentPage(1);}} className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${activeDifficulty === d ? "bg-red-600 text-white shadow-lg" : "bg-gray-100 text-gray-400"}`}>{d}</button>
             ))}
           </div>
         </div>
@@ -184,13 +207,13 @@ function Activities() {
           {loading ? (
             <div className="col-span-full flex justify-center py-20"><Loader2 className="animate-spin text-blue-600" size={40} /></div>
           ) : currentExercises.map((item) => (
-            <div key={item.id} className="group bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm hover:shadow-2xl transition-all flex flex-col justify-between">
+            <div key={item.id} className="group bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm hover:shadow-2xl transition-all flex flex-col justify-between transform hover:-translate-y-2">
               <div>
-                <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-6 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all">
+                <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-6 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
                   {getIcon(item.exerciseType)}
                 </div>
                 <h3 className="text-2xl font-bold text-slate-800 mb-2">{item.title}</h3>
-                <p className="text-gray-500 text-sm line-clamp-3 mb-6">{item.description}</p>
+                <p className="text-gray-500 text-sm line-clamp-3 mb-6 leading-relaxed">{item.description}</p>
               </div>
               <button onClick={() => handleOpenExercise(item.id)} className="flex items-center gap-2 font-bold text-blue-700 mt-auto group/btn">
                 Start Activity <ArrowRight size={18} className="group-hover/btn:translate-x-2 transition-transform" />
@@ -201,56 +224,62 @@ function Activities() {
 
         {/* PAGINATION */}
         {totalPages > 1 && (
-          <div className="flex justify-center items-center gap-4">
-            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-4 bg-white rounded-2xl border disabled:opacity-20"><ChevronLeft /></button>
-            <span className="font-bold text-gray-400">Page {currentPage} of {totalPages}</span>
-            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="p-4 bg-white rounded-2xl border disabled:opacity-20"><ChevronRight /></button>
+          <div className="flex justify-center items-center gap-4 py-8">
+            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-4 bg-white rounded-2xl border hover:bg-gray-50 disabled:opacity-20 transition-all shadow-sm"><ChevronLeft /></button>
+            <span className="font-bold text-gray-500 bg-white px-6 py-3 rounded-2xl border shadow-sm">Page {currentPage} of {totalPages}</span>
+            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="p-4 bg-white rounded-2xl border hover:bg-gray-50 disabled:opacity-20 transition-all shadow-sm"><ChevronRight /></button>
           </div>
         )}
       </section>
 
       {/* EXERCISE MODAL */}
-      {selectedEx && (
+      {(selectedEx || fetchError) && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-sm" onClick={() => setSelectedEx(null)} />
-          <div className="relative bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[3rem] p-10 shadow-2xl">
-            <button onClick={() => setSelectedEx(null)} className="absolute top-8 right-8 p-2 hover:bg-gray-100 rounded-full"><X size={24} /></button>
+          <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-md" onClick={() => {setSelectedEx(null); setFetchError(null);}} />
+          <div className="relative bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[3.5rem] p-10 shadow-2xl">
+            <button onClick={() => {setSelectedEx(null); setFetchError(null);}} className="absolute top-8 right-8 p-3 hover:bg-gray-100 rounded-full transition-colors"><X size={24} /></button>
 
-            {modalStage === 'info' ? (
-              <div className="text-center py-4">
-                <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-3xl flex items-center justify-center mx-auto mb-6">{getIcon(selectedEx.exerciseType)}</div>
-                <h2 className="text-3xl font-bold text-slate-900 mb-4">{selectedEx.title}</h2>
-                <p className="text-gray-600 text-lg mb-10">{selectedEx.description}</p>
-                <button onClick={() => setModalStage('test')} className="w-full py-5 bg-blue-600 text-white rounded-[2rem] font-bold shadow-xl flex items-center justify-center gap-3">
-                  Proceed to Exercise <ArrowRight size={20} />
-                </button>
+            {fetchError ? (
+              <div className="text-center py-10">
+                <AlertCircle size={60} className="mx-auto text-red-500 mb-4" />
+                <h2 className="text-2xl font-bold mb-2">Oops! Something went wrong</h2>
+                <p className="text-gray-500 mb-8">{fetchError}</p>
+                <button onClick={() => setFetchError(null)} className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-bold">Close</button>
               </div>
-            ) : (
-              <div className="space-y-8">
-                {/* Score Header */}
-                {submitted && (
-                  <div className="bg-blue-600 rounded-[2rem] p-8 text-white flex items-center justify-between mb-8 shadow-xl">
-                    <div>
-                      <h3 className="text-2xl font-bold flex items-center gap-2"><Trophy size={28}/> Activity Complete!</h3>
-                      <p className="opacity-80">You've successfully finished this exercise.</p>
-                    </div>
-                    <div className="text-right">
-                      <span className="text-4xl font-black">{score}</span>
-                      <span className="text-xl opacity-60"> / {selectedEx.content.length}</span>
-                    </div>
-                  </div>
-                )}
-
-                <div className="border-b pb-4">
-                    <h2 className="text-2xl font-bold">{selectedEx.title}</h2>
-                    <p className="text-sm text-gray-400">{submitted ? "Review your answers below." : "Select the correct answers below."}</p>
+            ) : selectedEx && (
+              modalStage === 'info' ? (
+                <div className="text-center py-4">
+                  <div className="w-24 h-24 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner">{getIcon(selectedEx.exerciseType)}</div>
+                  <h2 className="text-4xl font-bold text-slate-900 mb-4">{selectedEx.title}</h2>
+                  <p className="text-gray-600 text-lg mb-10 leading-relaxed">{selectedEx.description}</p>
+                  <button onClick={() => setModalStage('test')} className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] font-bold shadow-xl flex items-center justify-center gap-3 hover:bg-blue-700 transition-all">
+                    Proceed to Exercise <ArrowRight size={22} />
+                  </button>
                 </div>
-                
-                {selectedEx.content && selectedEx.content.length > 0 ? (
-                  selectedEx.content.map((q, idx) => (
-                    <div key={idx} className={`p-8 rounded-[2.5rem] border transition-colors ${submitted ? "bg-white border-gray-200" : "bg-gray-50 border-gray-100"}`}>
-                      <p className="font-bold text-xl mb-6 flex gap-4">
-                          <span className="bg-blue-600 text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0">{idx + 1}</span>
+              ) : (
+                <div className="space-y-8">
+                  {submitted && (
+                    <div className="bg-blue-600 rounded-[2.5rem] p-8 text-white flex items-center justify-between mb-8 shadow-2xl">
+                      <div>
+                        <h3 className="text-2xl font-bold flex items-center gap-2"><Trophy size={28}/> Well Done!</h3>
+                        <p className="opacity-80">Activity completed successfully.</p>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-5xl font-black">{score}</span>
+                        <span className="text-xl opacity-60"> / {selectedEx.content.length}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="border-b pb-6">
+                      <h2 className="text-3xl font-bold text-slate-900">{selectedEx.title}</h2>
+                      <p className="text-gray-400 mt-1">{submitted ? "Review your results below." : "Carefully select the best answer for each question."}</p>
+                  </div>
+                  
+                  {selectedEx.content.map((q, idx) => (
+                    <div key={idx} className={`p-8 rounded-[3rem] border transition-all ${submitted ? "bg-white border-gray-100" : "bg-gray-50 border-transparent shadow-inner"}`}>
+                      <p className="font-bold text-xl mb-6 flex gap-4 leading-snug">
+                          <span className="bg-blue-600 text-white w-9 h-9 rounded-xl flex items-center justify-center text-sm shrink-0 shadow-md">{idx + 1}</span>
                           {q.question}
                       </p>
                       <div className="grid grid-cols-1 gap-3">
@@ -264,41 +293,43 @@ function Activities() {
                               key={i}
                               disabled={submitted}
                               onClick={() => setUserAnswers(prev => ({ ...prev, [idx]: opt }))}
-                              className={`px-6 py-4 border-2 rounded-2xl text-left font-bold transition-all relative ${
+                              className={`px-7 py-5 border-2 rounded-[1.8rem] text-left font-bold transition-all relative ${
                                 isCorrect ? "bg-green-500 border-green-500 text-white shadow-lg" :
                                 isWrong ? "bg-red-500 border-red-500 text-white shadow-lg" :
-                                isSelected ? "bg-blue-600 border-blue-600 text-white shadow-md" : "bg-white border-gray-200 hover:border-blue-400"
+                                isSelected ? "bg-blue-600 border-blue-600 text-white shadow-md" : "bg-white border-gray-100 hover:border-blue-400 hover:shadow-md"
                               }`}
                             >
                               {opt}
-                              {isCorrect && submitted && <Check className="absolute right-4 top-1/2 -translate-y-1/2" size={20}/>}
-                              {isWrong && submitted && <X className="absolute right-4 top-1/2 -translate-y-1/2" size={20}/>}
+                              {isCorrect && submitted && <Check className="absolute right-6 top-1/2 -translate-y-1/2" size={24}/>}
+                              {isWrong && submitted && <X className="absolute right-6 top-1/2 -translate-y-1/2" size={24}/>}
                             </button>
                           );
                         })}
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <div className="text-center py-10 text-gray-400">No questions found for this exercise.</div>
-                )}
-                
-                {!submitted ? (
-                  <button onClick={() => setSubmitted(true)} className="w-full py-5 bg-slate-900 text-white rounded-[2.5rem] font-bold hover:bg-green-600 flex items-center justify-center gap-2 transition-all">
-                    <Check size={20} /> Submit My Answers
-                  </button>
-                ) : (
-                  <button onClick={() => setSelectedEx(null)} className="w-full py-5 bg-blue-600 text-white rounded-[2.5rem] font-bold shadow-lg hover:bg-blue-700 transition-all">Finish Lesson</button>
-                )}
-              </div>
+                  ))}
+                  
+                  {!submitted ? (
+                    <button onClick={() => setSubmitted(true)} className="w-full py-6 bg-slate-900 text-white rounded-[2.5rem] font-bold hover:bg-green-600 flex items-center justify-center gap-2 transition-all shadow-xl">
+                      <Check size={22} /> Finalize and Submit
+                    </button>
+                  ) : (
+                    <button onClick={() => {setSelectedEx(null); setSubmitted(false);}} className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] font-bold shadow-lg hover:bg-blue-700 transition-all">Back to Activities</button>
+                  )}
+                </div>
+              )
             )}
           </div>
         </div>
       )}
 
+      {/* GLOBAL LOADING OVERLAY */}
       {isPopupLoading && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-white/70 backdrop-blur-md">
-          <Loader2 className="animate-spin text-blue-600" size={50} />
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-white/80 backdrop-blur-md">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="animate-spin text-blue-600" size={60} />
+            <p className="font-bold text-blue-900 animate-pulse">Loading Activity...</p>
+          </div>
         </div>
       )}
     </main>
