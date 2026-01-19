@@ -49,7 +49,8 @@ const MapController = ({ geoData, searchQuery }: { geoData: any, searchQuery: st
       );
 
       if (stateMatch && geoData) {
-        const layer = L.geoJSON(geoData).getLayers().find((l: any) => 
+        const layers = L.geoJSON(geoData).getLayers();
+        const layer = layers.find((l: any) => 
           l.feature.properties.adm1_name === stateMatch
         ) as L.Polyline;
         
@@ -69,13 +70,16 @@ const NigeriaMap: React.FC = () => {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetch('/nga_admin1.geojson') // Ensure this is in your /public folder
+    fetch('/nga_admin1.geojson') 
       .then((res) => res.json())
       .then((data) => {
         setGeoData(data);
         setIsLoading(false);
       })
-      .catch((err) => console.error("Map Load Error:", err));
+      .catch((err) => {
+        console.error("Map Load Error:", err);
+        setIsLoading(false);
+      });
   }, []);
 
   const stateStyle = useCallback((feature: any) => {
@@ -84,12 +88,12 @@ const NigeriaMap: React.FC = () => {
       fillColor: isHighlighted ? '#4169E1' : '#ffffff',
       weight: 1.2,
       opacity: 1,
-      color: '#CBD5E1', // Slate-300
+      color: '#CBD5E1', 
       fillOpacity: isHighlighted ? 0.7 : 1,
     };
   }, []);
 
-  const onEachState = (feature: any, layer: L.Layer) => {
+  const onEachState = useCallback((feature: any, layer: L.Layer) => {
     const stateName = feature.properties.adm1_name;
     const schools = SCHOOL_DATA[stateName];
 
@@ -111,11 +115,18 @@ const NigeriaMap: React.FC = () => {
     }
 
     layer.on({
-      mouseover: (e) => { e.target.setStyle({ fillOpacity: 0.9, weight: 2, color: '#4169E1' }); },
-      mouseout: (e) => { e.target.setStyle(stateStyle(feature)); },
-      click: (e) => { map.fitBounds(e.target.getBounds()); }
+      mouseover: (e) => { 
+        e.target.setStyle({ fillOpacity: 0.9, weight: 2, color: '#4169E1' }); 
+      },
+      mouseout: (e) => { 
+        e.target.setStyle(stateStyle(feature)); 
+      },
+      click: (e) => { 
+        const mapInstance = e.target._map;
+        mapInstance.fitBounds(e.target.getBounds()); 
+      }
     });
-  };
+  }, [stateStyle]);
 
   if (isLoading) return (
     <div className="h-[500px] w-full flex flex-col items-center justify-center bg-slate-50 rounded-[2.5rem]">
@@ -143,7 +154,12 @@ const NigeriaMap: React.FC = () => {
 
         <MapContainer center={[9.082, 8.675]} zoom={6} className="h-full w-full outline-none">
           <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" />
-          <GeoJSON data={geoData} style={stateStyle} onEachFeature={onEachState} />
+          <GeoJSON 
+            key={geoData ? 'loaded' : 'loading'} 
+            data={geoData} 
+            style={stateStyle} 
+            onEachFeature={onEachState} 
+          />
           <MapController geoData={geoData} searchQuery={search} />
         </MapContainer>
       </div>

@@ -133,7 +133,10 @@ function Activities() {
       }
 
       // Transform the questions to match expected format and build answerKey
-      const transformedQuestions = [];
+      const transformedQuestions: Array<{
+        questionText: string;
+        options: string[];
+      }> = [];
       const answerKey: Record<string, string> = {};
 
       questionsArray.forEach((q: any, idx: number) => {
