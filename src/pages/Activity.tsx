@@ -10,7 +10,8 @@ import {
   X,
   Loader2,
   Search,
-  Check
+  Check,
+  Trophy
 } from "lucide-react";
 
 // --- Interfaces ---
@@ -90,12 +91,15 @@ function Activities() {
       const json = await res.json();
       const rawData = json.data || json;
 
-      // ROBUST PARSING: Your API sends content as a stringified JSON array
       let parsedContent: RawQuestion[] = [];
-      if (typeof rawData.content === 'string') {
-        parsedContent = JSON.parse(rawData.content);
-      } else if (Array.isArray(rawData.content)) {
-        parsedContent = rawData.content;
+      if (rawData.content) {
+        try {
+          parsedContent = typeof rawData.content === 'string' 
+            ? JSON.parse(rawData.content) 
+            : rawData.content;
+        } catch (e) {
+          console.error("Failed to parse exercise content:", e);
+        }
       }
 
       setSelectedEx({ ...rawData, content: parsedContent });
@@ -105,6 +109,14 @@ function Activities() {
       setIsPopupLoading(false);
     }
   };
+
+  // --- Score Calculation ---
+  const score = useMemo(() => {
+    if (!selectedEx || !submitted) return 0;
+    return selectedEx.content.reduce((acc, q, idx) => {
+      return userAnswers[idx] === q.options[q.correctAnswer] ? acc + 1 : acc;
+    }, 0);
+  }, [selectedEx, submitted, userAnswers]);
 
   const filteredExercises = useMemo(() => {
     return exercises.filter((ex) => {
@@ -128,7 +140,7 @@ function Activities() {
   return (
     <main className="pt-20 bg-[#fcfaf8] min-h-screen">
       {/* HERO SECTION */}
-      <div className="relative w-full h-[60dvh] overflow-hidden bg-slate-900">
+      <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
         {!loadingHero && heroData && (
           <>
             <img src={heroData.mediaUrl} className="absolute inset-0 w-full h-full object-cover z-0" alt="Hero" />
@@ -215,46 +227,68 @@ function Activities() {
               </div>
             ) : (
               <div className="space-y-8">
-                <div className="border-b pb-4">
-                    <h2 className="text-2xl font-bold">{selectedEx.title}</h2>
-                    <p className="text-sm text-gray-400">Select the correct answers below.</p>
-                </div>
-                {selectedEx.content.map((q, idx) => (
-                  <div key={idx} className="p-8 bg-gray-50 rounded-[2.5rem] border border-gray-100">
-                    <p className="font-bold text-xl mb-6 flex gap-4">
-                        <span className="bg-blue-600 text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0">{idx + 1}</span>
-                        {q.question}
-                    </p>
-                    <div className="grid grid-cols-1 gap-3">
-                      {q.options.map((opt, i) => {
-                        const isSelected = userAnswers[idx] === opt;
-                        const isCorrect = submitted && i === q.correctAnswer;
-                        const isWrong = submitted && isSelected && i !== q.correctAnswer;
-
-                        return (
-                          <button
-                            key={i}
-                            disabled={submitted}
-                            onClick={() => setUserAnswers(prev => ({ ...prev, [idx]: opt }))}
-                            className={`px-6 py-4 border-2 rounded-2xl text-left font-bold transition-all ${
-                              isCorrect ? "bg-green-500 border-green-500 text-white shadow-lg" :
-                              isWrong ? "bg-red-500 border-red-500 text-white shadow-lg" :
-                              isSelected ? "bg-blue-600 border-blue-600 text-white shadow-md" : "bg-white border-gray-200 hover:border-blue-400"
-                            }`}
-                          >
-                            {opt}
-                          </button>
-                        );
-                      })}
+                {/* Score Header */}
+                {submitted && (
+                  <div className="bg-blue-600 rounded-[2rem] p-8 text-white flex items-center justify-between mb-8 shadow-xl">
+                    <div>
+                      <h3 className="text-2xl font-bold flex items-center gap-2"><Trophy size={28}/> Activity Complete!</h3>
+                      <p className="opacity-80">You've successfully finished this exercise.</p>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-4xl font-black">{score}</span>
+                      <span className="text-xl opacity-60"> / {selectedEx.content.length}</span>
                     </div>
                   </div>
-                ))}
+                )}
+
+                <div className="border-b pb-4">
+                    <h2 className="text-2xl font-bold">{selectedEx.title}</h2>
+                    <p className="text-sm text-gray-400">{submitted ? "Review your answers below." : "Select the correct answers below."}</p>
+                </div>
+                
+                {selectedEx.content && selectedEx.content.length > 0 ? (
+                  selectedEx.content.map((q, idx) => (
+                    <div key={idx} className={`p-8 rounded-[2.5rem] border transition-colors ${submitted ? "bg-white border-gray-200" : "bg-gray-50 border-gray-100"}`}>
+                      <p className="font-bold text-xl mb-6 flex gap-4">
+                          <span className="bg-blue-600 text-white w-8 h-8 rounded-lg flex items-center justify-center text-sm shrink-0">{idx + 1}</span>
+                          {q.question}
+                      </p>
+                      <div className="grid grid-cols-1 gap-3">
+                        {q.options.map((opt, i) => {
+                          const isSelected = userAnswers[idx] === opt;
+                          const isCorrect = submitted && i === q.correctAnswer;
+                          const isWrong = submitted && isSelected && i !== q.correctAnswer;
+
+                          return (
+                            <button
+                              key={i}
+                              disabled={submitted}
+                              onClick={() => setUserAnswers(prev => ({ ...prev, [idx]: opt }))}
+                              className={`px-6 py-4 border-2 rounded-2xl text-left font-bold transition-all relative ${
+                                isCorrect ? "bg-green-500 border-green-500 text-white shadow-lg" :
+                                isWrong ? "bg-red-500 border-red-500 text-white shadow-lg" :
+                                isSelected ? "bg-blue-600 border-blue-600 text-white shadow-md" : "bg-white border-gray-200 hover:border-blue-400"
+                              }`}
+                            >
+                              {opt}
+                              {isCorrect && submitted && <Check className="absolute right-4 top-1/2 -translate-y-1/2" size={20}/>}
+                              {isWrong && submitted && <X className="absolute right-4 top-1/2 -translate-y-1/2" size={20}/>}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-10 text-gray-400">No questions found for this exercise.</div>
+                )}
+                
                 {!submitted ? (
                   <button onClick={() => setSubmitted(true)} className="w-full py-5 bg-slate-900 text-white rounded-[2.5rem] font-bold hover:bg-green-600 flex items-center justify-center gap-2 transition-all">
                     <Check size={20} /> Submit My Answers
                   </button>
                 ) : (
-                  <button onClick={() => setSelectedEx(null)} className="w-full py-5 bg-blue-600 text-white rounded-[2.5rem] font-bold">Finish Lesson</button>
+                  <button onClick={() => setSelectedEx(null)} className="w-full py-5 bg-blue-600 text-white rounded-[2.5rem] font-bold shadow-lg hover:bg-blue-700 transition-all">Finish Lesson</button>
                 )}
               </div>
             )}
