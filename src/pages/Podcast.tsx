@@ -1,5 +1,5 @@
-import { Headphones, Search, X, PlayCircle, ChevronLeft, ChevronRight, ArrowLeft, Calendar, User, MapPin, Layers, Copy, Download, Check, Loader2 } from "lucide-react";
-import { useState, useEffect,  useMemo } from 'react';
+import { Headphones, Search, X, PlayCircle, ChevronLeft, ChevronRight, ArrowLeft, Calendar, User, Layers, Copy, Download, Check, Loader2 } from "lucide-react";
+import { useState, useEffect, useMemo } from 'react';
 
 interface Podcast {
   id: number;
@@ -14,9 +14,12 @@ interface Podcast {
   topic: string;
   cefrLevel: string;
   audience: string;
-  state: string; // The Nigerian State
+  state: string;
+  status?: string;
   updatedAt: string;
   downloadable?: boolean;
+  publishedAt?: string;
+  createdAt?: string;
 }
 
 interface GalleryHero {
@@ -33,7 +36,6 @@ function Podcast() {
   
   const [levelFilter, setLevelFilter] = useState<string>('All');
   const [mediaFilter, setMediaFilter] = useState<string>('All');
-  const [stateFilter, setStateFilter] = useState<string>('All');
   const [topicFilter, setTopicFilter] = useState<string>('All');
   const [search, setSearch] = useState<string>('');
   const [copied, setCopied] = useState(false);
@@ -43,13 +45,11 @@ function Podcast() {
   const itemsPerPage = 6;
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
-  const NIGERIAN_STATES = [
-    "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno",
-    "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "Gombe", "Imo",
-    "Jigawa", "Kaduna", "Kano", "Katsina", "Kebbi", "Kogi", "Kwara", "Lagos",
-    "Nasarawa", "Niger", "Ogun", "Ondo", "Osun", "Oyo", "Plateau", "Rivers",
-    "Sokoto", "Taraba", "Yobe", "Zamfara", "FCT"
-  ];
+  // Extract unique topics from podcasts data
+  const availableTopics = useMemo(() => {
+    const topics = podcasts.map(p => p.topic).filter(Boolean);
+    return Array.from(new Set(topics)).sort();
+  }, [podcasts]);
 
   useEffect(() => {
     fetch(`${CLIENT_KEY}api/galleries`)
@@ -74,12 +74,11 @@ function Podcast() {
                           item.description.toLowerCase().includes(search.toLowerCase());
       const matchesLevel = levelFilter === 'All' || item.cefrLevel === levelFilter;
       const matchesMedia = mediaFilter === 'All' || item.mediaType.toLowerCase() === mediaFilter.toLowerCase();
-      const matchesState = stateFilter === 'All' || item.state === stateFilter;
       const matchesTopic = topicFilter === 'All' || item.topic === topicFilter;
 
-      return matchesSearch && matchesLevel && matchesMedia && matchesState && matchesTopic;
+      return matchesSearch && matchesLevel && matchesMedia && matchesTopic;
     });
-  }, [podcasts, search, levelFilter, mediaFilter, stateFilter, topicFilter]);
+  }, [podcasts, search, levelFilter, mediaFilter, topicFilter]);
 
   const currentPodcasts = filteredPodcasts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(filteredPodcasts.length / itemsPerPage);
@@ -102,7 +101,7 @@ function Podcast() {
 
   return (
     <main className="pt-20 bg-gray-50/50 min-h-screen relative">
-      {/* Original Cover Section Untouched */}
+      {/* Hero Section */}
       <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
         {loadingHero ? (
           <div className="absolute inset-0 bg-slate-800 animate-pulse" />
@@ -131,40 +130,56 @@ function Podcast() {
       {/* Filters and Content */}
       <div className="px-4 md:px-8 py-12 max-w-7xl mx-auto">
         <div className="flex flex-col gap-6 mb-12 bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input 
                 type="text" 
-                placeholder="Search..." 
+                placeholder="Search podcasts..." 
                 className="w-full pl-11 pr-4 py-3 rounded-2xl border border-gray-200 bg-gray-50/50 outline-none focus:ring-2 focus:ring-blue-500" 
                 value={search} 
                 onChange={(e) => setSearch(e.target.value)} 
               />
             </div>
-            <select className="px-4 py-3 rounded-2xl border border-gray-200 bg-gray-50/50 font-bold text-sm outline-none" value={topicFilter} onChange={(e) => setTopicFilter(e.target.value)}>
+            <select 
+              className="px-4 py-3 rounded-2xl border border-gray-200 bg-gray-50/50 font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500" 
+              value={topicFilter} 
+              onChange={(e) => setTopicFilter(e.target.value)}
+            >
               <option value="All">All Topics</option>
-              {['Pronunciation', 'Grammar', 'Conversation', 'Culture', 'Basics', 'Node.js'].map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-            <select className="px-4 py-3 rounded-2xl border border-gray-200 bg-gray-50/50 font-bold text-sm outline-none" value={stateFilter} onChange={(e) => setStateFilter(e.target.value)}>
-              <option value="All">All States (Nigeria)</option>
-              {NIGERIAN_STATES.map(s => <option key={s} value={s}>{s}</option>)}
+              {availableTopics.map(t => <option key={t} value={t}>{t}</option>)}
             </select>
             <div className="flex bg-gray-100 p-1 rounded-xl">
               {['All', 'Audio', 'Video'].map(m => (
-                <button key={m} onClick={() => setMediaFilter(m)} className={`flex-1 rounded-lg text-xs font-bold transition-all ${mediaFilter === m ? 'bg-white text-blue-800 shadow-sm' : 'text-gray-500'}`}>{m}</button>
+                <button 
+                  key={m} 
+                  onClick={() => setMediaFilter(m)} 
+                  className={`flex-1 py-3 rounded-lg text-xs font-bold transition-all ${mediaFilter === m ? 'bg-white text-blue-800 shadow-sm' : 'text-gray-500'}`}
+                >
+                  {m}
+                </button>
               ))}
             </div>
           </div>
           <div className="flex gap-2 pt-4 border-t border-gray-100 overflow-x-auto no-scrollbar">
             {['All', 'A1', 'A2', 'B1', 'B2', 'C1'].map(lvl => (
-              <button key={lvl} onClick={() => setLevelFilter(lvl)} className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all shrink-0 ${levelFilter === lvl ? 'bg-blue-800 border-blue-800 text-white' : 'bg-white border-gray-200 text-gray-600'}`}>{lvl}</button>
+              <button 
+                key={lvl} 
+                onClick={() => setLevelFilter(lvl)} 
+                className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all shrink-0 ${levelFilter === lvl ? 'bg-blue-800 border-blue-800 text-white' : 'bg-white border-gray-200 text-gray-600'}`}
+              >
+                {lvl}
+              </button>
             ))}
           </div>
         </div>
 
         {loadingPodcasts ? (
           <div className="flex justify-center py-24"><Loader2 className="animate-spin text-blue-600" size={48}/></div>
+        ) : filteredPodcasts.length === 0 ? (
+          <div className="text-center py-24">
+            <p className="text-gray-400 text-lg font-bold">No podcasts found matching your filters</p>
+          </div>
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -188,7 +203,7 @@ function Podcast() {
                     <p className="text-gray-500 text-sm line-clamp-2 mb-6 flex-grow">{item.description}</p>
                     
                     <div className="mb-6 py-4 border-y border-gray-50 flex items-center justify-between text-[10px] font-black text-gray-400 uppercase">
-                       <span className="flex items-center gap-1"><MapPin size={12} className="text-blue-500"/> {item.state}</span>
+                       <span className="flex items-center gap-1"><Layers size={12} className="text-blue-500"/> {item.topic}</span>
                        <span className="flex items-center gap-1"><User size={12}/> {item.audience}</span>
                     </div>
 
@@ -238,12 +253,12 @@ function Podcast() {
           <div className="flex-1 w-full max-w-4xl mx-auto px-6 py-12" onClick={e => e.stopPropagation()}>
             <div className="space-y-8">
               <div className="flex gap-2">
-                <span className="px-3 py-1 bg-blue-600 text-white text-[10px] font-black uppercase rounded-lg">{activePodcast.state}</span>
+                <span className="px-3 py-1 bg-blue-600 text-white text-[10px] font-black uppercase rounded-lg">{activePodcast.topic}</span>
                 <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-lg">{activePodcast.cefrLevel}</span>
               </div>
               <h2 className="text-4xl md:text-6xl font-bold font-serif text-slate-900 leading-tight">{activePodcast.title}</h2>
               <div className="flex flex-wrap gap-6 py-4 border-b border-gray-100 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                <span className="flex items-center gap-2"><MapPin size={14} className="text-blue-600"/> {activePodcast.state}, Nigeria</span>
+                <span className="flex items-center gap-2"><User size={14} className="text-blue-600"/> {activePodcast.audience}</span>
                 <span className="flex items-center gap-2"><Calendar size={14}/> {new Date(activePodcast.updatedAt).toLocaleDateString()}</span>
                 <span className="flex items-center gap-2"><Layers size={14}/> ID: {activePodcast.id}</span>
               </div>
@@ -258,6 +273,18 @@ function Podcast() {
                   {activePodcast.audioUrl && (
                     <a href={activePodcast.audioUrl} download className="p-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all"><Download size={20}/></a>
                   )}
+                </div>
+              )}
+
+              {activePodcast.mediaType === 'video' && activePodcast.videoUrl && (
+                <div className="aspect-video rounded-[2.5rem] overflow-hidden shadow-2xl">
+                  <iframe 
+                    className="w-full h-full" 
+                    src={`https://www.youtube.com/embed/${getYouTubeID(activePodcast.videoUrl)}`} 
+                    title={activePodcast.title} 
+                    frameBorder="0" 
+                    allowFullScreen 
+                  />
                 </div>
               )}
 

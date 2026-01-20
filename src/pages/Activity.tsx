@@ -12,7 +12,8 @@ import {
   Search,
   Check,
   Trophy,
-  AlertCircle
+  AlertCircle,
+  XCircle
 } from "lucide-react";
 
 // --- Interfaces ---
@@ -45,8 +46,7 @@ function Activities() {
   const [exercises, setExercises] = useState<Exercise[]>([]);
   const [heroData, setHeroData] = useState<GalleryHero | null>(null);
   const [selectedEx, setSelectedEx] = useState<DetailedExercise | null>(null);
-  const [modalStage, setModalStage] = useState<'info' | 'test'>('info');
-  const [submitted, setSubmitted] = useState(false);
+  const [modalStage, setModalStage] = useState<'info' | 'test' | 'result'>('info');
   const [loading, setLoading] = useState(true);
   const [loadingHero, setLoadingHero] = useState(true);
   const [isPopupLoading, setIsPopupLoading] = useState(false);
@@ -55,7 +55,7 @@ function Activities() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const exercisesPerPage = 8;
-  const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
+  const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
   const [fetchError, setFetchError] = useState<string | null>(null);
 
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
@@ -92,12 +92,11 @@ function Activities() {
     fetchData();
   }, [CLIENT_KEY]);
 
-  // 2. Load Single Exercise (Corrects the 404/Parsing issues)
+  // 2. Load Single Exercise with Enhanced Console Logging
   const handleOpenExercise = async (id: number) => {
     setIsPopupLoading(true);
     setFetchError(null);
     setModalStage('info');
-    setSubmitted(false);
     setUserAnswers({});
     
     try {
@@ -108,10 +107,15 @@ function Activities() {
       }
 
       const json = await res.json();
+      console.log("📦 Full API Response:", json);
+      
       const rawData = json.data || json;
       
       // Flatten Strapi v4 attributes if they exist
       const data = rawData.attributes ? { id: rawData.id, ...rawData.attributes } : rawData;
+      
+      console.log("📋 Extracted Exercise Data:", data);
+      console.log("📝 Description:", data.description);
 
       let parsedContent: RawQuestion[] = [];
       if (data.content) {
@@ -119,27 +123,65 @@ function Activities() {
           parsedContent = typeof data.content === 'string' 
             ? JSON.parse(data.content) 
             : data.content;
+          
+          console.log("❓ Total Questions:", parsedContent.length);
+          
+          // Log each question with its details
+          parsedContent.forEach((q, idx) => {
+            console.log(`\n--- Question ${idx + 1} ---`);
+            console.log("Question:", q.question);
+            console.log("Options:", q.options);
+            console.log("Correct Answer Index:", q.correctAnswer);
+            console.log("Correct Answer:", q.options[q.correctAnswer]);
+          });
+          
         } catch (e) {
-          console.error("JSON Parsing failed for exercise content", e);
+          console.error("❌ JSON Parsing failed for exercise content", e);
+          throw new Error("Failed to parse exercise questions");
         }
+      } else {
+        console.warn("⚠️ No content field found in exercise data");
       }
 
       setSelectedEx({ ...data, content: parsedContent });
     } catch (err: any) {
       setFetchError(err.message || "Failed to load activity");
-      console.error("Detail Fetch Error:", err);
+      console.error("❌ Detail Fetch Error:", err);
     } finally {
       setIsPopupLoading(false);
     }
   };
 
-  // 3. Logic & Filtering
+  // 3. Calculate Score
   const score = useMemo(() => {
-    if (!selectedEx || !submitted) return 0;
+    if (!selectedEx || modalStage !== 'result') return 0;
     return selectedEx.content.reduce((acc, q, idx) => {
-      return userAnswers[idx] === q.options[q.correctAnswer] ? acc + 1 : acc;
+      return userAnswers[idx] === q.correctAnswer ? acc + 1 : acc;
     }, 0);
-  }, [selectedEx, submitted, userAnswers]);
+  }, [selectedEx, modalStage, userAnswers]);
+
+  // Handle Submit
+  const handleSubmit = () => {
+    if (!selectedEx) return;
+    
+    console.log("\n🎯 SUBMISSION RESULTS:");
+    console.log("Total Questions:", selectedEx.content.length);
+    console.log("User Answers:", userAnswers);
+    
+    let correctCount = 0;
+    selectedEx.content.forEach((q, idx) => {
+      const isCorrect = userAnswers[idx] === q.correctAnswer;
+      if (isCorrect) correctCount++;
+      
+      console.log(`\nQuestion ${idx + 1}: ${q.question}`);
+      console.log(`User selected: ${userAnswers[idx] !== undefined ? q.options[userAnswers[idx]] : 'No answer'}`);
+      console.log(`Correct answer: ${q.options[q.correctAnswer]}`);
+      console.log(`Result: ${isCorrect ? '✅ Correct' : '❌ Wrong'}`);
+    });
+    
+    console.log(`\n📊 Final Score: ${correctCount}/${selectedEx.content.length}`);
+    setModalStage('result');
+  };
 
   const filteredExercises = useMemo(() => {
     return exercises.filter((ex) => {
@@ -163,7 +205,7 @@ function Activities() {
   return (
     <main className="pt-20 bg-[#fcfaf8] min-h-screen">
       {/* HERO SECTION */}
-      <div className="relative w-full h-[70dvh] overflow-hidden bg-slate-900">
+      <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
         {!loadingHero && heroData && (
           <>
             <img src={heroData.mediaUrl} className="absolute inset-0 w-full h-full object-cover z-0" alt="Hero" />
@@ -216,7 +258,7 @@ function Activities() {
                 <p className="text-gray-500 text-sm line-clamp-3 mb-6 leading-relaxed">{item.description}</p>
               </div>
               <button onClick={() => handleOpenExercise(item.id)} className="flex items-center gap-2 font-bold text-blue-700 mt-auto group/btn">
-                Start Activity <ArrowRight size={18} className="group-hover/btn:translate-x-2 transition-transform" />
+                Start Exercise <ArrowRight size={18} className="group-hover/btn:translate-x-2 transition-transform" />
               </button>
             </div>
           ))}
@@ -247,77 +289,142 @@ function Activities() {
                 <button onClick={() => setFetchError(null)} className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-bold">Close</button>
               </div>
             ) : selectedEx && (
-              modalStage === 'info' ? (
-                <div className="text-center py-4">
-                  <div className="w-24 h-24 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner">{getIcon(selectedEx.exerciseType)}</div>
-                  <h2 className="text-4xl font-bold text-slate-900 mb-4">{selectedEx.title}</h2>
-                  <p className="text-gray-600 text-lg mb-10 leading-relaxed">{selectedEx.description}</p>
-                  <button onClick={() => setModalStage('test')} className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] font-bold shadow-xl flex items-center justify-center gap-3 hover:bg-blue-700 transition-all">
-                    Proceed to Exercise <ArrowRight size={22} />
-                  </button>
-                </div>
-              ) : (
-                <div className="space-y-8">
-                  {submitted && (
-                    <div className="bg-blue-600 rounded-[2.5rem] p-8 text-white flex items-center justify-between mb-8 shadow-2xl">
-                      <div>
-                        <h3 className="text-2xl font-bold flex items-center gap-2"><Trophy size={28}/> Well Done!</h3>
-                        <p className="opacity-80">Activity completed successfully.</p>
-                      </div>
-                      <div className="text-right">
-                        <span className="text-5xl font-black">{score}</span>
-                        <span className="text-xl opacity-60"> / {selectedEx.content.length}</span>
-                      </div>
+              <>
+                {/* STAGE 1: Description/Info */}
+                {modalStage === 'info' && (
+                  <div className="text-center py-4">
+                    <div className="w-24 h-24 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner">{getIcon(selectedEx.exerciseType)}</div>
+                    <h2 className="text-4xl font-bold text-slate-900 mb-4">{selectedEx.title}</h2>
+                    <div className="bg-gray-50 rounded-[2rem] p-8 mb-8">
+                      <p className="text-gray-700 text-lg leading-relaxed">{selectedEx.description}</p>
                     </div>
-                  )}
-
-                  <div className="border-b pb-6">
-                      <h2 className="text-3xl font-bold text-slate-900">{selectedEx.title}</h2>
-                      <p className="text-gray-400 mt-1">{submitted ? "Review your results below." : "Carefully select the best answer for each question."}</p>
+                    <div className="flex gap-3 text-sm text-gray-500 justify-center mb-8">
+                      <span className="bg-blue-50 px-4 py-2 rounded-full font-bold">{selectedEx.exerciseType}</span>
+                      <span className="bg-red-50 px-4 py-2 rounded-full font-bold">{selectedEx.difficulty}</span>
+                      <span className="bg-green-50 px-4 py-2 rounded-full font-bold">{selectedEx.content.length} Questions</span>
+                    </div>
+                    <button onClick={() => setModalStage('test')} className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] font-bold shadow-xl flex items-center justify-center gap-3 hover:bg-blue-700 transition-all">
+                      Continue to Questions <ArrowRight size={22} />
+                    </button>
                   </div>
-                  
-                  {selectedEx.content.map((q, idx) => (
-                    <div key={idx} className={`p-8 rounded-[3rem] border transition-all ${submitted ? "bg-white border-gray-100" : "bg-gray-50 border-transparent shadow-inner"}`}>
-                      <p className="font-bold text-xl mb-6 flex gap-4 leading-snug">
+                )}
+
+                {/* STAGE 2: Questions/Test */}
+                {modalStage === 'test' && (
+                  <div className="space-y-8">
+                    <div className="border-b pb-6">
+                      <h2 className="text-3xl font-bold text-slate-900">{selectedEx.title}</h2>
+                      <p className="text-gray-400 mt-1">Select the best answer for each question.</p>
+                    </div>
+                    
+                    {selectedEx.content.map((q, idx) => (
+                      <div key={idx} className="p-8 rounded-[3rem] bg-gray-50 border-transparent shadow-inner">
+                        <p className="font-bold text-xl mb-6 flex gap-4 leading-snug">
                           <span className="bg-blue-600 text-white w-9 h-9 rounded-xl flex items-center justify-center text-sm shrink-0 shadow-md">{idx + 1}</span>
                           {q.question}
-                      </p>
-                      <div className="grid grid-cols-1 gap-3">
-                        {q.options.map((opt, i) => {
-                          const isSelected = userAnswers[idx] === opt;
-                          const isCorrect = submitted && i === q.correctAnswer;
-                          const isWrong = submitted && isSelected && i !== q.correctAnswer;
-
-                          return (
-                            <button
-                              key={i}
-                              disabled={submitted}
-                              onClick={() => setUserAnswers(prev => ({ ...prev, [idx]: opt }))}
-                              className={`px-7 py-5 border-2 rounded-[1.8rem] text-left font-bold transition-all relative ${
-                                isCorrect ? "bg-green-500 border-green-500 text-white shadow-lg" :
-                                isWrong ? "bg-red-500 border-red-500 text-white shadow-lg" :
-                                isSelected ? "bg-blue-600 border-blue-600 text-white shadow-md" : "bg-white border-gray-100 hover:border-blue-400 hover:shadow-md"
-                              }`}
-                            >
-                              {opt}
-                              {isCorrect && submitted && <Check className="absolute right-6 top-1/2 -translate-y-1/2" size={24}/>}
-                              {isWrong && submitted && <X className="absolute right-6 top-1/2 -translate-y-1/2" size={24}/>}
-                            </button>
-                          );
-                        })}
+                        </p>
+                        <div className="grid grid-cols-1 gap-3">
+                          {q.options.map((opt, i) => {
+                            const isSelected = userAnswers[idx] === i;
+                            return (
+                              <button
+                                key={i}
+                                onClick={() => setUserAnswers(prev => ({ ...prev, [idx]: i }))}
+                                className={`px-7 py-5 border-2 rounded-[1.8rem] text-left font-bold transition-all ${
+                                  isSelected ? "bg-blue-600 border-blue-600 text-white shadow-md" : "bg-white border-gray-100 hover:border-blue-400 hover:shadow-md"
+                                }`}
+                              >
+                                {opt}
+                              </button>
+                            );
+                          })}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                  
-                  {!submitted ? (
-                    <button onClick={() => setSubmitted(true)} className="w-full py-6 bg-slate-900 text-white rounded-[2.5rem] font-bold hover:bg-green-600 flex items-center justify-center gap-2 transition-all shadow-xl">
-                      <Check size={22} /> Finalize and Submit
+                    ))}
+                    
+                    <button 
+                      onClick={handleSubmit} 
+                      disabled={Object.keys(userAnswers).length !== selectedEx.content.length}
+                      className="w-full py-6 bg-slate-900 text-white rounded-[2.5rem] font-bold hover:bg-green-600 flex items-center justify-center gap-2 transition-all shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Check size={22} /> Submit Answers
                     </button>
-                  ) : (
-                    <button onClick={() => {setSelectedEx(null); setSubmitted(false);}} className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] font-bold shadow-lg hover:bg-blue-700 transition-all">Back to Activities</button>
-                  )}
-                </div>
-              )
+                  </div>
+                )}
+
+                {/* STAGE 3: Results */}
+                {modalStage === 'result' && (
+                  <div className="space-y-8">
+                    <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-[2.5rem] p-10 text-white text-center shadow-2xl">
+                      <Trophy size={60} className="mx-auto mb-4" />
+                      <h3 className="text-3xl font-bold mb-2">Exercise Complete!</h3>
+                      <div className="flex items-center justify-center gap-3 mt-6">
+                        <span className="text-6xl font-black">{score}</span>
+                        <span className="text-3xl opacity-60">/ {selectedEx.content.length}</span>
+                      </div>
+                      <p className="mt-4 text-blue-100">
+                        {score === selectedEx.content.length ? "Perfect Score! 🎉" : 
+                         score >= selectedEx.content.length * 0.7 ? "Great Job! 👏" : "Keep Practicing! 💪"}
+                      </p>
+                    </div>
+
+                    <div className="border-b pb-4">
+                      <h3 className="text-2xl font-bold text-slate-900">Review Your Answers</h3>
+                      <p className="text-gray-400 text-sm mt-1">See the correct answers below</p>
+                    </div>
+                    
+                    {selectedEx.content.map((q, idx) => {
+                      const userAnswerIndex = userAnswers[idx];
+                      const isCorrect = userAnswerIndex === q.correctAnswer;
+                      
+                      return (
+                        <div key={idx} className={`p-8 rounded-[3rem] border-2 ${isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`}>
+                          <div className="flex items-start gap-4 mb-6">
+                            <span className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm shrink-0 shadow-md font-bold ${isCorrect ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
+                              {idx + 1}
+                            </span>
+                            <p className="font-bold text-xl leading-snug flex-1">{q.question}</p>
+                            {isCorrect ? <Check className="text-green-600" size={28} /> : <XCircle className="text-red-600" size={28} />}
+                          </div>
+                          
+                          <div className="grid grid-cols-1 gap-3 mb-4">
+                            {q.options.map((opt, i) => {
+                              const isUserAnswer = userAnswerIndex === i;
+                              const isCorrectAnswer = i === q.correctAnswer;
+                              
+                              return (
+                                <div
+                                  key={i}
+                                  className={`px-7 py-5 border-2 rounded-[1.8rem] font-bold relative ${
+                                    isCorrectAnswer ? "bg-green-500 border-green-500 text-white" :
+                                    isUserAnswer && !isCorrect ? "bg-red-500 border-red-500 text-white" :
+                                    "bg-white border-gray-200"
+                                  }`}
+                                >
+                                  {opt}
+                                  {isCorrectAnswer && <Check className="absolute right-6 top-1/2 -translate-y-1/2" size={24}/>}
+                                  {isUserAnswer && !isCorrect && <X className="absolute right-6 top-1/2 -translate-y-1/2" size={24}/>}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          
+                          <div className={`text-sm font-bold px-4 py-2 rounded-xl inline-block ${isCorrect ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
+                            {isCorrect ? '✓ Correct' : `✗ Correct answer: ${q.options[q.correctAnswer]}`}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    
+                    <button 
+                      onClick={() => {setSelectedEx(null); setModalStage('info'); setUserAnswers({});}} 
+                      className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] font-bold shadow-lg hover:bg-blue-700 transition-all"
+                    >
+                      Back to Activities
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
