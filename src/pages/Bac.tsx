@@ -165,13 +165,14 @@ function BAC() {
                     </a>
                 </div>
 
-                {/* MAP SECTION - Integrated NigeriaMap here */}
+                {/* MAP SECTION */}
                 <div className="w-[90%] max-w-7xl flex flex-col gap-8 py-10">
                     <div className="space-y-2">
                         <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900">Partner Universities</h2>
                         <p className="text-gray-500">Explore the network of institutions participating in the French Embassy Fund project across Nigeria.</p>
                     </div>
                     <div className="rounded-[3rem] overflow-hidden border border-gray-100 shadow-xl bg-white p-2">
+                        {/* The component we just built */}
                         <NigeriaMap />
                     </div>
                 </div>

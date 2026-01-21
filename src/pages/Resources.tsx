@@ -71,15 +71,12 @@ function Pedagogies() {
     return 'link';
   };
 
-  // --- PDF WATERMARK & DOWNLOAD ---
   const handleDownloadPDF = async (e: React.MouseEvent, item: Pedagogy) => {
     e.stopPropagation();
     setDownloadingId(item.id);
-
     try {
       const response = await fetch(item.url);
       const existingPdfBytes = await response.arrayBuffer();
-
       const pdfDoc = await PDFDocument.load(existingPdfBytes);
       const helveticaFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
       const pages = pdfDoc.getPages();
@@ -106,12 +103,7 @@ function Pedagogies() {
       });
 
       const pdfBytes = await pdfDoc.save();
-      
-      /** * FIX: Constructing Blob with new Uint8Array ensures compatibility 
-       * with strict TypeScript BlobPart requirements.
-       */
       const blob = new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" });
-      
       const downloadUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = downloadUrl;
@@ -120,16 +112,14 @@ function Pedagogies() {
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(downloadUrl);
-
     } catch (err) {
-      console.error("Watermark failed:", err);
       window.open(item.url, '_blank');
     } finally {
       setDownloadingId(null);
     }
   };
 
-  // --- Initial Data Fetch ---
+  // --- DYNAMIC HERO FETCHING ---
   useEffect(() => {
     const loadAllData = async () => {
       setLoading(true);
@@ -142,15 +132,18 @@ function Pedagogies() {
         const heroes = await heroRes.json();
         const peds = await pedRes.json();
 
-        const hero = (heroes.data || heroes).find((item: any) => 
-            (item.attributes?.purpose || item.purpose) === "Other Page" && 
-            (item.attributes?.subPurpose || item.subPurpose) === "Resources"
-        );
-        if (hero) setHeroData(hero.attributes || hero);
+        // Dynamically find the hero based on Purpose: "Other Page" and SubPurpose: "Resources"
+        const hero = (heroes.data || heroes).find((item: any) => {
+            const attr = item.attributes || item;
+            return attr.purpose === "Other Page" && attr.subPurpose === "Resources";
+        });
+        
+        if (hero) {
+          setHeroData(hero.attributes || hero);
+        }
 
         const pedArray = Array.isArray(peds) ? peds : peds.data || [];
         setPedagogies(pedArray);
-
       } catch (err) {
         console.error("Failed to fetch pedagogies:", err);
       } finally {
@@ -169,13 +162,11 @@ function Pedagogies() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [CLIENT_KEY]);
 
-  // --- DYNAMIC FILTER OPTIONS ---
   const typeOptions = ["All", "pdf", "video", "audio", "link"];
   const levelOptions = useMemo(() => ["All", ...Array.from(new Set(pedagogies.map(p => p.level).filter(Boolean)))], [pedagogies]);
   const skillOptions = useMemo(() => ["All", ...Array.from(new Set(pedagogies.map(p => p.skillType).filter(Boolean)))], [pedagogies]);
   const themeOptions = useMemo(() => ["All", ...Array.from(new Set(pedagogies.map(p => p.theme).filter(Boolean)))], [pedagogies]);
 
-  // --- Filtered Data ---
   const filteredPedagogies = useMemo(() => {
     return pedagogies.filter(item => {
       const type = getItemType(item.url).toLowerCase();
@@ -192,19 +183,16 @@ function Pedagogies() {
   const currentItems = filteredPedagogies.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(filteredPedagogies.length / itemsPerPage);
 
-  // --- Social Sharing ---
   const handleShare = (e: React.MouseEvent, platform: string, item: Pedagogy) => {
     e.stopPropagation();
     const shareUrl = item.url;
     const text = `Check out this resource: ${item.title}`;
-
     if (platform === 'copy') {
       navigator.clipboard.writeText(shareUrl);
       setCopiedId(item.id);
       setTimeout(() => setCopiedId(null), 2000);
       return;
     }
-
     const links: Record<string, string> = {
       twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`,
       whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(text + " " + shareUrl)}`,
@@ -215,26 +203,48 @@ function Pedagogies() {
 
   return (
     <main className="pt-20 bg-gray-50/30 min-h-screen">
-      {/* HERO SECTION */}
+      {/* --- DYNAMIC HERO SECTION --- */}
       <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
-        {heroData && (
+        {heroData ? (
           <>
-            <img src={heroData.mediaUrl} alt="Hero" className="absolute inset-0 w-full h-full object-cover z-0" />
+            {/* Dynamic Cover Image from Backend */}
+            <img 
+                src={heroData.mediaUrl} 
+                alt={heroData.title} 
+                className="absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-700" 
+            />
+            
+            {/* Overlay for Readability */}
             <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/90 via-blue-800/60 to-red-700/60" />
+            
+            {/* Dynamic Content */}
             <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-20 gap-5">
               <div className="flex items-center gap-2 text-white px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full">
                 <Library size={18} />
                 <p className="text-sm font-bold uppercase tracking-widest">Resources</p>
               </div>
-              <h1 className="text-white text-4xl md:text-7xl font-bold font-serif max-w-3xl leading-tight">{heroData.title}</h1>
-              <p className="text-white/90 text-xl max-w-xl">{heroData.description}</p>
+              
+              {/* Dynamic Title */}
+              <h1 className="text-white text-4xl md:text-7xl font-bold font-serif max-w-3xl leading-tight">
+                {heroData.title}
+              </h1>
+              
+              {/* Dynamic Description */}
+              <p className="text-white/90 text-xl max-w-xl">
+                {heroData.description}
+              </p>
             </div>
           </>
+        ) : (
+          /* Skeleton Loader for Hero */
+          <div className="w-full h-full flex items-center justify-center">
+            <Loader2 className="animate-spin text-white/20" size={48} />
+          </div>
         )}
       </div>
 
       <div className="px-4 md:px-8 py-12 max-w-7xl mx-auto">
-        {/* FILTERS */}
+        {/* FILTERS ... (rest of your existing UI) */}
         <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-gray-100 mb-12 space-y-8">
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="relative flex-1">

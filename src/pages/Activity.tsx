@@ -28,7 +28,7 @@ interface Exercise {
   exerciseType: string;
   difficulty: string;
   publishedAt: string | null;
-  content: RawQuestion[]; // Included in base interface for easy mapping
+  content: RawQuestion[];
 }
 
 interface DetailedExercise extends Exercise {}
@@ -40,7 +40,6 @@ interface GalleryHero {
 }
 
 function Activities() {
-  // --- State ---
   const [exercisesMap, setExercisesMap] = useState<Record<number, DetailedExercise>>({});
   const [exercisesList, setExercisesList] = useState<Exercise[]>([]);
   const [heroData, setHeroData] = useState<GalleryHero | null>(null);
@@ -57,7 +56,15 @@ function Activities() {
   const exercisesPerPage = 8;
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
-  // --- 1. Fetch and Organize Data ---
+  // LOCK SCROLL WHEN MODAL IS OPEN
+  useEffect(() => {
+    if (selectedEx || fetchError) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+  }, [selectedEx, fetchError]);
+
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -69,37 +76,27 @@ function Activities() {
         const heroJson = await heroRes.json();
         const exJson = await exRes.json();
 
-        // Handle Hero Data
         const matchingHero = (heroJson.data || heroJson).find((item: any) => 
           (item.attributes?.purpose || item.purpose) === "Other Page" && 
           (item.attributes?.subPurpose || item.subPurpose) === "Activities"
         );
-        if (matchingHero) {
-          setHeroData(matchingHero.attributes || matchingHero);
-        }
+        if (matchingHero) setHeroData(matchingHero.attributes || matchingHero);
 
-        // Process Exercises into a Lookup Object
         const rawExercises = Array.isArray(exJson) ? exJson : (exJson.data || []);
         const tempMap: Record<number, DetailedExercise> = {};
         
         rawExercises.forEach((item: any) => {
           const data = item.attributes ? { id: item.id, ...item.attributes } : item;
-          
-          // Pre-parse the questions (content) so they are ready for the popup
           let parsedContent: RawQuestion[] = [];
           if (data.content) {
-            parsedContent = typeof data.content === 'string' 
-              ? JSON.parse(data.content) 
-              : data.content;
+            parsedContent = typeof data.content === 'string' ? JSON.parse(data.content) : data.content;
           }
-
           tempMap[data.id] = { ...data, content: parsedContent };
         });
 
         setExercisesMap(tempMap);
         setExercisesList(Object.values(tempMap));
       } catch (err) {
-        console.error("Fetch Error:", err);
         setFetchError("Failed to load activities from server.");
       } finally {
         setLoading(false);
@@ -108,23 +105,15 @@ function Activities() {
     fetchData();
   }, [CLIENT_KEY]);
 
-  // --- 2. Interaction Handlers ---
   const handleOpenExercise = (id: number) => {
     const activity = exercisesMap[id];
     if (activity) {
       setSelectedEx(activity);
       setModalStage('info');
       setUserAnswers({});
-    } else {
-      setFetchError("Activity details not found.");
     }
   };
 
-  const handleSubmit = () => {
-    if (selectedEx) setModalStage('result');
-  };
-
-  // --- 3. Computed Logic (Filtering/Scoring) ---
   const filteredExercises = useMemo(() => {
     return exercisesList.filter((ex) => {
       const matchesSearch = ex.title?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -178,13 +167,7 @@ function Activities() {
             <p className="text-[10px] font-black uppercase text-blue-600 mb-2 ml-1">Search Activity</p>
             <div className="relative">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <input 
-                type="text" 
-                placeholder="Search..." 
-                className="w-full pl-14 pr-6 py-4 rounded-2xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-600 shadow-inner" 
-                value={searchQuery} 
-                onChange={(e) => setSearchQuery(e.target.value)} 
-              />
+              <input type="text" placeholder="Search..." className="w-full pl-14 pr-6 py-4 rounded-2xl bg-gray-50 outline-none shadow-inner" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             </div>
           </div>
           <div className="flex gap-2">
@@ -204,14 +187,12 @@ function Activities() {
           {loading ? (
             <div className="col-span-full flex justify-center py-20"><Loader2 className="animate-spin text-blue-600" size={40} /></div>
           ) : currentExercises.map((item) => (
-            <div key={item.id} className="group bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm hover:shadow-2xl transition-all flex flex-col justify-between transform hover:-translate-y-2">
-              <div>
-                <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-6 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
-                  {getIcon(item.exerciseType)}
-                </div>
-                <h3 className="text-2xl font-bold text-slate-800 mb-2">{item.title}</h3>
-                <p className="text-gray-500 text-sm line-clamp-3 mb-6 leading-relaxed">{item.description}</p>
+            <div key={item.id} className="group bg-white rounded-[2.5rem] p-8 border border-gray-100 shadow-sm hover:shadow-2xl transition-all flex flex-col transform hover:-translate-y-2">
+              <div className="w-16 h-16 rounded-2xl bg-blue-50 flex items-center justify-center mb-6 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
+                {getIcon(item.exerciseType)}
               </div>
+              <h3 className="text-2xl font-bold text-slate-800 mb-2">{item.title}</h3>
+              <p className="text-gray-500 text-sm line-clamp-3 mb-6">{item.description}</p>
               <button onClick={() => handleOpenExercise(item.id)} className="flex items-center gap-2 font-bold text-blue-700 mt-auto group/btn">
                 Start Exercise <ArrowRight size={18} className="group-hover/btn:translate-x-2 transition-transform" />
               </button>
@@ -222,48 +203,55 @@ function Activities() {
         {/* PAGINATION */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-4 py-8">
-            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-4 bg-white rounded-2xl border hover:bg-gray-50 disabled:opacity-20 transition-all shadow-sm"><ChevronLeft /></button>
-            <span className="font-bold text-gray-500 bg-white px-6 py-3 rounded-2xl border shadow-sm">Page {currentPage} of {totalPages}</span>
-            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="p-4 bg-white rounded-2xl border hover:bg-gray-50 disabled:opacity-20 transition-all shadow-sm"><ChevronRight /></button>
+            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-4 bg-white rounded-2xl border disabled:opacity-20"><ChevronLeft /></button>
+            <span className="font-bold text-gray-500 bg-white px-6 py-3 rounded-2xl border">Page {currentPage} of {totalPages}</span>
+            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="p-4 bg-white rounded-2xl border disabled:opacity-20"><ChevronRight /></button>
           </div>
         )}
       </section>
 
-      {/* EXERCISE MODAL */}
+      {/* EXERCISE MODAL - FULL COVERAGE */}
       {(selectedEx || fetchError) && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/90 backdrop-blur-md" onClick={() => {setSelectedEx(null); setFetchError(null);}} />
-          <div className="relative bg-white w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-[3.5rem] p-10 shadow-2xl">
-            <button onClick={() => {setSelectedEx(null); setFetchError(null);}} className="absolute top-8 right-8 p-3 hover:bg-gray-100 rounded-full transition-colors"><X size={24} /></button>
+        <div className="fixed inset-0 z-[999] overflow-y-auto bg-slate-900 flex justify-center items-start pt-10 pb-10 px-4 sm:px-6">
+          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xl" onClick={() => {setSelectedEx(null); setFetchError(null);}} />
+          
+          <div className="relative bg-white w-full max-w-3xl rounded-[3rem] p-6 md:p-12 shadow-2xl animate-in fade-in zoom-in duration-300">
+            {/* BOLD CANCEL BUTTON */}
+            <button 
+              onClick={() => {setSelectedEx(null); setFetchError(null);}} 
+              className="absolute top-6 right-6 p-4 bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-900 rounded-full transition-all border-2 border-transparent hover:border-red-100 z-50"
+              aria-label="Close modal"
+            >
+              <X size={28} strokeWidth={3} />
+            </button>
 
             {fetchError ? (
               <div className="text-center py-10">
                 <AlertCircle size={60} className="mx-auto text-red-500 mb-4" />
-                <h2 className="text-2xl font-bold mb-2">Oops!</h2>
+                <h2 className="text-2xl font-bold mb-2">Error</h2>
                 <p className="text-gray-500 mb-8">{fetchError}</p>
-                <button onClick={() => setFetchError(null)} className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-bold">Close</button>
+                <button onClick={() => setFetchError(null)} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-bold">Dismiss</button>
               </div>
             ) : selectedEx && (
               <>
-                {/* STAGE 1: Info */}
                 {modalStage === 'info' && (
                   <div className="text-center py-4">
-                    <div className="w-24 h-24 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner">{getIcon(selectedEx.exerciseType)}</div>
+                    <div className="w-24 h-24 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center mx-auto mb-8">{getIcon(selectedEx.exerciseType)}</div>
                     <h2 className="text-4xl font-bold text-slate-900 mb-4">{selectedEx.title}</h2>
-                    <div className="bg-gray-50 rounded-[2rem] p-8 mb-8">
+                    <div className="bg-gray-50 rounded-[2rem] p-8 mb-10">
                       <p className="text-gray-700 text-lg leading-relaxed">{selectedEx.description}</p>
                     </div>
-                    <button onClick={() => setModalStage('test')} className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] font-bold shadow-xl flex items-center justify-center gap-3 hover:bg-blue-700">
+                    <button onClick={() => setModalStage('test')} className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] font-bold shadow-xl flex items-center justify-center gap-3 hover:bg-blue-700 transition-colors">
                       Start Test <ArrowRight size={22} />
                     </button>
                   </div>
                 )}
 
-                {/* STAGE 2: Test */}
                 {modalStage === 'test' && (
-                  <div className="space-y-8">
+                  <div className="space-y-8 pt-4">
+                    <h2 className="text-2xl font-black text-slate-800 border-b pb-4">{selectedEx.title}</h2>
                     {selectedEx.content.map((q, idx) => (
-                      <div key={idx} className="p-8 rounded-[3rem] bg-gray-50 shadow-inner">
+                      <div key={idx} className="p-8 rounded-[3rem] bg-gray-50/50 border border-gray-100">
                         <p className="font-bold text-xl mb-6 flex gap-4">
                           <span className="bg-blue-600 text-white w-9 h-9 rounded-xl flex items-center justify-center text-sm shrink-0">{idx + 1}</span>
                           {q.question}
@@ -284,29 +272,34 @@ function Activities() {
                       </div>
                     ))}
                     <button 
-                      onClick={handleSubmit} 
+                      onClick={() => setModalStage('result')} 
                       disabled={Object.keys(userAnswers).length !== selectedEx.content.length}
-                      className="w-full py-6 bg-slate-900 text-white rounded-[2.5rem] font-bold disabled:opacity-50"
+                      className="w-full py-6 bg-slate-900 text-white rounded-[2.5rem] font-bold disabled:opacity-50 hover:bg-slate-800 transition-colors"
                     >
-                      Check Results
+                      Check My Score
                     </button>
                   </div>
                 )}
 
-                {/* STAGE 3: Result */}
                 {modalStage === 'result' && (
-                  <div className="space-y-8">
-                    <div className="bg-blue-600 rounded-[2.5rem] p-10 text-white text-center">
-                      <Trophy size={60} className="mx-auto mb-4" />
-                      <h3 className="text-3xl font-bold">Score: {score} / {selectedEx.content.length}</h3>
+                  <div className="space-y-8 pt-4">
+                    <div className="bg-blue-600 rounded-[2.5rem] p-10 text-white text-center shadow-xl">
+                      <Trophy size={64} className="mx-auto mb-4 animate-bounce" />
+                      <p className="uppercase tracking-widest font-bold text-sm mb-2 opacity-80">Final Results</p>
+                      <h3 className="text-5xl font-black">{score} / {selectedEx.content.length}</h3>
                     </div>
                     {selectedEx.content.map((q, idx) => (
-                      <div key={idx} className={`p-6 rounded-[2rem] border-2 ${userAnswers[idx] === q.correctAnswer ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`}>
-                        <p className="font-bold mb-2">{idx + 1}. {q.question}</p>
-                        <p className="text-sm">Correct Answer: <span className="font-bold">{q.options[q.correctAnswer]}</span></p>
+                      <div key={idx} className={`p-8 rounded-[2.5rem] border-2 ${userAnswers[idx] === q.correctAnswer ? 'border-green-200 bg-green-50/50' : 'border-red-200 bg-red-50/50'}`}>
+                        <p className="font-bold text-lg mb-3">{idx + 1}. {q.question}</p>
+                        <p className={`text-sm font-bold ${userAnswers[idx] === q.correctAnswer ? 'text-green-700' : 'text-red-700'}`}>
+                          Your Answer: {q.options[userAnswers[idx]]}
+                        </p>
+                        {userAnswers[idx] !== q.correctAnswer && (
+                          <p className="text-sm text-slate-600 mt-1">Correct: {q.options[q.correctAnswer]}</p>
+                        )}
                       </div>
                     ))}
-                    <button onClick={() => setSelectedEx(null)} className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] font-bold">Finish</button>
+                    <button onClick={() => setSelectedEx(null)} className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] font-bold shadow-lg hover:bg-blue-700 transition-colors">Return to Activities</button>
                   </div>
                 )}
               </>
