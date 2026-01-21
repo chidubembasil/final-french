@@ -1,6 +1,11 @@
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Autoplay } from "swiper/modules";
+import { Autoplay, EffectFade } from "swiper/modules";
+
+// Main Swiper Styles
 import "swiper/css";
+// Effect Styles (Ensure these match your Swiper version)
+import "swiper/swiper-bundle.css"; 
+
 import { motion } from 'framer-motion';
 import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -33,10 +38,17 @@ export default function Home() {
         const fetchSliderData = async () => {
             try {
                 const response = await fetch(`${CLIENT_KEY}api/galleries`);
-                const data: GalleryItem[] = await response.json();
+                const json = await response.json();
                 
-                // Filter items for the homepage
-                const filtered = data.filter(item => item.purpose === "Homepage Image");
+                const rawData = Array.isArray(json) ? json : (json.data || []);
+                
+                const filtered = rawData
+                    .map((item: any) => ({
+                        id: item.id,
+                        ...(item.attributes || item)
+                    }))
+                    .filter((item: GalleryItem) => item.purpose === "Homepage Image");
+
                 setSliderItems(filtered);
             } catch (error) {
                 console.error("Error fetching gallery data:", error);
@@ -50,130 +62,102 @@ export default function Home() {
 
     const getNavLinks = (subPurpose: string) => {
         const lowerSub = subPurpose?.toLowerCase();
-        if (lowerSub === 'fef') {
-            return { page: "/resource", anchor: "#resource" };
-        } else if (lowerSub === 'bac') {
-            return { page: "/bac", anchor: "#bac" };
-        } else if (lowerSub === 'atoile') {
-            return { page: "/activities", anchor: "#activities" };
-        }
+        if (lowerSub === 'fef') return { page: "/resource", anchor: "#resource" };
+        if (lowerSub === 'bac') return { page: "/bac", anchor: "#bac" };
+        if (lowerSub === 'atoile') return { page: "/activities", anchor: "#activities" };
         return { page: "/", anchor: "#about" };
     };
 
     if (loading) {
         return (
             <div className="h-screen w-full flex items-center justify-center bg-white">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-slate-500 font-medium">Loading Experience...</p>
-                </div>
+                <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
             </div>
         );
     }
 
     return (
-        <>
-            <main className='w-full h-fit pt-12 bg-white'>
-                
-                {/* Dynamic Hero Slider Section */}
-                <div id="slider" className="relative w-full h-[90dvh] overflow-hidden">
-                    <Swiper 
-                        key="home-swiper"
-                        modules={[Autoplay]}
-                        autoplay={{ delay: 7000, disableOnInteraction: false }}
-                        loop={sliderItems.length > 1}
-                        slidesPerView={1}
-                        className="h-full w-full"
-                    >
-                        {sliderItems.map((item, index) => {
-                            const links = getNavLinks(item.subPurpose);
-                            
-                            /** * ALTERNATING GRADIENT LOGIC:
-                             * Index 0, 2, 4... (Even): Blue to Red
-                             * Index 1, 3, 5... (Odd): Red to Blue
-                             */
-                            const gradientClass = index % 2 === 0 
-                                ? "from-blue-900/80 via-blue-700/50 to-red-700/80" 
-                                : "from-red-800/80 via-red-600/50 to-blue-900/80";
+        <main className='w-full h-fit pt-12 bg-white'>
+            
+            {/* CLEAN AUTOMATIC SLIDER */}
+            <div id="slider" className="relative w-full h-[90dvh] overflow-hidden">
+                <Swiper 
+                    key={`hero-${sliderItems.length}`}
+                    modules={[Autoplay, EffectFade]}
+                    effect="fade"
+                    autoplay={{ 
+                        delay: 6000, 
+                        disableOnInteraction: false 
+                    }}
+                    loop={sliderItems.length > 1}
+                    speed={1000} // Speed of the fade transition
+                    allowTouchMove={true}
+                    className="h-full w-full"
+                >
+                    {sliderItems.map((item, index) => {
+                        const links = getNavLinks(item.subPurpose);
+                        const gradient = index % 2 === 0 
+                            ? "from-blue-900/80 via-blue-800/40 to-transparent" 
+                            : "from-red-900/80 via-red-800/40 to-transparent";
 
-                            return (
-                                <SwiperSlide key={item.id}>
-                                    <div className="relative w-full h-full">
-                                        <img
-                                            src={item.mediaUrl}
-                                            alt={item.title}
-                                            className="absolute inset-0 w-full h-full object-cover z-0"
-                                        />
-                                        
-                                        {/* Dynamic Gradient Overlay */}
-                                        <div className={`absolute inset-0 z-[5] bg-gradient-to-br ${gradientClass}`} />
-                                        
-                                        <div className="absolute inset-0 flex flex-col justify-center items-start px-10 md:px-20 z-10">
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 30 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ duration: 0.8, delay: 0.2 }}
-                                            >
-                                                <h2 className="text-5xl md:text-7xl font-bold text-white max-w-2xl font-serif leading-tight drop-shadow-lg">
-                                                    {item.title}
-                                                </h2>
-                                                <p className="text-white/90 mt-4 max-w-lg text-lg md:text-xl drop-shadow-md">
-                                                    {item.description}
-                                                </p>
-                                                <div className="flex flex-wrap gap-4 mt-8">
-                                                    {/* GET STARTED: Anchors to component on same page */}
-                                                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                                        <a
-                                                            href={links.anchor}
-                                                            className="inline-block bg-blue-700 hover:bg-blue-800 text-white px-10 py-4 rounded-xl shadow-xl font-bold transition-all uppercase text-sm tracking-widest"
-                                                        >
-                                                            Get Started
-                                                        </a>
-                                                    </motion.div>
-                                                    
-                                                    {/* LEARN MORE: Navigates to full route */}
-                                                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                                        <Link
-                                                            to={links.page}
-                                                            className="inline-block bg-transparent border-2 border-white text-white hover:bg-white hover:text-blue-900 px-10 py-4 rounded-xl shadow-xl font-bold transition-all uppercase text-sm tracking-widest"
-                                                        >
-                                                            Learn More
-                                                        </Link>
-                                                    </motion.div>
-                                                </div>
-                                            </motion.div>
-                                        </div>
+                        return (
+                            <SwiperSlide key={item.id}>
+                                <div className="relative w-full h-full">
+                                    <img
+                                        src={item.mediaUrl}
+                                        alt={item.title}
+                                        className="absolute inset-0 w-full h-full object-cover"
+                                    />
+                                    
+                                    <div className={`absolute inset-0 z-10 bg-gradient-to-r ${gradient}`} />
+                                    
+                                    <div className="absolute inset-0 flex flex-col justify-center px-10 md:px-24 z-20">
+                                        <motion.div
+                                            initial={{ opacity: 0, y: 30 }}
+                                            whileInView={{ opacity: 1, y: 0 }}
+                                            transition={{ duration: 1 }}
+                                        >
+                                            <h2 className="text-5xl md:text-8xl font-bold text-white max-w-4xl font-serif leading-[1.1] drop-shadow-2xl">
+                                                {item.title}
+                                            </h2>
+                                            <p className="text-white/90 mt-6 max-w-2xl text-lg md:text-2xl font-light leading-relaxed drop-shadow-md">
+                                                {item.description}
+                                            </p>
+                                            
+                                            <div className="flex flex-wrap gap-5 mt-10">
+                                                <a
+                                                    href={links.anchor}
+                                                    className="bg-white text-blue-900 px-12 py-5 rounded-full font-bold uppercase text-[10px] tracking-widest hover:bg-blue-50 transition-colors shadow-xl"
+                                                >
+                                                    Get Started
+                                                </a>
+                                                
+                                                <Link
+                                                    to={links.page}
+                                                    className="border-2 border-white/80 text-white px-12 py-5 rounded-full font-bold uppercase text-[10px] tracking-widest hover:bg-white hover:text-blue-900 transition-all backdrop-blur-sm"
+                                                >
+                                                    Learn More
+                                                </Link>
+                                            </div>
+                                        </motion.div>
                                     </div>
-                                </SwiperSlide>
-                            );
-                        })}
-                    </Swiper>
-                </div>
+                                </div>
+                            </SwiperSlide>
+                        );
+                    })}
+                </Swiper>
+            </div>
 
-                <div className="flex flex-col gap-0 overflow-hidden">
-                    <section id="about" className="scroll-mt-20">
-                        <AboutUs />
-                    </section>
-                    
-                    <section id="bac" className="scroll-mt-20">
-                        <BACSection />
-                    </section>
-
-                    <section id="activities" className="scroll-mt-20">
-                        <InteractiveActivities />
-                    </section>
-
-                    <PodcastHero />
-
-                    <section id="resource" className="scroll-mt-20">
-                        <ResourceHero />
-                    </section>
-
-                    <NewsHero />
-                    <GalleryHero />
-                    <PartnersSection />
-                </div>
-            </main>
-        </>
+            <div className="flex flex-col">
+                <section id="about" className="scroll-mt-20"><AboutUs /></section>
+                <section id="bac" className="scroll-mt-20"><BACSection /></section>
+                <section id="activities" className="scroll-mt-20"><InteractiveActivities /></section>
+                <PodcastHero />
+                <section id="resource" className="scroll-mt-20"><ResourceHero /></section>
+                <NewsHero />
+                <GalleryHero />
+                <PartnersSection />
+            </div>
+        </main>
     );
 }
