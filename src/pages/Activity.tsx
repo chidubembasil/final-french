@@ -10,17 +10,15 @@ import {
   X,
   Loader2,
   Search,
-  Check,
   Trophy,
   AlertCircle,
-  XCircle
 } from "lucide-react";
 
 // --- Interfaces ---
 interface RawQuestion {
   question: string;
   options: string[];
-  correctAnswer: number; 
+  correctAnswer: number;
 }
 
 interface Exercise {
@@ -30,11 +28,10 @@ interface Exercise {
   exerciseType: string;
   difficulty: string;
   publishedAt: string | null;
+  content: RawQuestion[]; // Included in base interface for easy mapping
 }
 
-interface DetailedExercise extends Exercise {
-  content: RawQuestion[]; 
-}
+interface DetailedExercise extends Exercise {}
 
 interface GalleryHero {
   title: string;
@@ -43,24 +40,24 @@ interface GalleryHero {
 }
 
 function Activities() {
-  const [exercises, setExercises] = useState<Exercise[]>([]);
+  // --- State ---
+  const [exercisesMap, setExercisesMap] = useState<Record<number, DetailedExercise>>({});
+  const [exercisesList, setExercisesList] = useState<Exercise[]>([]);
   const [heroData, setHeroData] = useState<GalleryHero | null>(null);
   const [selectedEx, setSelectedEx] = useState<DetailedExercise | null>(null);
   const [modalStage, setModalStage] = useState<'info' | 'test' | 'result'>('info');
   const [loading, setLoading] = useState(true);
-  const [loadingHero, setLoadingHero] = useState(true);
-  const [isPopupLoading, setIsPopupLoading] = useState(false);
   const [activeType, setActiveType] = useState<string>("All");
   const [activeDifficulty, setActiveDifficulty] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
-  const exercisesPerPage = 8;
   const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
   const [fetchError, setFetchError] = useState<string | null>(null);
 
+  const exercisesPerPage = 8;
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
-  // 1. Load List View
+  // --- 1. Fetch and Organize Data ---
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -68,132 +65,84 @@ function Activities() {
           fetch(`${CLIENT_KEY}api/galleries`),
           fetch(`${CLIENT_KEY}api/exercises`)
         ]);
+        
         const heroJson = await heroRes.json();
         const exJson = await exRes.json();
 
-        const matchingHero = heroJson.find((item: any) => 
-          item.purpose === "Other Page" && item.subPurpose === "Activities"
+        // Handle Hero Data
+        const matchingHero = (heroJson.data || heroJson).find((item: any) => 
+          (item.attributes?.purpose || item.purpose) === "Other Page" && 
+          (item.attributes?.subPurpose || item.subPurpose) === "Activities"
         );
-        if (matchingHero) setHeroData(matchingHero);
+        if (matchingHero) {
+          setHeroData(matchingHero.attributes || matchingHero);
+        }
 
-        // Normalize Strapi array response
+        // Process Exercises into a Lookup Object
         const rawExercises = Array.isArray(exJson) ? exJson : (exJson.data || []);
-        setExercises(rawExercises.map((item: any) => ({
-            id: item.id,
-            ...(item.attributes || item)
-        })));
+        const tempMap: Record<number, DetailedExercise> = {};
+        
+        rawExercises.forEach((item: any) => {
+          const data = item.attributes ? { id: item.id, ...item.attributes } : item;
+          
+          // Pre-parse the questions (content) so they are ready for the popup
+          let parsedContent: RawQuestion[] = [];
+          if (data.content) {
+            parsedContent = typeof data.content === 'string' 
+              ? JSON.parse(data.content) 
+              : data.content;
+          }
+
+          tempMap[data.id] = { ...data, content: parsedContent };
+        });
+
+        setExercisesMap(tempMap);
+        setExercisesList(Object.values(tempMap));
       } catch (err) {
         console.error("Fetch Error:", err);
+        setFetchError("Failed to load activities from server.");
       } finally {
-        setLoadingHero(false);
         setLoading(false);
       }
     };
     fetchData();
   }, [CLIENT_KEY]);
 
-  // 2. Load Single Exercise with Enhanced Console Logging
-  const handleOpenExercise = async (id: number) => {
-    setIsPopupLoading(true);
-    setFetchError(null);
-    setModalStage('info');
-    setUserAnswers({});
-    
-    try {
-      const res = await fetch(`${CLIENT_KEY}api/exercises/${id}`);
-      
-      if (!res.ok) {
-        throw new Error(`Exercise ${id} not found (404). Check if it's published.`);
-      }
-
-      const json = await res.json();
-      console.log("📦 Full API Response:", json);
-      
-      const rawData = json.data || json;
-      
-      // Flatten Strapi v4 attributes if they exist
-      const data = rawData.attributes ? { id: rawData.id, ...rawData.attributes } : rawData;
-      
-      console.log("📋 Extracted Exercise Data:", data);
-      console.log("📝 Description:", data.description);
-
-      let parsedContent: RawQuestion[] = [];
-      if (data.content) {
-        try {
-          parsedContent = typeof data.content === 'string' 
-            ? JSON.parse(data.content) 
-            : data.content;
-          
-          console.log("❓ Total Questions:", parsedContent.length);
-          
-          // Log each question with its details
-          parsedContent.forEach((q, idx) => {
-            console.log(`\n--- Question ${idx + 1} ---`);
-            console.log("Question:", q.question);
-            console.log("Options:", q.options);
-            console.log("Correct Answer Index:", q.correctAnswer);
-            console.log("Correct Answer:", q.options[q.correctAnswer]);
-          });
-          
-        } catch (e) {
-          console.error("❌ JSON Parsing failed for exercise content", e);
-          throw new Error("Failed to parse exercise questions");
-        }
-      } else {
-        console.warn("⚠️ No content field found in exercise data");
-      }
-
-      setSelectedEx({ ...data, content: parsedContent });
-    } catch (err: any) {
-      setFetchError(err.message || "Failed to load activity");
-      console.error("❌ Detail Fetch Error:", err);
-    } finally {
-      setIsPopupLoading(false);
+  // --- 2. Interaction Handlers ---
+  const handleOpenExercise = (id: number) => {
+    const activity = exercisesMap[id];
+    if (activity) {
+      setSelectedEx(activity);
+      setModalStage('info');
+      setUserAnswers({});
+    } else {
+      setFetchError("Activity details not found.");
     }
   };
 
-  // 3. Calculate Score
+  const handleSubmit = () => {
+    if (selectedEx) setModalStage('result');
+  };
+
+  // --- 3. Computed Logic (Filtering/Scoring) ---
+  const filteredExercises = useMemo(() => {
+    return exercisesList.filter((ex) => {
+      const matchesSearch = ex.title?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesType = activeType === "All" || ex.exerciseType?.toLowerCase() === activeType.toLowerCase().replace(/ /g, '');
+      const matchesDiff = activeDifficulty === "All" || ex.difficulty?.toLowerCase() === activeDifficulty.toLowerCase();
+      return matchesSearch && matchesType && matchesDiff;
+    });
+  }, [exercisesList, searchQuery, activeType, activeDifficulty]);
+
+  const currentExercises = filteredExercises.slice((currentPage - 1) * exercisesPerPage, currentPage * exercisesPerPage);
+  const totalPages = Math.ceil(filteredExercises.length / exercisesPerPage);
+
   const score = useMemo(() => {
     if (!selectedEx || modalStage !== 'result') return 0;
     return selectedEx.content.reduce((acc, q, idx) => {
       return userAnswers[idx] === q.correctAnswer ? acc + 1 : acc;
     }, 0);
   }, [selectedEx, modalStage, userAnswers]);
-
-  // Handle Submit
-  const handleSubmit = () => {
-    if (!selectedEx) return;
-    
-    console.log("\n🎯 SUBMISSION RESULTS:");
-    console.log("Total Questions:", selectedEx.content.length);
-    console.log("User Answers:", userAnswers);
-    
-    let correctCount = 0;
-    selectedEx.content.forEach((q, idx) => {
-      const isCorrect = userAnswers[idx] === q.correctAnswer;
-      if (isCorrect) correctCount++;
-      
-      console.log(`\nQuestion ${idx + 1}: ${q.question}`);
-      console.log(`User selected: ${userAnswers[idx] !== undefined ? q.options[userAnswers[idx]] : 'No answer'}`);
-      console.log(`Correct answer: ${q.options[q.correctAnswer]}`);
-      console.log(`Result: ${isCorrect ? '✅ Correct' : '❌ Wrong'}`);
-    });
-    
-    console.log(`\n📊 Final Score: ${correctCount}/${selectedEx.content.length}`);
-    setModalStage('result');
-  };
-
-  const filteredExercises = useMemo(() => {
-    return exercises.filter((ex) => {
-      const matchesSearch = ex.title?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesType = activeType === "All" || ex.exerciseType?.toLowerCase() === activeType.toLowerCase().replace(/ /g, '');
-      const matchesDiff = activeDifficulty === "All" || ex.difficulty?.toLowerCase() === activeDifficulty.toLowerCase();
-      return matchesSearch && matchesType && matchesDiff;
-    });
-  }, [exercises, searchQuery, activeType, activeDifficulty]);
-
-  const currentExercises = filteredExercises.slice((currentPage - 1) * exercisesPerPage, currentPage * exercisesPerPage);
-  const totalPages = Math.ceil(filteredExercises.length / exercisesPerPage);
 
   const getIcon = (type: string) => {
     const t = type?.toLowerCase() || '';
@@ -206,12 +155,12 @@ function Activities() {
     <main className="pt-20 bg-[#fcfaf8] min-h-screen">
       {/* HERO SECTION */}
       <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
-        {!loadingHero && heroData && (
+        {heroData && (
           <>
             <img src={heroData.mediaUrl} className="absolute inset-0 w-full h-full object-cover z-0" alt="Hero" />
             <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/80 via-blue-700/40 to-red-700/60" />
             <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-20 gap-5">
-               <div className="flex items-center gap-2 px-4 py-2 text-white bg-white/20 backdrop-blur-md border border-white/30 rounded-3xl">
+              <div className="flex items-center gap-2 px-4 py-2 text-white bg-white/20 backdrop-blur-md border border-white/30 rounded-3xl">
                 <SplitSquareHorizontal size={17} />
                 <p className="text-sm font-bold uppercase tracking-wider">Interactive Learning</p>
               </div>
@@ -229,7 +178,13 @@ function Activities() {
             <p className="text-[10px] font-black uppercase text-blue-600 mb-2 ml-1">Search Activity</p>
             <div className="relative">
               <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <input type="text" placeholder="Search..." className="w-full pl-14 pr-6 py-4 rounded-2xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-600 shadow-inner" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+              <input 
+                type="text" 
+                placeholder="Search..." 
+                className="w-full pl-14 pr-6 py-4 rounded-2xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-600 shadow-inner" 
+                value={searchQuery} 
+                onChange={(e) => setSearchQuery(e.target.value)} 
+              />
             </div>
           </div>
           <div className="flex gap-2">
@@ -284,13 +239,13 @@ function Activities() {
             {fetchError ? (
               <div className="text-center py-10">
                 <AlertCircle size={60} className="mx-auto text-red-500 mb-4" />
-                <h2 className="text-2xl font-bold mb-2">Oops! Something went wrong</h2>
+                <h2 className="text-2xl font-bold mb-2">Oops!</h2>
                 <p className="text-gray-500 mb-8">{fetchError}</p>
                 <button onClick={() => setFetchError(null)} className="px-8 py-3 bg-slate-900 text-white rounded-2xl font-bold">Close</button>
               </div>
             ) : selectedEx && (
               <>
-                {/* STAGE 1: Description/Info */}
+                {/* STAGE 1: Info */}
                 {modalStage === 'info' && (
                   <div className="text-center py-4">
                     <div className="w-24 h-24 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center mx-auto mb-8 shadow-inner">{getIcon(selectedEx.exerciseType)}</div>
@@ -298,144 +253,64 @@ function Activities() {
                     <div className="bg-gray-50 rounded-[2rem] p-8 mb-8">
                       <p className="text-gray-700 text-lg leading-relaxed">{selectedEx.description}</p>
                     </div>
-                    <div className="flex gap-3 text-sm text-gray-500 justify-center mb-8">
-                      <span className="bg-blue-50 px-4 py-2 rounded-full font-bold">{selectedEx.exerciseType}</span>
-                      <span className="bg-red-50 px-4 py-2 rounded-full font-bold">{selectedEx.difficulty}</span>
-                      <span className="bg-green-50 px-4 py-2 rounded-full font-bold">{selectedEx.content.length} Questions</span>
-                    </div>
-                    <button onClick={() => setModalStage('test')} className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] font-bold shadow-xl flex items-center justify-center gap-3 hover:bg-blue-700 transition-all">
-                      Continue to Questions <ArrowRight size={22} />
+                    <button onClick={() => setModalStage('test')} className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] font-bold shadow-xl flex items-center justify-center gap-3 hover:bg-blue-700">
+                      Start Test <ArrowRight size={22} />
                     </button>
                   </div>
                 )}
 
-                {/* STAGE 2: Questions/Test */}
+                {/* STAGE 2: Test */}
                 {modalStage === 'test' && (
                   <div className="space-y-8">
-                    <div className="border-b pb-6">
-                      <h2 className="text-3xl font-bold text-slate-900">{selectedEx.title}</h2>
-                      <p className="text-gray-400 mt-1">Select the best answer for each question.</p>
-                    </div>
-                    
                     {selectedEx.content.map((q, idx) => (
-                      <div key={idx} className="p-8 rounded-[3rem] bg-gray-50 border-transparent shadow-inner">
-                        <p className="font-bold text-xl mb-6 flex gap-4 leading-snug">
-                          <span className="bg-blue-600 text-white w-9 h-9 rounded-xl flex items-center justify-center text-sm shrink-0 shadow-md">{idx + 1}</span>
+                      <div key={idx} className="p-8 rounded-[3rem] bg-gray-50 shadow-inner">
+                        <p className="font-bold text-xl mb-6 flex gap-4">
+                          <span className="bg-blue-600 text-white w-9 h-9 rounded-xl flex items-center justify-center text-sm shrink-0">{idx + 1}</span>
                           {q.question}
                         </p>
                         <div className="grid grid-cols-1 gap-3">
-                          {q.options.map((opt, i) => {
-                            const isSelected = userAnswers[idx] === i;
-                            return (
-                              <button
-                                key={i}
-                                onClick={() => setUserAnswers(prev => ({ ...prev, [idx]: i }))}
-                                className={`px-7 py-5 border-2 rounded-[1.8rem] text-left font-bold transition-all ${
-                                  isSelected ? "bg-blue-600 border-blue-600 text-white shadow-md" : "bg-white border-gray-100 hover:border-blue-400 hover:shadow-md"
-                                }`}
-                              >
-                                {opt}
-                              </button>
-                            );
-                          })}
+                          {q.options.map((opt, i) => (
+                            <button
+                              key={i}
+                              onClick={() => setUserAnswers(prev => ({ ...prev, [idx]: i }))}
+                              className={`px-7 py-5 border-2 rounded-[1.8rem] text-left font-bold transition-all ${
+                                userAnswers[idx] === i ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-gray-100 hover:border-blue-400"
+                              }`}
+                            >
+                              {opt}
+                            </button>
+                          ))}
                         </div>
                       </div>
                     ))}
-                    
                     <button 
                       onClick={handleSubmit} 
                       disabled={Object.keys(userAnswers).length !== selectedEx.content.length}
-                      className="w-full py-6 bg-slate-900 text-white rounded-[2.5rem] font-bold hover:bg-green-600 flex items-center justify-center gap-2 transition-all shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full py-6 bg-slate-900 text-white rounded-[2.5rem] font-bold disabled:opacity-50"
                     >
-                      <Check size={22} /> Submit Answers
+                      Check Results
                     </button>
                   </div>
                 )}
 
-                {/* STAGE 3: Results */}
+                {/* STAGE 3: Result */}
                 {modalStage === 'result' && (
                   <div className="space-y-8">
-                    <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-[2.5rem] p-10 text-white text-center shadow-2xl">
+                    <div className="bg-blue-600 rounded-[2.5rem] p-10 text-white text-center">
                       <Trophy size={60} className="mx-auto mb-4" />
-                      <h3 className="text-3xl font-bold mb-2">Exercise Complete!</h3>
-                      <div className="flex items-center justify-center gap-3 mt-6">
-                        <span className="text-6xl font-black">{score}</span>
-                        <span className="text-3xl opacity-60">/ {selectedEx.content.length}</span>
+                      <h3 className="text-3xl font-bold">Score: {score} / {selectedEx.content.length}</h3>
+                    </div>
+                    {selectedEx.content.map((q, idx) => (
+                      <div key={idx} className={`p-6 rounded-[2rem] border-2 ${userAnswers[idx] === q.correctAnswer ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`}>
+                        <p className="font-bold mb-2">{idx + 1}. {q.question}</p>
+                        <p className="text-sm">Correct Answer: <span className="font-bold">{q.options[q.correctAnswer]}</span></p>
                       </div>
-                      <p className="mt-4 text-blue-100">
-                        {score === selectedEx.content.length ? "Perfect Score! 🎉" : 
-                         score >= selectedEx.content.length * 0.7 ? "Great Job! 👏" : "Keep Practicing! 💪"}
-                      </p>
-                    </div>
-
-                    <div className="border-b pb-4">
-                      <h3 className="text-2xl font-bold text-slate-900">Review Your Answers</h3>
-                      <p className="text-gray-400 text-sm mt-1">See the correct answers below</p>
-                    </div>
-                    
-                    {selectedEx.content.map((q, idx) => {
-                      const userAnswerIndex = userAnswers[idx];
-                      const isCorrect = userAnswerIndex === q.correctAnswer;
-                      
-                      return (
-                        <div key={idx} className={`p-8 rounded-[3rem] border-2 ${isCorrect ? 'border-green-500 bg-green-50' : 'border-red-500 bg-red-50'}`}>
-                          <div className="flex items-start gap-4 mb-6">
-                            <span className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm shrink-0 shadow-md font-bold ${isCorrect ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
-                              {idx + 1}
-                            </span>
-                            <p className="font-bold text-xl leading-snug flex-1">{q.question}</p>
-                            {isCorrect ? <Check className="text-green-600" size={28} /> : <XCircle className="text-red-600" size={28} />}
-                          </div>
-                          
-                          <div className="grid grid-cols-1 gap-3 mb-4">
-                            {q.options.map((opt, i) => {
-                              const isUserAnswer = userAnswerIndex === i;
-                              const isCorrectAnswer = i === q.correctAnswer;
-                              
-                              return (
-                                <div
-                                  key={i}
-                                  className={`px-7 py-5 border-2 rounded-[1.8rem] font-bold relative ${
-                                    isCorrectAnswer ? "bg-green-500 border-green-500 text-white" :
-                                    isUserAnswer && !isCorrect ? "bg-red-500 border-red-500 text-white" :
-                                    "bg-white border-gray-200"
-                                  }`}
-                                >
-                                  {opt}
-                                  {isCorrectAnswer && <Check className="absolute right-6 top-1/2 -translate-y-1/2" size={24}/>}
-                                  {isUserAnswer && !isCorrect && <X className="absolute right-6 top-1/2 -translate-y-1/2" size={24}/>}
-                                </div>
-                              );
-                            })}
-                          </div>
-                          
-                          <div className={`text-sm font-bold px-4 py-2 rounded-xl inline-block ${isCorrect ? 'bg-green-600 text-white' : 'bg-red-600 text-white'}`}>
-                            {isCorrect ? '✓ Correct' : `✗ Correct answer: ${q.options[q.correctAnswer]}`}
-                          </div>
-                        </div>
-                      );
-                    })}
-                    
-                    <button 
-                      onClick={() => {setSelectedEx(null); setModalStage('info'); setUserAnswers({});}} 
-                      className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] font-bold shadow-lg hover:bg-blue-700 transition-all"
-                    >
-                      Back to Activities
-                    </button>
+                    ))}
+                    <button onClick={() => setSelectedEx(null)} className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] font-bold">Finish</button>
                   </div>
                 )}
               </>
             )}
-          </div>
-        </div>
-      )}
-
-      {/* GLOBAL LOADING OVERLAY */}
-      {isPopupLoading && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-white/80 backdrop-blur-md">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="animate-spin text-blue-600" size={60} />
-            <p className="font-bold text-blue-900 animate-pulse">Loading Activity...</p>
           </div>
         </div>
       )}
