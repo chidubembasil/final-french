@@ -177,7 +177,7 @@ export default function Home() {
                                                         transition={{ duration: 0.8, delay: 0.2 }}
                                                         className="max-w-4xl"
                                                     >
-                                                        <h2 className="text-4xl md:text-5xl font-bold text-white max-w-2xl font-serif leading-tight drop-shadow-lg">
+                                                        <h2 className="text-5xl md:text-7xl font-bold text-white max-w-2xl font-serif leading-tight drop-shadow-lg">
                                                             {item.title}
                                                         </h2>
                                                         <p className="text-white/90 mt-4 max-w-lg text-lg md:text-xl drop-shadow-md">
