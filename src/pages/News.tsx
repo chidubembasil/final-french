@@ -1,7 +1,7 @@
 import { 
   Newspaper, Search, Loader2, Calendar, MapPin, 
-  ChevronLeft, ChevronRight, ArrowLeft, Share2, 
-  MessageCircle, Linkedin, Copy, Check 
+  ArrowLeft, Share2, MessageCircle, Linkedin, 
+  Copy, Check, ChevronLeft, ChevronRight 
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 
@@ -26,7 +26,6 @@ interface GalleryHero {
 }
 
 function News() {
-  // Custom SVG for X (formerly Twitter)
   const XLogo = ({ className = "w-4 h-4" }: { className?: string }) => (
     <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
@@ -63,7 +62,6 @@ function News() {
     ]
   };
 
-  // --- Fetch Hero Data ---
   useEffect(() => {
     fetch(`${CLIENT_KEY}api/galleries`)
       .then(res => res.json())
@@ -87,7 +85,6 @@ function News() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [CLIENT_KEY]);
 
-  // --- Fetch Blog Posts ---
   const fetchBlogs = useCallback(async () => {
     setLoading(true);
     try {
@@ -104,7 +101,6 @@ function News() {
 
   useEffect(() => { fetchBlogs(); }, [fetchBlogs]);
 
-  // --- Filter Logic ---
   const filteredBlogs = useMemo(() => {
     return blogs.filter(post => {
       const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -119,9 +115,12 @@ function News() {
   const totalPages = Math.ceil(filteredBlogs.length / itemsPerPage);
   const currentBlogs = filteredBlogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  // --- Sharing Logic (Always Opens New Tab) ---
   const handleShare = (e: React.MouseEvent | undefined, platform: string, post: BlogPost) => {
-    if (e) e.stopPropagation();
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+
     const url = `${window.location.origin}/news/${post.id}`;
     const text = `Read this article: ${post.title}`;
 
@@ -141,7 +140,6 @@ function News() {
     const targetUrl = links[platform];
     if (targetUrl) {
       const newTab = window.open(targetUrl, '_blank', 'noopener,noreferrer');
-      // If popup blocker stops the new tab, use current window as fallback
       if (!newTab || newTab.closed || typeof newTab.closed === 'undefined') {
         window.location.href = targetUrl;
       }
@@ -175,7 +173,7 @@ function News() {
         )}
       </div>
 
-      {/* STICKY FILTER BAR */}
+      {/* FILTER BAR */}
       <div className="sticky top-20 z-30 w-full bg-white/95 backdrop-blur-xl border-b border-gray-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -193,11 +191,11 @@ function News() {
               <option value="All">All Categories</option>
               {FILTER_OPTIONS.categories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-            <select className="px-4 py-3 bg-gray-100/50 rounded-2xl font-bold text-[10px] uppercase outline-none" value={activeLanguage} onChange={(e) => setActiveLanguage(e.target.value)}>
+            <select className="px-4 py-3 bg-gray-100/50 rounded-2xl font-bold text-[10px] uppercase outline-none" value={activeLanguage} onChange={(e) => {setActiveLanguage(e.target.value); setCurrentPage(1);}}>
               <option value="All">All Languages</option>
               {FILTER_OPTIONS.languages.map(l => <option key={l} value={l}>{l}</option>)}
             </select>
-            <select className="px-4 py-3 bg-gray-100/50 rounded-2xl font-bold text-[10px] uppercase outline-none" value={activeState} onChange={(e) => setActiveState(e.target.value)}>
+            <select className="px-4 py-3 bg-gray-100/50 rounded-2xl font-bold text-[10px] uppercase outline-none" value={activeState} onChange={(e) => {setActiveState(e.target.value); setCurrentPage(1);}}>
               <option value="All">All Locations</option>
               {FILTER_OPTIONS.states.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
@@ -214,80 +212,88 @@ function News() {
           </div>
         ) : (
           <>
-            {currentBlogs.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                {currentBlogs.map((post) => (
-                  <article key={post.id} className="group bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-500 relative" onClick={() => setSelectedPost(post)}>
-                    
-                    {/* Floating Share Menu */}
-                    <div className="absolute top-4 right-4 z-40">
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); setSharingId(sharingId === post.id ? null : post.id); }}
-                        className="p-3 bg-white/20 backdrop-blur-md border border-white/30 text-white rounded-full hover:bg-white hover:text-blue-600 transition-all"
-                      >
-                        <Share2 size={16} />
-                      </button>
-                      {sharingId === post.id && (
-                        <div ref={shareMenuRef} className="absolute right-0 mt-2 w-44 bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 z-50 flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
-                          <button onClick={(e) => handleShare(e, 'whatsapp', post)} className="flex items-center gap-3 w-full p-3 hover:bg-green-50 text-green-600 rounded-xl transition-colors">
-                            <MessageCircle size={14} /> <span className="text-[10px] font-bold uppercase">WhatsApp</span>
-                          </button>
-                          <button onClick={(e) => handleShare(e, 'x', post)} className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 text-gray-900 rounded-xl transition-colors">
-                            <XLogo /> <span className="text-[10px] font-bold uppercase">X</span>
-                          </button>
-                          <button onClick={(e) => handleShare(e, 'linkedin', post)} className="flex items-center gap-3 w-full p-3 hover:bg-blue-50 text-blue-700 rounded-xl transition-colors">
-                            <Linkedin size={14} /> <span className="text-[10px] font-bold uppercase">LinkedIn</span>
-                          </button>
-                          <button onClick={(e) => handleShare(e, 'copy', post)} className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 text-gray-600 rounded-xl transition-colors">
-                            {copiedId === post.id ? <Check size={14} className="text-green-500" /> : <Copy size={14} />} 
-                            <span className="text-[10px] font-bold uppercase">{copiedId === post.id ? 'Copied' : 'Copy Link'}</span>
-                          </button>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="relative h-60 overflow-hidden">
-                      <img src={post.coverImage} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={post.title} />
-                      <div className="absolute top-4 left-4 bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase">{post.category}</div>
-                    </div>
-                    <div className="p-8">
-                      <div className="flex items-center gap-4 text-gray-400 text-[10px] font-black uppercase mb-4">
-                        <span className="flex items-center gap-1"><Calendar size={12}/> {new Date(post.updatedAt).toLocaleDateString()}</span>
-                        <span className="flex items-center gap-1"><MapPin size={12}/> {post.state}</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
+              {currentBlogs.map((post) => (
+                <article key={post.id} className="group bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-500 relative" onClick={() => setSelectedPost(post)}>
+                  <div className="absolute top-4 right-4 z-40">
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); setSharingId(sharingId === post.id ? null : post.id); }}
+                      className="p-3 bg-white/20 backdrop-blur-md border border-white/30 text-white rounded-full hover:bg-white hover:text-blue-600 transition-all"
+                    >
+                      <Share2 size={16} />
+                    </button>
+                    {sharingId === post.id && (
+                      <div ref={shareMenuRef} className="absolute right-0 mt-2 w-44 bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 z-50 flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={(e) => handleShare(e, 'whatsapp', post)} className="flex items-center gap-3 w-full p-3 hover:bg-green-50 text-green-600 rounded-xl transition-colors">
+                          <MessageCircle size={14} /> <span className="text-[10px] font-bold uppercase">WhatsApp</span>
+                        </button>
+                        <button onClick={(e) => handleShare(e, 'x', post)} className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 text-gray-900 rounded-xl transition-colors">
+                          <XLogo /> <span className="text-[10px] font-bold uppercase">X</span>
+                        </button>
+                        <button onClick={(e) => handleShare(e, 'linkedin', post)} className="flex items-center gap-3 w-full p-3 hover:bg-blue-50 text-blue-700 rounded-xl transition-colors">
+                          <Linkedin size={14} /> <span className="text-[10px] font-bold uppercase">LinkedIn</span>
+                        </button>
+                        <button onClick={(e) => handleShare(e, 'copy', post)} className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 text-gray-600 rounded-xl transition-colors">
+                          {copiedId === post.id ? <Check size={14} className="text-green-500" /> : <Copy size={14} />} 
+                          <span className="text-[10px] font-bold uppercase">{copiedId === post.id ? 'Copied' : 'Copy Link'}</span>
+                        </button>
                       </div>
-                      <h3 className="text-xl font-bold mb-4 line-clamp-2 group-hover:text-blue-600 transition-colors leading-tight">{post.title}</h3>
-                      <p className="text-gray-500 text-sm line-clamp-3 leading-relaxed">{post.excerpt}</p>
+                    )}
+                  </div>
+                  <div className="relative h-60 overflow-hidden">
+                    <img src={post.coverImage} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={post.title} />
+                    <div className="absolute top-4 left-4 bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase">{post.category}</div>
+                  </div>
+                  <div className="p-8">
+                    <div className="flex items-center gap-4 text-gray-400 text-[10px] font-black uppercase mb-4">
+                      <span className="flex items-center gap-1"><Calendar size={12}/> {new Date(post.updatedAt).toLocaleDateString()}</span>
+                      <span className="flex items-center gap-1"><MapPin size={12}/> {post.state}</span>
                     </div>
-                  </article>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-20 bg-gray-50 rounded-[3rem] border-2 border-dashed border-gray-200">
-                <p className="text-gray-400 font-bold uppercase tracking-widest">No articles found matching your criteria</p>
-              </div>
-            )}
+                    <h3 className="text-xl font-bold mb-4 line-clamp-2 group-hover:text-blue-600 transition-colors leading-tight">{post.title}</h3>
+                    <p className="text-gray-500 text-sm line-clamp-3 leading-relaxed">{post.excerpt}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
 
-            {/* Pagination */}
+            {/* PAGINATION CONTROLS RESTORED */}
             {totalPages > 1 && (
-              <div className="mt-20 flex justify-center items-center gap-3">
-                <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-4 bg-white rounded-2xl border disabled:opacity-20 hover:bg-gray-50 shadow-sm transition-all"><ChevronLeft size={20}/></button>
-                <span className="text-xs font-bold text-gray-400 px-4">Page {currentPage} of {totalPages}</span>
-                <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="p-4 bg-white rounded-2xl border disabled:opacity-20 hover:bg-gray-50 shadow-sm transition-all"><ChevronRight size={20}/></button>
+              <div className="flex justify-center items-center gap-4 mt-16">
+                <button 
+                  disabled={currentPage === 1} 
+                  onClick={() => setCurrentPage(p => p - 1)} 
+                  className="p-4 bg-white rounded-2xl border disabled:opacity-30 shadow-sm hover:bg-gray-50 transition-colors"
+                >
+                  <ChevronLeft />
+                </button>
+                <span className="font-bold text-gray-500 bg-white px-6 py-3 rounded-2xl border">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button 
+                  disabled={currentPage === totalPages} 
+                  onClick={() => setCurrentPage(p => p + 1)} 
+                  className="p-4 bg-white rounded-2xl border disabled:opacity-30 shadow-sm hover:bg-gray-50 transition-colors"
+                >
+                  <ChevronRight />
+                </button>
               </div>
             )}
           </>
         )}
       </div>
 
-      {/* FULL SCREEN READER MODAL */}
+      {/* READER MODAL */}
       {selectedPost && (
-        <div className="fixed inset-0 z-[9999] bg-white overflow-y-auto flex flex-col" onClick={() => setSelectedPost(null)}>
-          <div className="sticky top-0 left-0 w-full p-4 md:p-10 flex justify-between items-center bg-white/80 backdrop-blur-md z-[100] border-b">
-            <button onClick={(e) => { e.stopPropagation(); setSelectedPost(null); }} className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-all">
+        <div 
+          className="fixed inset-0 z-[9999] bg-white overflow-y-auto flex flex-col" 
+          onClick={() => setSelectedPost(null)}
+        >
+          <div className="sticky top-0 left-0 w-full p-4 md:p-10 flex justify-between items-center bg-white/80 backdrop-blur-md z-[100] border-b" onClick={(e) => e.stopPropagation()}>
+            <button onClick={() => setSelectedPost(null)} className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-all">
               <ArrowLeft size={20} />
               <span className="font-black uppercase tracking-widest text-[10px]">Back to News</span>
             </button>
-            <button onClick={(e) => { e.stopPropagation(); setSelectedPost(null); }} className="px-6 py-2 bg-red-600 text-white rounded-full text-xs font-bold uppercase shadow-lg hover:bg-red-700 transition-colors">Close</button>
+            <button onClick={() => setSelectedPost(null)} className="px-6 py-2 bg-red-600 text-white rounded-full text-xs font-bold uppercase shadow-lg hover:bg-red-700 transition-colors">Close</button>
           </div>
 
           <div className="flex-1 w-full max-w-4xl mx-auto px-6 py-10" onClick={(e) => e.stopPropagation()}>
@@ -297,29 +303,24 @@ function News() {
                   <span>{selectedPost.category}</span>
                 </div>
                 <h2 className="text-4xl md:text-6xl font-bold font-serif text-slate-900 leading-[1.1]">{selectedPost.title}</h2>
-                
                 <div className="flex flex-col md:flex-row items-center justify-center gap-6 pt-4 border-t">
                   <div className="flex items-center gap-6 text-gray-400 text-xs font-bold uppercase tracking-widest">
                     <span className="flex items-center gap-2"><Calendar size={14}/> {new Date(selectedPost.updatedAt).toLocaleDateString()}</span>
                     <span className="flex items-center gap-2"><MapPin size={14}/> {selectedPost.state}</span>
                   </div>
-
-                  {/* Modal Share Bar (Always Opens New Tab) */}
-                  <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-2xl border">
-                    <button onClick={() => handleShare(undefined, 'whatsapp', selectedPost)} className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"><MessageCircle size={18} /></button>
-                    <button onClick={() => handleShare(undefined, 'x', selectedPost)} className="p-2 text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"><XLogo /></button>
-                    <button onClick={() => handleShare(undefined, 'linkedin', selectedPost)} className="p-2 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors"><Linkedin size={18} /></button>
-                    <button onClick={() => handleShare(undefined, 'copy', selectedPost)} className="flex items-center gap-2 p-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors">
+                  <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-2xl border" onClick={(e) => e.stopPropagation()}>
+                    <button onClick={(e) => handleShare(e, 'whatsapp', selectedPost)} className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"><MessageCircle size={18} /></button>
+                    <button onClick={(e) => handleShare(e, 'x', selectedPost)} className="p-2 text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"><XLogo /></button>
+                    <button onClick={(e) => handleShare(e, 'linkedin', selectedPost)} className="p-2 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors"><Linkedin size={18} /></button>
+                    <button onClick={(e) => handleShare(e, 'copy', selectedPost)} className="flex items-center gap-2 p-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors">
                       {copiedId === selectedPost.id ? <Check size={18} className="text-green-500" /> : <Copy size={18} />}
                     </button>
                   </div>
                 </div>
               </div>
-
               <div className="aspect-[16/9] w-full rounded-[2.5rem] overflow-hidden shadow-2xl border">
                 <img src={selectedPost.coverImage} className="w-full h-full object-cover" alt={selectedPost.title} />
               </div>
-
               <div className="prose prose-lg prose-slate max-w-none mt-4">
                 <div className="text-gray-600 leading-[1.8] space-y-8 text-lg">
                   {selectedPost.content.split('\n').filter(p => p.trim() !== '').map((para, i) => (

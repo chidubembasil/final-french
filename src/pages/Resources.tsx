@@ -79,8 +79,9 @@ function Pedagogies() {
     return 'link';
   };
 
+  // --- FIXED DOWNLOAD LOGIC ---
   const handleDownloadPDF = async (e: React.MouseEvent, item: Pedagogy) => {
-    e.stopPropagation();
+    e.stopPropagation(); // Prevent modal from opening
     setDownloadingId(item.id);
     try {
       const response = await fetch(item.url);
@@ -135,17 +136,14 @@ function Pedagogies() {
           fetch(`${CLIENT_KEY}api/galleries`),
           fetch(`${CLIENT_KEY}api/pedagogies`)
         ]);
-
         const heroes = await heroRes.json();
         const peds = await pedRes.json();
-
         const heroArray = Array.isArray(heroes) ? heroes : (heroes.data || []);
         const hero = heroArray.find((item: any) => {
           const attr = item.attributes || item;
           return attr.purpose?.toLowerCase().trim() === "other page" && 
                  attr.subPurpose?.toLowerCase().trim() === "resources";
         });
-
         if (hero) setHeroData(hero.attributes || hero);
         setPedagogies(Array.isArray(peds) ? peds : peds.data || []);
       } catch (err) {
@@ -154,7 +152,6 @@ function Pedagogies() {
         setLoading(false);
       }
     };
-
     loadAllData();
 
     const handleClickOutside = (event: MouseEvent) => {
@@ -187,9 +184,11 @@ function Pedagogies() {
   const currentItems = filteredPedagogies.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(filteredPedagogies.length / itemsPerPage);
 
-  // --- UPDATED SHARING LOGIC: OPEN IN NEW TAB ---
+  // --- FIXED SHARING LOGIC: OPEN IN NEW TAB + STOP PROPAGATION ---
   const handleShare = (e: React.MouseEvent, platform: string, item: Pedagogy) => {
-    e.stopPropagation();
+    e.stopPropagation(); // Stop card click
+    e.preventDefault();
+    
     const shareUrl = item.url;
     const text = `Check out this resource: ${item.title}`;
 
@@ -208,7 +207,6 @@ function Pedagogies() {
     const targetUrl = shareLinks[platform];
     if (targetUrl) {
       const newTab = window.open(targetUrl, '_blank', 'noopener,noreferrer');
-      // If the browser blocks popups, fallback to current window
       if (!newTab || newTab.closed || typeof newTab.closed === 'undefined') {
         window.location.href = targetUrl;
       }
@@ -241,7 +239,7 @@ function Pedagogies() {
       </div>
 
       <div className="px-4 md:px-8 py-12 max-w-7xl mx-auto">
-        {/* Filters */}
+        {/* Filters ... (Keep as is) */}
         <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-gray-100 mb-12 space-y-8">
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="relative flex-1">
@@ -302,8 +300,13 @@ function Pedagogies() {
                 </div>
               </div>
 
+              {/* SHARE MENU ON CARD */}
               {sharingId === item.id && (
-                <div ref={shareMenuRef} className="absolute top-20 right-8 z-30 bg-white border border-gray-100 p-4 rounded-[1.5rem] shadow-2xl flex gap-5" onClick={(e) => e.stopPropagation()}>
+                <div 
+                  ref={shareMenuRef} 
+                  className="absolute top-20 right-8 z-30 bg-white border border-gray-100 p-4 rounded-[1.5rem] shadow-2xl flex gap-5" 
+                  onClick={(e) => e.stopPropagation()} // Stop click from reaching card
+                >
                   <button onClick={(e) => handleShare(e, 'x', item)} className="hover:text-blue-400 text-gray-400 transition-colors">
                     <XLogo />
                   </button>
@@ -325,7 +328,7 @@ function Pedagogies() {
           ))}
         </div>
 
-        {/* Pagination */}
+        {/* Pagination ... */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-4 py-12">
             <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-4 bg-white rounded-2xl border disabled:opacity-20 shadow-sm hover:bg-gray-50 transition-colors"><ChevronLeft /></button>
@@ -337,8 +340,8 @@ function Pedagogies() {
 
       {/* Preview Modal */}
       {previewItem && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-md">
-          <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-[3.5rem] p-10 relative overflow-y-auto">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-md" onClick={() => setPreviewItem(null)}>
+          <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-[3.5rem] p-10 relative overflow-y-auto" onClick={(e) => e.stopPropagation()}>
             <button className="absolute top-8 right-8 p-3 hover:bg-gray-100 rounded-full transition-colors" onClick={() => setPreviewItem(null)}><X size={28} /></button>
             <div className="flex items-center gap-2 text-blue-600 font-bold mb-6"><GraduationCap size={24} /> <span className="uppercase tracking-widest text-sm">Educational Material</span></div>
             <h2 className="text-4xl font-bold text-slate-900 mb-8">{previewItem.title}</h2>
