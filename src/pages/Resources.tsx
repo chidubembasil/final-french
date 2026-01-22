@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import Ifclasse from "../assets/img/capture.png"
 
 // --- Interfaces ---
 interface Pedagogy {
@@ -40,7 +39,7 @@ interface GalleryHero {
 }
 
 function Pedagogies() {
-  // --- Redeclared Custom X Logo ---
+  // --- Custom Logo Components ---
   const XLogo = ({ className = "w-4 h-4" }: { className?: string }) => (
     <svg 
       viewBox="0 0 24 24" 
@@ -49,6 +48,21 @@ function Pedagogies() {
       fill="currentColor"
     >
       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+    </svg>
+  );
+
+  const IfClasseLogo = ({ className = "w-10 h-10" }: { className?: string }) => (
+    <svg 
+      viewBox="0 0 100 100" 
+      className={className}
+      fill="none" 
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <rect width="100" height="100" rx="15" fill="#45B1A8"/>
+      <rect x="23" y="27" width="10" height="46" fill="white"/>
+      <rect x="42" y="27" width="10" height="46" fill="white"/>
+      <rect x="61" y="27" width="16" height="10" fill="white"/>
+      <rect x="61" y="45" width="16" height="10" fill="white"/>
     </svg>
   );
 
@@ -68,7 +82,6 @@ function Pedagogies() {
   const itemsPerPage = 6;
   const [previewItem, setPreviewItem] = useState<Pedagogy | null>(null);
   
-  // --- Sharing & UI Refs ---
   const [sharingId, setSharingId] = useState<number | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const shareMenuRef = useRef<HTMLDivElement>(null);
@@ -215,25 +228,31 @@ function Pedagogies() {
   return (
     <main className="pt-20 bg-gray-50/30 min-h-screen">
       {/* Hero Section */}
-      <div className="relative w-full h-[60dvh] md:h-[90dvh] overflow-hidden bg-slate-900">
+      <div className="relative w-full h-[60dvh] md:h-[80dvh] overflow-hidden bg-slate-900">
         {loading ? (
           <div className="w-full h-full flex items-center justify-center">
             <Loader2 className="animate-spin text-white/40" size={48} />
           </div>
         ) : heroData && (
           <>
-            {/* Primary Hero Image from Data */}
+            {/* Primary Hero Image */}
             <img src={heroData.mediaUrl} alt={heroData.title} className="absolute inset-0 w-full h-full object-cover z-0" />
             
-            {/* Decorative Overlay using Ifclasse image */}
-            <img src={Ifclasse} alt="Decoration" className="absolute top-0 right-0 w-1/2 h-full object-cover z-10 opacity-30 mix-blend-overlay hidden md:block" />
+            {/* Decorative Overlay and SVG Logo */}
+            <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/90 via-blue-800/60 to-red-700/60" />
             
-            <div className="absolute inset-0 z-20 bg-gradient-to-br from-blue-900/90 via-blue-800/60 to-red-700/60" />
+            {/* IfClasseLogo as Background Decoration */}
+            <div className="absolute top-1/2 right-10 -translate-y-1/2 z-20 opacity-20 hidden lg:block">
+               <IfClasseLogo className="w-[400px] h-[400px] blur-[2px]" />
+            </div>
             
             <div className="relative z-30 w-full h-full flex flex-col items-start justify-center px-6 md:px-20 gap-5">
-              <div className="flex items-center gap-2 text-white px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full">
-                <Library size={18} />
-                <p className="text-sm font-bold uppercase tracking-widest">Resources</p>
+              <div className="flex items-center gap-3">
+                 <IfClasseLogo className="w-12 h-12 rounded-xl shadow-lg border border-white/20" />
+                 <div className="flex items-center gap-2 text-white px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full">
+                    <Library size={18} />
+                    <p className="text-sm font-bold uppercase tracking-widest">Resources</p>
+                 </div>
               </div>
               <h1 className="text-white text-4xl md:text-7xl font-bold font-serif max-w-3xl leading-tight">{heroData.title}</h1>
               <p className="text-white/90 text-xl max-w-xl">{heroData.description}</p>
@@ -315,7 +334,6 @@ function Pedagogies() {
                     </button>
                   )}
 
-                  {/* Share Menu Popup */}
                   {sharingId === item.id && (
                     <div 
                       ref={shareMenuRef} 
@@ -404,6 +422,6 @@ function Pedagogies() {
       )}
     </main>
   );
-}   
+}
 
 export default Pedagogies;
