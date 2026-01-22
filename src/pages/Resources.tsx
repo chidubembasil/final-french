@@ -404,6 +404,6 @@ function Pedagogies() {
       )}
     </main>
   );
-}
+}   
 
 export default Pedagogies;
