@@ -5,23 +5,61 @@ import L from 'leaflet';
 
 // 1. Data mapping from your HTML/README
 const schoolData: Record<string, { name: string; level: string }[]> = {
-    'Lagos': [{ name: 'Lagos State University', level: 'Gold' }, { name: 'The French Language Village', level: 'Gold' }],
-    'Oyo': [{ name: 'Lead City University, Ibadan', level: 'Gold' }, { name: 'University of Ibadan', level: 'Silver' }],
-    'Borno': [{ name: 'University of Maiduguri', level: 'Silver' }],
-    'Rivers': [{ name: 'University of Port-Harcourt', level: 'Gold' }],
-    'Kano': [{ name: 'Bayero University Kano', level: 'Silver' }],
-    'Kaduna': [{ name: 'Amadu Bello University, Kaduna', level: 'Silver' }],
-    'FCT': [{ name: 'University of Abuja', level: 'Silver' }],
-    'Enugu': [{ name: 'University of Nigeria, Nsukka', level: 'Silver' }],
-    'Ogun': [{ name: 'Mountain Top University, Ogun', level: 'Silver' }, { name: 'Chrisland University, Abeokuta', level: 'Silver' }, { name: 'Babcock University, Ilishan-Remo', level: 'Silver' }, { name: 'Covenant University, Ota', level: 'Silver' }, { name: 'Olusegun Obasanjo University, Ogun', level: 'Silver' }],
-    'Sokoto': [{ name: 'Usmanu Danfodiyo University, Sokoto', level: 'Silver' }],
-    'Kwara': [{ name: 'University of Ilorin', level: 'Silver' }],
-    'Ondo': [{ name: 'Achievers University, Ondo', level: 'Silver' }],
-    'Osun': [{ name: 'Obafemi Awolowo University, Ile-Ife', level: 'Silver' }],
-    'Cross River': [{ name: 'University of Calabar Technology', level: 'Silver' }],
-    'Ebonyi': [{ name: 'Ebonyi State University', level: 'Silver' }],
-    'Anambra': [{ name: 'Nnamdi Azikiwe University, Awka', level: 'Gold' }],
-    'Abia': [{ name: 'Michael Okpara University of Agric, Abia', level: 'Gold' }],
+    'Abia': [
+        { name: 'Michael Okpara University of Agriculture, Umudike', level: 'Gold' }
+    ],
+    'Anambra': [
+        { name: 'Nnamdi Azikiwe University, Awka', level: 'Gold' }
+    ],
+    'Borno': [
+        { name: 'University of Maiduguri', level: 'Gold' }
+    ],
+    'Cross River': [
+        { name: 'University of Calabar', level: 'Silver' }
+    ],
+    'Ebonyi': [
+        { name: 'Ebonyi State University', level: 'Silver' }
+    ],
+    'Enugu': [
+        { name: 'University of Nigeria, Nsukka', level: 'Silver' }
+    ],
+    'FCT': [
+        { name: 'University of Abuja', level: 'Gold' }
+    ],
+    'Kaduna': [
+        { name: 'Kaduna State University', level: 'Gold' },
+        { name: 'Ahmadu Bello University, Zaria', level: 'Silver' }
+    ],
+    'Kano': [
+        { name: 'Maryam Abacha American University', level: 'Gold' }
+    ],
+    'Kwara': [
+        { name: 'University of Ilorin', level: 'Gold' }
+    ],
+    'Lagos': [
+        { name: 'Lagos State University', level: 'Gold' },
+        { name: 'University of Lagos', level: 'Silver' }
+    ],
+    'Ogun': [
+        { name: 'Olabisi Onabanjo University', level: 'Silver' }
+    ],
+    'Ondo': [
+        { name: 'Achievers University, Owo', level: 'Silver' }
+    ],
+    'Osun': [
+        { name: 'Obafemi Awolowo University, Ile-Ife', level: 'Gold' }
+    ],
+    'Oyo': [
+        { name: 'Lead City University, Ibadan', level: 'Gold' },
+        { name: 'University of Ibadan', level: 'Silver' }
+    ],
+    'Rivers': [
+        { name: 'Rivers State University, Port Harcourt', level: 'Gold' },
+        { name: 'University of Port Harcourt', level: 'Silver' }
+    ],
+    'Sokoto': [
+        { name: 'Usmanu Danfodiyo University, Sokoto', level: 'Silver' }
+    ]
 };
 
 const highlightedStates = Object.keys(schoolData);

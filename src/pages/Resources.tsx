@@ -187,7 +187,7 @@ function Pedagogies() {
   const currentItems = filteredPedagogies.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(filteredPedagogies.length / itemsPerPage);
 
-  // --- FIXED HANDLE SHARE LOGIC ---
+  // --- UPDATED SHARING LOGIC: OPEN IN NEW TAB ---
   const handleShare = (e: React.MouseEvent, platform: string, item: Pedagogy) => {
     e.stopPropagation();
     const shareUrl = item.url;
@@ -207,9 +207,9 @@ function Pedagogies() {
 
     const targetUrl = shareLinks[platform];
     if (targetUrl) {
-      const newWindow = window.open(targetUrl, '_blank', 'noopener,noreferrer');
-      // If window.open is blocked by the browser, fallback to current window redirect
-      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+      const newTab = window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      // If the browser blocks popups, fallback to current window
+      if (!newTab || newTab.closed || typeof newTab.closed === 'undefined') {
         window.location.href = targetUrl;
       }
     }
@@ -291,11 +291,11 @@ function Pedagogies() {
                   {getItemType(item.url) === 'link' && <BookOpen size={24} />}
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={(e) => { e.stopPropagation(); setSharingId(sharingId === item.id ? null : item.id); }} className="p-3 hover:bg-gray-100 rounded-full">
+                  <button onClick={(e) => { e.stopPropagation(); setSharingId(sharingId === item.id ? null : item.id); }} className="p-3 hover:bg-gray-100 rounded-full transition-colors">
                     <Share2 size={18} />
                   </button>
                   {getItemType(item.url) === 'pdf' && (
-                    <button onClick={(e) => handleDownloadPDF(e, item)} className="p-3 hover:bg-gray-100 rounded-full text-blue-600">
+                    <button onClick={(e) => handleDownloadPDF(e, item)} className="p-3 hover:bg-gray-100 rounded-full text-blue-600 transition-colors">
                       {downloadingId === item.id ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
                     </button>
                   )}
@@ -303,20 +303,20 @@ function Pedagogies() {
               </div>
 
               {sharingId === item.id && (
-                <div ref={shareMenuRef} className="absolute top-20 right-8 z-30 bg-white border border-gray-100 p-4 rounded-[1.5rem] shadow-2xl flex gap-5">
-                  <button onClick={(e) => handleShare(e, 'x', item)} className="hover:text-blue-400 text-gray-400">
+                <div ref={shareMenuRef} className="absolute top-20 right-8 z-30 bg-white border border-gray-100 p-4 rounded-[1.5rem] shadow-2xl flex gap-5" onClick={(e) => e.stopPropagation()}>
+                  <button onClick={(e) => handleShare(e, 'x', item)} className="hover:text-blue-400 text-gray-400 transition-colors">
                     <XLogo />
                   </button>
-                  <button onClick={(e) => handleShare(e, 'whatsapp', item)} className="hover:text-green-500 text-gray-400">
+                  <button onClick={(e) => handleShare(e, 'whatsapp', item)} className="hover:text-green-500 text-gray-400 transition-colors">
                     <MessageCircle size={20}/>
                   </button>
-                  <button onClick={(e) => handleShare(e, 'copy', item)} className="text-gray-400">
+                  <button onClick={(e) => handleShare(e, 'copy', item)} className="text-gray-400 transition-colors">
                     {copiedId === item.id ? <Check size={20} className="text-green-500" /> : <Copy size={20} />}
                   </button>
                 </div>
               )}
 
-              <h3 className="text-2xl font-bold text-slate-800 mb-3 group-hover:text-blue-600">{item.title}</h3>
+              <h3 className="text-2xl font-bold text-slate-800 mb-3 group-hover:text-blue-600 transition-colors">{item.title}</h3>
               <p className="text-gray-500 text-sm line-clamp-3 mb-6">{item.description}</p>
               <div className="mt-auto pt-6 border-t border-gray-50 flex items-center justify-between text-blue-600 font-bold text-xs uppercase tracking-widest">
                 Preview Resource <ExternalLink size={14} />
@@ -328,9 +328,9 @@ function Pedagogies() {
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-4 py-12">
-            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-4 bg-white rounded-2xl border disabled:opacity-20 shadow-sm"><ChevronLeft /></button>
+            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-4 bg-white rounded-2xl border disabled:opacity-20 shadow-sm hover:bg-gray-50 transition-colors"><ChevronLeft /></button>
             <span className="font-bold text-gray-500 bg-white px-6 py-3 rounded-2xl border">Page {currentPage} of {totalPages}</span>
-            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="p-4 bg-white rounded-2xl border disabled:opacity-20 shadow-sm"><ChevronRight /></button>
+            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="p-4 bg-white rounded-2xl border disabled:opacity-20 shadow-sm hover:bg-gray-50 transition-colors"><ChevronRight /></button>
           </div>
         )}
       </div>
@@ -339,7 +339,7 @@ function Pedagogies() {
       {previewItem && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-md">
           <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-[3.5rem] p-10 relative overflow-y-auto">
-            <button className="absolute top-8 right-8 p-3 hover:bg-gray-100 rounded-full" onClick={() => setPreviewItem(null)}><X size={28} /></button>
+            <button className="absolute top-8 right-8 p-3 hover:bg-gray-100 rounded-full transition-colors" onClick={() => setPreviewItem(null)}><X size={28} /></button>
             <div className="flex items-center gap-2 text-blue-600 font-bold mb-6"><GraduationCap size={24} /> <span className="uppercase tracking-widest text-sm">Educational Material</span></div>
             <h2 className="text-4xl font-bold text-slate-900 mb-8">{previewItem.title}</h2>
             <div className="rounded-[2.5rem] overflow-hidden bg-gray-50 border shadow-inner">
