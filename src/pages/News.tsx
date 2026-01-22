@@ -132,7 +132,7 @@ function News() {
     }
 
     const links: Record<string, string> = {
-      X: `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+      X: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
       linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
       whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(text + " " + url)}`,
     };
