@@ -18,7 +18,8 @@ import {
   Download
 } from "lucide-react";
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { PDFDocument, rgb, StandardFonts, degrees } from 'pdf-lib';
+import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import Ifclasse from "../assets/img/Capture.png"
 
 // --- Interfaces ---
 interface Pedagogy {
@@ -39,6 +40,7 @@ interface GalleryHero {
 }
 
 function Pedagogies() {
+  // --- Redeclared Custom X Logo ---
   const XLogo = ({ className = "w-4 h-4" }: { className?: string }) => (
     <svg 
       viewBox="0 0 24 24" 
@@ -50,6 +52,7 @@ function Pedagogies() {
     </svg>
   );
 
+  // --- States ---
   const [pedagogies, setPedagogies] = useState<Pedagogy[]>([]);
   const [heroData, setHeroData] = useState<GalleryHero | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -64,24 +67,26 @@ function Pedagogies() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
   const [previewItem, setPreviewItem] = useState<Pedagogy | null>(null);
+  
+  // --- Sharing & UI Refs ---
   const [sharingId, setSharingId] = useState<number | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
-
-  const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
   const shareMenuRef = useRef<HTMLDivElement>(null);
 
+  const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
+
+  // --- Helpers ---
   const getItemType = (url: string) => {
     if (!url) return 'link';
     const lower = url.toLowerCase();
-    if (lower.endsWith('.pdf')) return 'pdf';
-    if (lower.match(/\.(mp4|webm|ogg|mov)$/) || lower.includes('youtube.com') || lower.includes('youtu.be')) return 'video';
-    if (lower.match(/\.(mp3|wav|aac|ogg)$/)) return 'audio';
+    if (lower.endsWith('.pdf') || lower.includes('/image/upload/')) return 'pdf';
+    if (lower.match(/\.(mp4|webm|ogg|mov)$/) || lower.includes('/video/upload/') || lower.includes('youtube.com') || lower.includes('youtu.be')) return 'video';
+    if (lower.match(/\.(mp3|wav|aac|ogg)$/) || lower.includes('/audio/upload/')) return 'audio';
     return 'link';
   };
 
-  // --- FIXED DOWNLOAD LOGIC ---
   const handleDownloadPDF = async (e: React.MouseEvent, item: Pedagogy) => {
-    e.stopPropagation(); // Prevent modal from opening
+    e.stopPropagation(); 
     setDownloadingId(item.id);
     try {
       const response = await fetch(item.url);
@@ -91,7 +96,7 @@ function Pedagogies() {
       const pages = pdfDoc.getPages();
 
       pages.forEach((page) => {
-        const { width, height } = page.getSize();
+        const { width } = page.getSize();
         page.drawText('À toi le micro Naija', {
           x: width - 160,
           y: 25,
@@ -99,15 +104,6 @@ function Pedagogies() {
           font: helveticaFont,
           color: rgb(0.05, 0.2, 0.5),
           opacity: 0.7,
-        });
-        page.drawText('À toi le micro Naija', {
-          x: width / 6,
-          y: height / 3,
-          size: 45,
-          font: helveticaFont,
-          color: rgb(0.8, 0.8, 0.8),
-          opacity: 0.15,
-          rotate: degrees(45),
         });
       });
 
@@ -128,6 +124,29 @@ function Pedagogies() {
     }
   };
 
+  const handleShare = (e: React.MouseEvent, platform: string, item: Pedagogy) => {
+    e.stopPropagation(); 
+    const shareUrl = item.url;
+    const text = `Check out this resource: ${item.title}`;
+
+    if (platform === 'copy') {
+      navigator.clipboard.writeText(shareUrl);
+      setCopiedId(item.id);
+      setTimeout(() => setCopiedId(null), 2000);
+      return;
+    }
+
+    const shareLinks: Record<string, string> = {
+      x: `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`,
+      whatsapp: `https://wa.me/?text=${encodeURIComponent(text + " " + shareUrl)}`,
+    };
+
+    const targetUrl = shareLinks[platform];
+    if (targetUrl) window.open(targetUrl, '_blank', 'noopener,noreferrer');
+    setSharingId(null);
+  };
+
+  // --- Effects ---
   useEffect(() => {
     const loadAllData = async () => {
       setLoading(true);
@@ -138,6 +157,7 @@ function Pedagogies() {
         ]);
         const heroes = await heroRes.json();
         const peds = await pedRes.json();
+        
         const heroArray = Array.isArray(heroes) ? heroes : (heroes.data || []);
         const hero = heroArray.find((item: any) => {
           const attr = item.attributes || item;
@@ -145,7 +165,14 @@ function Pedagogies() {
                  attr.subPurpose?.toLowerCase().trim() === "resources";
         });
         if (hero) setHeroData(hero.attributes || hero);
-        setPedagogies(Array.isArray(peds) ? peds : peds.data || []);
+        
+        const pedData = Array.isArray(peds) ? peds : (peds.data || []);
+        const normalizedPeds = pedData.map((p: any) => ({
+          id: p.id,
+          ...(p.attributes || p)
+        }));
+
+        setPedagogies(normalizedPeds);
       } catch (err) {
         console.error("Failed to fetch data:", err);
       } finally {
@@ -163,10 +190,11 @@ function Pedagogies() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [CLIENT_KEY]);
 
+  // --- Filter Logic ---
   const typeOptions = ["All", "pdf", "video", "audio", "link"];
-  const levelOptions = useMemo(() => ["All", ...Array.from(new Set(pedagogies.map(p => p.level).filter(Boolean)))], [pedagogies]);
-  const skillOptions = useMemo(() => ["All", ...Array.from(new Set(pedagogies.map(p => p.skillType).filter(Boolean)))], [pedagogies]);
-  const themeOptions = useMemo(() => ["All", ...Array.from(new Set(pedagogies.map(p => p.theme).filter(Boolean)))], [pedagogies]);
+  const levelOptions = useMemo(() => ["All", ...Array.from(new Set(pedagogies.map(p => p.level).filter(Boolean)))].sort(), [pedagogies]);
+  const skillOptions = useMemo(() => ["All", ...Array.from(new Set(pedagogies.map(p => p.skillType).filter(Boolean)))].sort(), [pedagogies]);
+  const themeOptions = useMemo(() => ["All", ...Array.from(new Set(pedagogies.map(p => p.theme).filter(Boolean)))].sort(), [pedagogies]);
 
   const filteredPedagogies = useMemo(() => {
     return pedagogies.filter(item => {
@@ -184,49 +212,25 @@ function Pedagogies() {
   const currentItems = filteredPedagogies.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(filteredPedagogies.length / itemsPerPage);
 
-  // --- FIXED SHARING LOGIC: OPEN IN NEW TAB + STOP PROPAGATION ---
-  const handleShare = (e: React.MouseEvent, platform: string, item: Pedagogy) => {
-    e.stopPropagation(); // Stop card click
-    e.preventDefault();
-    
-    const shareUrl = item.url;
-    const text = `Check out this resource: ${item.title}`;
-
-    if (platform === 'copy') {
-      navigator.clipboard.writeText(shareUrl);
-      setCopiedId(item.id);
-      setTimeout(() => setCopiedId(null), 2000);
-      return;
-    }
-
-    const shareLinks: Record<string, string> = {
-      x: `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`,
-      whatsapp: `https://wa.me/?text=${encodeURIComponent(text + " " + shareUrl)}`,
-    };
-
-    const targetUrl = shareLinks[platform];
-    if (targetUrl) {
-      const newTab = window.open(targetUrl, '_blank', 'noopener,noreferrer');
-      if (!newTab || newTab.closed || typeof newTab.closed === 'undefined') {
-        window.location.href = targetUrl;
-      }
-    }
-    setSharingId(null);
-  };
-
   return (
     <main className="pt-20 bg-gray-50/30 min-h-screen">
       {/* Hero Section */}
-      <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
+      <div className="relative w-full h-[60dvh] md:h-[90dvh] overflow-hidden bg-slate-900">
         {loading ? (
           <div className="w-full h-full flex items-center justify-center">
             <Loader2 className="animate-spin text-white/40" size={48} />
           </div>
-        ) : heroData ? (
+        ) : heroData && (
           <>
+            {/* Primary Hero Image from Data */}
             <img src={heroData.mediaUrl} alt={heroData.title} className="absolute inset-0 w-full h-full object-cover z-0" />
-            <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/90 via-blue-800/60 to-red-700/60" />
-            <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-20 gap-5">
+            
+            {/* Decorative Overlay using Ifclasse image */}
+            <img src={Ifclasse} alt="Decoration" className="absolute top-0 right-0 w-1/2 h-full object-cover z-10 opacity-30 mix-blend-overlay hidden md:block" />
+            
+            <div className="absolute inset-0 z-20 bg-gradient-to-br from-blue-900/90 via-blue-800/60 to-red-700/60" />
+            
+            <div className="relative z-30 w-full h-full flex flex-col items-start justify-center px-6 md:px-20 gap-5">
               <div className="flex items-center gap-2 text-white px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full">
                 <Library size={18} />
                 <p className="text-sm font-bold uppercase tracking-widest">Resources</p>
@@ -235,11 +239,11 @@ function Pedagogies() {
               <p className="text-white/90 text-xl max-w-xl">{heroData.description}</p>
             </div>
           </>
-        ) : null}
+        )}
       </div>
 
       <div className="px-4 md:px-8 py-12 max-w-7xl mx-auto">
-        {/* Filters ... (Keep as is) */}
+        {/* Filters Section */}
         <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-gray-100 mb-12 space-y-8">
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="relative flex-1">
@@ -265,14 +269,17 @@ function Pedagogies() {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-6 border-t border-gray-50">
-            <select value={pedLevel} onChange={(e) => {setPedLevel(e.target.value); setCurrentPage(1);}} className="px-4 py-3.5 rounded-2xl bg-gray-50 text-xs font-bold text-gray-600 outline-none">
-              {levelOptions.map(l => <option key={l} value={l}>{l}</option>)}
+            <select value={pedLevel} onChange={(e) => {setPedLevel(e.target.value); setCurrentPage(1);}} className="px-4 py-3.5 rounded-2xl bg-gray-50 text-xs font-bold text-gray-600 outline-none cursor-pointer">
+              <option value="All">All Levels</option>
+              {levelOptions.filter(l => l !== "All").map(l => <option key={l} value={l}>{l}</option>)}
             </select>
-            <select value={pedSkill} onChange={(e) => {setPedSkill(e.target.value); setCurrentPage(1);}} className="px-4 py-3.5 rounded-2xl bg-gray-50 text-xs font-bold text-gray-600 outline-none">
-              {skillOptions.map(s => <option key={s} value={s}>{s}</option>)}
+            <select value={pedSkill} onChange={(e) => {setPedSkill(e.target.value); setCurrentPage(1);}} className="px-4 py-3.5 rounded-2xl bg-gray-50 text-xs font-bold text-gray-600 outline-none cursor-pointer">
+              <option value="All">All Skills</option>
+              {skillOptions.filter(s => s !== "All").map(s => <option key={s} value={s}>{s}</option>)}
             </select>
-            <select value={pedTheme} onChange={(e) => {setPedTheme(e.target.value); setCurrentPage(1);}} className="px-4 py-3.5 rounded-2xl bg-gray-50 text-xs font-bold text-gray-600 outline-none">
-              {themeOptions.map(t => <option key={t} value={t}>{t}</option>)}
+            <select value={pedTheme} onChange={(e) => {setPedTheme(e.target.value); setCurrentPage(1);}} className="px-4 py-3.5 rounded-2xl bg-gray-50 text-xs font-bold text-gray-600 outline-none cursor-pointer">
+              <option value="All">All Themes</option>
+              {themeOptions.filter(t => t !== "All").map(t => <option key={t} value={t}>{t}</option>)}
             </select>
           </div>
         </div>
@@ -288,37 +295,46 @@ function Pedagogies() {
                   {getItemType(item.url) === 'audio' && <Music size={24} />}
                   {getItemType(item.url) === 'link' && <BookOpen size={24} />}
                 </div>
-                <div className="flex gap-2">
-                  <button onClick={(e) => { e.stopPropagation(); setSharingId(sharingId === item.id ? null : item.id); }} className="p-3 hover:bg-gray-100 rounded-full transition-colors">
+
+                <div className="flex gap-2 relative">
+                  <button 
+                    onClick={(e) => { e.stopPropagation(); setSharingId(sharingId === item.id ? null : item.id); }} 
+                    className="p-3 hover:bg-gray-100 rounded-full transition-colors"
+                    aria-label="Share resource"
+                  >
                     <Share2 size={18} />
                   </button>
+                  
                   {getItemType(item.url) === 'pdf' && (
-                    <button onClick={(e) => handleDownloadPDF(e, item)} className="p-3 hover:bg-gray-100 rounded-full text-blue-600 transition-colors">
+                    <button 
+                      onClick={(e) => handleDownloadPDF(e, item)} 
+                      className="p-3 hover:bg-gray-100 rounded-full text-blue-600 transition-colors"
+                      aria-label="Download PDF"
+                    >
                       {downloadingId === item.id ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
                     </button>
                   )}
+
+                  {/* Share Menu Popup */}
+                  {sharingId === item.id && (
+                    <div 
+                      ref={shareMenuRef} 
+                      className="absolute top-12 right-0 z-30 bg-white border border-gray-100 p-3 rounded-2xl shadow-xl flex gap-4"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <button onClick={(e) => handleShare(e, 'x', item)} className="hover:text-blue-400 text-gray-400 transition-colors" title="Share on X">
+                        <XLogo />
+                      </button>
+                      <button onClick={(e) => handleShare(e, 'whatsapp', item)} className="hover:text-green-500 text-gray-400 transition-colors" title="Share on WhatsApp">
+                        <MessageCircle size={20}/>
+                      </button>
+                      <button onClick={(e) => handleShare(e, 'copy', item)} className="text-gray-400 transition-colors" title="Copy Link">
+                        {copiedId === item.id ? <Check size={20} className="text-green-500" /> : <Copy size={20} />}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
-
-              {/* SHARE MENU ON CARD */}
-              {sharingId === item.id && (
-                <div 
-                  ref={shareMenuRef} 
-                  className="absolute top-20 right-8 z-30 bg-white border border-gray-100 p-4 rounded-[1.5rem] shadow-2xl flex gap-5" 
-                  onClick={(e) => e.stopPropagation()} // Stop click from reaching card
-                >
-                  <button onClick={(e) => handleShare(e, 'x', item)} className="hover:text-blue-400 text-gray-400 transition-colors">
-                    <XLogo />
-                  </button>
-                  <button onClick={(e) => handleShare(e, 'whatsapp', item)} className="hover:text-green-500 text-gray-400 transition-colors">
-                    <MessageCircle size={20}/>
-                  </button>
-                  <button onClick={(e) => handleShare(e, 'copy', item)} className="text-gray-400 transition-colors">
-                    {copiedId === item.id ? <Check size={20} className="text-green-500" /> : <Copy size={20} />}
-                  </button>
-                </div>
-              )}
-
               <h3 className="text-2xl font-bold text-slate-800 mb-3 group-hover:text-blue-600 transition-colors">{item.title}</h3>
               <p className="text-gray-500 text-sm line-clamp-3 mb-6">{item.description}</p>
               <div className="mt-auto pt-6 border-t border-gray-50 flex items-center justify-between text-blue-600 font-bold text-xs uppercase tracking-widest">
@@ -328,7 +344,7 @@ function Pedagogies() {
           ))}
         </div>
 
-        {/* Pagination ... */}
+        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-4 py-12">
             <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-4 bg-white rounded-2xl border disabled:opacity-20 shadow-sm hover:bg-gray-50 transition-colors"><ChevronLeft /></button>
@@ -341,25 +357,42 @@ function Pedagogies() {
       {/* Preview Modal */}
       {previewItem && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-md" onClick={() => setPreviewItem(null)}>
-          <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-[3.5rem] p-10 relative overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <button className="absolute top-8 right-8 p-3 hover:bg-gray-100 rounded-full transition-colors" onClick={() => setPreviewItem(null)}><X size={28} /></button>
-            <div className="flex items-center gap-2 text-blue-600 font-bold mb-6"><GraduationCap size={24} /> <span className="uppercase tracking-widest text-sm">Educational Material</span></div>
-            <h2 className="text-4xl font-bold text-slate-900 mb-8">{previewItem.title}</h2>
-            <div className="rounded-[2.5rem] overflow-hidden bg-gray-50 border shadow-inner">
+          <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-[3.5rem] p-6 md:p-10 relative overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <button className="absolute top-6 right-6 p-3 hover:bg-gray-100 rounded-full transition-colors" onClick={() => setPreviewItem(null)} aria-label="Close preview"><X size={28} /></button>
+            <div className="flex items-center gap-2 text-blue-600 font-bold mb-4 md:mb-6"><GraduationCap size={24} /> <span className="uppercase tracking-widest text-xs md:text-sm">Resource Preview</span></div>
+            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-6 md:mb-8 pr-12">{previewItem.title}</h2>
+            
+            <div className="rounded-[2rem] overflow-hidden bg-slate-100 border shadow-inner min-h-[40vh] flex items-center justify-center">
               {getItemType(previewItem.url) === 'pdf' ? (
-                <iframe src={previewItem.url} className="w-full h-[65vh]" title={previewItem.title} />
+                <iframe 
+                  src={`${previewItem.url}#toolbar=0`} 
+                  className="w-full h-[70vh] rounded-[2rem]" 
+                  title={`PDF preview of ${previewItem.title}`} 
+                />
               ) : getItemType(previewItem.url) === 'video' ? (
-                <div className="aspect-video">
-                  {previewItem.url.includes('youtube') || previewItem.url.includes('youtu.be') ? (
-                    <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${previewItem.url.split('v=')[1] || previewItem.url.split('/').pop()}`} allowFullScreen />
+                <div className="w-full aspect-video bg-black">
+                  {previewItem.url.includes('youtube.com') || previewItem.url.includes('youtu.be') ? (
+                    <iframe 
+                      className="w-full h-full" 
+                      src={`https://www.youtube.com/embed/${previewItem.url.split('v=')[1] || previewItem.url.split('/').pop()}`} 
+                      allowFullScreen 
+                      title={`Video: ${previewItem.title}`}
+                    />
                   ) : (
                     <video src={previewItem.url} controls className="w-full h-full" />
                   )}
                 </div>
               ) : getItemType(previewItem.url) === 'audio' ? (
-                <div className="py-20 flex flex-col items-center"><Music size={80} className="text-blue-200 mb-6" /><audio src={previewItem.url} controls className="w-full max-w-md" /></div>
+                <div className="w-full py-20 flex flex-col items-center bg-white">
+                  <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6">
+                    <Music size={40} className="text-blue-600 animate-pulse" />
+                  </div>
+                  <audio src={previewItem.url} controls className="w-full max-w-md" />
+                </div>
               ) : (
-                <div className="py-24 text-center"><BookOpen size={80} className="mx-auto text-gray-200 mb-6" />
+                <div className="py-24 text-center px-6">
+                  <BookOpen size={80} className="mx-auto text-blue-100 mb-6" />
+                  <p className="text-slate-600 mb-8 max-w-md mx-auto">External resource.</p>
                   <a href={previewItem.url} target="_blank" rel="noreferrer" className="px-10 py-5 bg-blue-600 text-white rounded-[2rem] font-bold shadow-xl hover:bg-blue-700 transition-all inline-flex items-center gap-3">
                     Open Resource <ExternalLink size={20} />
                   </a>

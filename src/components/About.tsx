@@ -1,5 +1,5 @@
 import { Users, Lightbulb } from "lucide-react";
-import pic from "../assets/img/_A1A4779.jpg"
+import pic from "../assets/img/_A1A5053.jpg"
 
 export default function AboutUs() {
   return (

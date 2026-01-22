@@ -18,7 +18,7 @@ import {
 interface RawQuestion {
   question: string;
   options: string[];
-  correctAnswer: number;
+  correctAnswer: number; // JSON: 1, 2, 3, 4 -> App: 0, 1, 2, 3
 }
 
 interface Exercise {
@@ -89,7 +89,13 @@ function Activities() {
           const data = item.attributes ? { id: item.id, ...item.attributes } : item;
           let parsedContent: RawQuestion[] = [];
           if (data.content) {
-            parsedContent = typeof data.content === 'string' ? JSON.parse(data.content) : data.content;
+            const rawContent = typeof data.content === 'string' ? JSON.parse(data.content) : data.content;
+            
+            // FIX: Subtract 1 from correctAnswer if the backend uses 1-based indexing (1,2,3,4)
+            parsedContent = rawContent.map((q: RawQuestion) => ({
+              ...q,
+              correctAnswer: q.correctAnswer - 1
+            }));
           }
           tempMap[data.id] = { ...data, content: parsedContent };
         });
@@ -105,6 +111,17 @@ function Activities() {
     fetchData();
   }, [CLIENT_KEY]);
 
+  // DYNAMIC FILTERS FROM BACKEND DATA
+  const typeOptions = useMemo(() => {
+    const types = new Set(exercisesList.map(ex => ex.exerciseType).filter(Boolean));
+    return ["All", ...Array.from(types)];
+  }, [exercisesList]);
+
+  const difficultyOptions = useMemo(() => {
+    const diffs = new Set(exercisesList.map(ex => ex.difficulty).filter(Boolean));
+    return ["All", ...Array.from(diffs)];
+  }, [exercisesList]);
+
   const handleOpenExercise = (id: number) => {
     const activity = exercisesMap[id];
     if (activity) {
@@ -117,8 +134,8 @@ function Activities() {
   const filteredExercises = useMemo(() => {
     return exercisesList.filter((ex) => {
       const matchesSearch = ex.title?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesType = activeType === "All" || ex.exerciseType?.toLowerCase() === activeType.toLowerCase().replace(/ /g, '');
-      const matchesDiff = activeDifficulty === "All" || ex.difficulty?.toLowerCase() === activeDifficulty.toLowerCase();
+      const matchesType = activeType === "All" || ex.exerciseType === activeType;
+      const matchesDiff = activeDifficulty === "All" || ex.difficulty === activeDifficulty;
       return matchesSearch && matchesType && matchesDiff;
     });
   }, [exercisesList, searchQuery, activeType, activeDifficulty]);
@@ -170,13 +187,13 @@ function Activities() {
               <input type="text" placeholder="Search..." className="w-full pl-14 pr-6 py-4 rounded-2xl bg-gray-50 outline-none shadow-inner" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             </div>
           </div>
-          <div className="flex gap-2">
-            {["All", "MCQ", "Gap Filling"].map((t) => (
+          <div className="flex flex-wrap gap-2">
+            {typeOptions.map((t) => (
               <button key={t} onClick={() => {setActiveType(t); setCurrentPage(1);}} className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${activeType === t ? "bg-blue-600 text-white shadow-lg" : "bg-gray-100 text-gray-400"}`}>{t}</button>
             ))}
           </div>
-          <div className="flex gap-2">
-            {["All", "Beginner", "Advanced"].map((d) => (
+          <div className="flex flex-wrap gap-2">
+            {difficultyOptions.map((d) => (
               <button key={d} onClick={() => {setActiveDifficulty(d); setCurrentPage(1);}} className={`px-4 py-3 rounded-xl text-[10px] font-black uppercase transition-all ${activeDifficulty === d ? "bg-red-600 text-white shadow-lg" : "bg-gray-100 text-gray-400"}`}>{d}</button>
             ))}
           </div>
@@ -210,103 +227,123 @@ function Activities() {
         )}
       </section>
 
-      {/* EXERCISE MODAL - FULL COVERAGE */}
+      {/* EXERCISE MODAL */}
       {(selectedEx || fetchError) && (
-        <div className="fixed inset-0 z-[999] overflow-y-auto bg-slate-900 flex justify-center items-start pt-10 pb-10 px-4 sm:px-6">
-          <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xl" onClick={() => {setSelectedEx(null); setFetchError(null);}} />
+        <div className="fixed inset-0 z-[999] bg-slate-900/60 backdrop-blur-xl flex justify-center items-center p-4">
+          <div className="fixed inset-0" onClick={() => {setSelectedEx(null); setFetchError(null);}} />
           
-          <div className="relative bg-white w-full max-w-3xl rounded-[3rem] p-6 md:p-12 shadow-2xl animate-in fade-in zoom-in duration-300">
-            {/* BOLD CANCEL BUTTON */}
+          <div className="relative bg-white w-full max-w-3xl rounded-[3rem] shadow-2xl animate-in fade-in zoom-in duration-300 flex flex-col max-h-[90vh]">
+            {/* CLOSE BUTTON */}
             <button 
               onClick={() => {setSelectedEx(null); setFetchError(null);}} 
-              className="absolute top-6 right-6 p-4 bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-900 rounded-full transition-all border-2 border-transparent hover:border-red-100 z-50"
-              aria-label="Close modal"
+              className="absolute top-6 right-6 p-3 bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-900 rounded-full transition-all z-50"
             >
-              <X size={28} strokeWidth={3} />
+              <X size={24} strokeWidth={3} />
             </button>
 
-            {fetchError ? (
-              <div className="text-center py-10">
-                <AlertCircle size={60} className="mx-auto text-red-500 mb-4" />
-                <h2 className="text-2xl font-bold mb-2">Error</h2>
-                <p className="text-gray-500 mb-8">{fetchError}</p>
-                <button onClick={() => setFetchError(null)} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-bold">Dismiss</button>
-              </div>
-            ) : selectedEx && (
-              <>
-                {modalStage === 'info' && (
-                  <div className="text-center py-4">
-                    <div className="w-24 h-24 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center mx-auto mb-8">{getIcon(selectedEx.exerciseType)}</div>
-                    <h2 className="text-4xl font-bold text-slate-900 mb-4">{selectedEx.title}</h2>
-                    <div className="bg-gray-50 rounded-[2rem] p-8 mb-10">
-                      <p className="text-gray-700 text-lg leading-relaxed">{selectedEx.description}</p>
+            {/* SCROLLABLE CONTENT CONTAINER */}
+            <div className="overflow-y-auto p-6 md:p-12 custom-scrollbar">
+              {fetchError ? (
+                <div className="text-center py-10">
+                  <AlertCircle size={60} className="mx-auto text-red-500 mb-4" />
+                  <h2 className="text-2xl font-bold mb-2">Error</h2>
+                  <p className="text-gray-500 mb-8">{fetchError}</p>
+                  <button onClick={() => setFetchError(null)} className="px-10 py-4 bg-slate-900 text-white rounded-2xl font-bold">Dismiss</button>
+                </div>
+              ) : selectedEx && (
+                <>
+                  {modalStage === 'info' && (
+                    <div className="text-center py-4">
+                      <div className="w-24 h-24 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center mx-auto mb-8">{getIcon(selectedEx.exerciseType)}</div>
+                      <h2 className="text-4xl font-bold text-slate-900 mb-4">{selectedEx.title}</h2>
+                      <div className="bg-gray-50 rounded-[2rem] p-8 mb-10">
+                        <p className="text-gray-700 text-lg leading-relaxed">{selectedEx.description}</p>
+                      </div>
+                      <button onClick={() => setModalStage('test')} className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] font-bold shadow-xl flex items-center justify-center gap-3 hover:bg-blue-700 transition-colors">
+                        Start Test <ArrowRight size={22} />
+                      </button>
                     </div>
-                    <button onClick={() => setModalStage('test')} className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] font-bold shadow-xl flex items-center justify-center gap-3 hover:bg-blue-700 transition-colors">
-                      Start Test <ArrowRight size={22} />
-                    </button>
-                  </div>
-                )}
+                  )}
 
-                {modalStage === 'test' && (
-                  <div className="space-y-8 pt-4">
-                    <h2 className="text-2xl font-black text-slate-800 border-b pb-4">{selectedEx.title}</h2>
-                    {selectedEx.content.map((q, idx) => (
-                      <div key={idx} className="p-8 rounded-[3rem] bg-gray-50/50 border border-gray-100">
-                        <p className="font-bold text-xl mb-6 flex gap-4">
-                          <span className="bg-blue-600 text-white w-9 h-9 rounded-xl flex items-center justify-center text-sm shrink-0">{idx + 1}</span>
-                          {q.question}
-                        </p>
-                        <div className="grid grid-cols-1 gap-3">
-                          {q.options.map((opt, i) => (
-                            <button
-                              key={i}
-                              onClick={() => setUserAnswers(prev => ({ ...prev, [idx]: i }))}
-                              className={`px-7 py-5 border-2 rounded-[1.8rem] text-left font-bold transition-all ${
-                                userAnswers[idx] === i ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-gray-100 hover:border-blue-400"
-                              }`}
-                            >
-                              {opt}
-                            </button>
-                          ))}
+                  {modalStage === 'test' && (
+                    <div className="space-y-8 pt-4">
+                      <h2 className="text-2xl font-black text-slate-800 border-b pb-4">{selectedEx.title}</h2>
+                      {selectedEx.content.map((q, idx) => (
+                        <div key={idx} className="p-8 rounded-[3rem] bg-gray-50/50 border border-gray-100">
+                          <p className="font-bold text-xl mb-6 flex gap-4">
+                            <span className="bg-blue-600 text-white w-9 h-9 rounded-xl flex items-center justify-center text-sm shrink-0">{idx + 1}</span>
+                            {q.question}
+                          </p>
+                          <div className="grid grid-cols-1 gap-3">
+                            {q.options.map((opt, i) => (
+                              <button
+                                key={i}
+                                onClick={() => setUserAnswers(prev => ({ ...prev, [idx]: i }))}
+                                className={`px-7 py-5 border-2 rounded-[1.8rem] text-left font-bold transition-all ${
+                                  userAnswers[idx] === i ? "bg-blue-600 border-blue-600 text-white" : "bg-white border-gray-100 hover:border-blue-400"
+                                }`}
+                              >
+                                {opt}
+                              </button>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ))}
-                    <button 
-                      onClick={() => setModalStage('result')} 
-                      disabled={Object.keys(userAnswers).length !== selectedEx.content.length}
-                      className="w-full py-6 bg-slate-900 text-white rounded-[2.5rem] font-bold disabled:opacity-50 hover:bg-slate-800 transition-colors"
-                    >
-                      Check My Score
-                    </button>
-                  </div>
-                )}
-
-                {modalStage === 'result' && (
-                  <div className="space-y-8 pt-4">
-                    <div className="bg-blue-600 rounded-[2.5rem] p-10 text-white text-center shadow-xl">
-                      <Trophy size={64} className="mx-auto mb-4 animate-bounce" />
-                      <p className="uppercase tracking-widest font-bold text-sm mb-2 opacity-80">Final Results</p>
-                      <h3 className="text-5xl font-black">{score} / {selectedEx.content.length}</h3>
+                      ))}
+                      <button 
+                        onClick={() => setModalStage('result')} 
+                        disabled={Object.keys(userAnswers).length !== selectedEx.content.length}
+                        className="w-full py-6 bg-slate-900 text-white rounded-[2.5rem] font-bold disabled:opacity-50 hover:bg-slate-800 transition-colors"
+                      >
+                        Check My Score
+                      </button>
                     </div>
-                    {selectedEx.content.map((q, idx) => (
-                      <div key={idx} className={`p-8 rounded-[2.5rem] border-2 ${userAnswers[idx] === q.correctAnswer ? 'border-green-200 bg-green-50/50' : 'border-red-200 bg-red-50/50'}`}>
-                        <p className="font-bold text-lg mb-3">{idx + 1}. {q.question}</p>
-                        <p className={`text-sm font-bold ${userAnswers[idx] === q.correctAnswer ? 'text-green-700' : 'text-red-700'}`}>
-                          Your Answer: {q.options[userAnswers[idx]]}
-                        </p>
-                        {userAnswers[idx] !== q.correctAnswer && (
-                          <p className="text-sm text-slate-600 mt-1">Correct: {q.options[q.correctAnswer]}</p>
-                        )}
+                  )}
+
+                  {modalStage === 'result' && (
+                    <div className="space-y-8 pt-4">
+                      <div className="bg-blue-600 rounded-[2.5rem] p-10 text-white text-center shadow-xl">
+                        <Trophy size={64} className="mx-auto mb-4 animate-bounce" />
+                        <p className="uppercase tracking-widest font-bold text-sm mb-2 opacity-80">Final Results</p>
+                        <h3 className="text-5xl font-black">{score} / {selectedEx.content.length}</h3>
                       </div>
-                    ))}
-                    <button onClick={() => setSelectedEx(null)} className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] font-bold shadow-lg hover:bg-blue-700 transition-colors">Return to Activities</button>
-                  </div>
-                )}
-              </>
-            )}
+                      {selectedEx.content.map((q, idx) => (
+                        <div key={idx} className={`p-8 rounded-[2.5rem] border-2 ${userAnswers[idx] === q.correctAnswer ? 'border-green-200 bg-green-50/50' : 'border-red-200 bg-red-50/50'}`}>
+                          <p className="font-bold text-lg mb-3">{idx + 1}. {q.question}</p>
+                          <p className={`text-sm font-bold ${userAnswers[idx] === q.correctAnswer ? 'text-green-700' : 'text-red-700'}`}>
+                            Your Answer: {q.options[userAnswers[idx]]}
+                          </p>
+                          {userAnswers[idx] !== q.correctAnswer && (
+                            <p className="text-sm text-slate-600 mt-1">Correct: {q.options[q.correctAnswer]}</p>
+                          )}
+                        </div>
+                      ))}
+                      <button onClick={() => setSelectedEx(null)} className="w-full py-6 bg-blue-600 text-white rounded-[2.5rem] font-bold shadow-lg hover:bg-blue-700 transition-colors">Return to Activities</button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
         </div>
       )}
+
+      {/* STYLES FOR SCROLLER */}
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+      `}</style>
     </main>
   );
 }

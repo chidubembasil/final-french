@@ -12,7 +12,9 @@ export default function PodcastHero() {
     const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || "";
 
     useEffect(() => {
-        fetch(`${CLIENT_KEY}api/podcasts?limit=4`)
+        // UPDATED: Added filter to only fetch audio media types
+        // Adjust the field name 'mediaType' to match your specific Strapi/API field name
+        fetch(`${CLIENT_KEY}api/podcasts?filters[mediaType][$eq]=audio&limit=4`)
             .then(res => {
                 if (!res.ok) throw new Error('Failed to fetch');
                 return res.json();
@@ -27,8 +29,15 @@ export default function PodcastHero() {
             });
     }, [CLIENT_KEY]);
 
-    // Function to handle play/pause
     const togglePlay = (podcast: any) => {
+        const audioSrc = podcast.audioUrl || podcast.file;
+        
+        // Safety check: Don't try to play if there is no audio source
+        if (!audioSrc) {
+            console.warn("No audio source found for this podcast");
+            return;
+        }
+
         if (currentPlaying?.id === podcast.id) {
             if (isPlaying) {
                 audioRef.current?.pause();
@@ -38,17 +47,26 @@ export default function PodcastHero() {
                 setIsPlaying(true);
             }
         } else {
-            setCurrentPlaying(podcast);
-            setIsPlaying(true);
-            // Audio will play via useEffect when currentPlaying changes
+            if (audioRef.current) {
+                audioRef.current.src = audioSrc;
+                audioRef.current.load();
+                audioRef.current.play()
+                    .then(() => {
+                        setCurrentPlaying(podcast);
+                        setIsPlaying(true);
+                    })
+                    .catch(err => console.error("Playback failed:", err));
+            }
         }
     };
 
-    // Effect to handle audio source changes
     useEffect(() => {
         if (currentPlaying && audioRef.current) {
-            audioRef.current.src = currentPlaying.audioUrl || currentPlaying.file; // Adjust based on your API field
-            audioRef.current.play();
+            const audioSrc = currentPlaying.audioUrl || currentPlaying.file;
+            if (audioRef.current.src !== audioSrc) {
+                audioRef.current.src = audioSrc;
+                audioRef.current.play().catch(() => {});
+            }
         }
     }, [currentPlaying]);
 
@@ -56,12 +74,12 @@ export default function PodcastHero() {
 
     return (
         <main className="w-full py-16 flex flex-col items-center bg-white">
-            {/* Hidden Audio Element */}
             <audio 
                 ref={audioRef} 
                 onEnded={() => setIsPlaying(false)} 
                 onPause={() => setIsPlaying(false)}
                 onPlay={() => setIsPlaying(true)}
+                preload="auto"
             />
 
             <div className="flex flex-col items-center gap-3 mb-10">
@@ -82,7 +100,6 @@ export default function PodcastHero() {
                             <h3 className="text-3xl md:text-4xl font-bold">{(featured as any).title}</h3>
                             <p className="opacity-80">Hosted by {(featured as any).author}</p>
                             
-                            {/* Simple Progress Indicator if playing */}
                             {currentPlaying?.id === (featured as any).id && (
                                 <div className="flex items-center gap-3 text-white/60">
                                     <Volume2 size={16} className="animate-pulse" />
@@ -95,13 +112,13 @@ export default function PodcastHero() {
                             onClick={() => togglePlay(featured)}
                             className="w-full md:w-1/2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 flex items-center justify-center aspect-video relative group cursor-pointer"
                         >
-                            <button className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
+                            <div className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
                                 {isPlaying && currentPlaying?.id === (featured as any).id ? (
                                     <Pause fill="white" color="white" size={34} />
                                 ) : (
                                     <Play fill="white" color="white" size={34} />
                                 )}
-                            </button>
+                            </div>
                         </div>
                     </div>
                 )}
@@ -122,7 +139,10 @@ export default function PodcastHero() {
                                 <h4 className="font-bold text-lg line-clamp-1">{p.title}</h4>
                                 <p className="text-sm text-gray-500 mb-2">{p.author}</p>
                                 <button 
-                                    onClick={() => togglePlay(p)} 
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        togglePlay(p);
+                                    }} 
                                     className="text-blue-600 font-bold text-xs uppercase tracking-widest flex items-center gap-2"
                                 >
                                     {currentPlaying?.id === p.id && isPlaying ? 'Pause Episode' : 'Play Episode'}

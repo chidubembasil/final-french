@@ -40,7 +40,6 @@ function News() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [activeState, setActiveState] = useState<string>('All');
-  const [activeLanguage, setActiveLanguage] = useState<string>('All');
   
   const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
   const [sharingId, setSharingId] = useState<number | null>(null);
@@ -52,7 +51,6 @@ function News() {
 
   const FILTER_OPTIONS = {
     categories: ['News', 'Announcement', 'Tutorial', 'Event', 'Update'],
-    languages: ['English', 'French'],
     states: [
       "Abia", "Adamawa", "Akwa Ibom", "Anambra", "Bauchi", "Bayelsa", "Benue", "Borno",
       "Cross River", "Delta", "Ebonyi", "Edo", "Ekiti", "Enugu", "Gombe", "Imo",
@@ -101,16 +99,26 @@ function News() {
 
   useEffect(() => { fetchBlogs(); }, [fetchBlogs]);
 
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const postId = urlParams.get('id');
+    if (postId && blogs.length > 0) {
+      const post = blogs.find(b => b.id === parseInt(postId));
+      if (post) {
+        setSelectedPost(post);
+      }
+    }
+  }, [blogs]);
+
   const filteredBlogs = useMemo(() => {
     return blogs.filter(post => {
       const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                             post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesCat = activeCategory === 'All' || post.category.toLowerCase() === activeCategory.toLowerCase();
       const matchesState = activeState === 'All' || post.state === activeState;
-      const matchesLang = activeLanguage === 'All' || post.language === activeLanguage;
-      return matchesSearch && matchesCat && matchesState && matchesLang;
+      return matchesSearch && matchesCat && matchesState;
     });
-  }, [blogs, searchQuery, activeCategory, activeState, activeLanguage]);
+  }, [blogs, searchQuery, activeCategory, activeState]);
 
   const totalPages = Math.ceil(filteredBlogs.length / itemsPerPage);
   const currentBlogs = filteredBlogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
@@ -121,7 +129,7 @@ function News() {
       e.preventDefault();
     }
 
-    const url = `${window.location.origin}/news/${post.id}`;
+    const url = `${window.location.origin}/news?id=${post.id}`;
     const text = `Read this article: ${post.title}`;
 
     if (platform === 'copy') {
@@ -139,10 +147,7 @@ function News() {
 
     const targetUrl = links[platform];
     if (targetUrl) {
-      const newTab = window.open(targetUrl, '_blank', 'noopener,noreferrer');
-      if (!newTab || newTab.closed || typeof newTab.closed === 'undefined') {
-        window.location.href = targetUrl;
-      }
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
     }
     setSharingId(null);
   };
@@ -166,7 +171,7 @@ function News() {
                 <Newspaper color="white" size={17} />
                 <p className="text-sm font-medium tracking-wide uppercase">Press & Updates</p>
               </div>
-              <h1 className="text-white text-5xl md:text-7xl font-bold font-serif max-w-3xl leading-tight">{heroData?.title || 'Latest News'}</h1>
+              <h1 className="text-white text-5xl md:text-7xl font-bold font-serif max-w-3xl leading-tight">{heroData?.title}</h1>
               <p className="text-white/90 text-lg md:text-xl max-w-xl">{heroData?.description}</p>
             </div>
           </>
@@ -176,7 +181,7 @@ function News() {
       {/* FILTER BAR */}
       <div className="sticky top-20 z-30 w-full bg-white/95 backdrop-blur-xl border-b border-gray-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input 
@@ -190,10 +195,6 @@ function News() {
             <select className="px-4 py-3 bg-gray-100/50 rounded-2xl font-bold text-[10px] uppercase outline-none" value={activeCategory} onChange={(e) => {setActiveCategory(e.target.value); setCurrentPage(1);}}>
               <option value="All">All Categories</option>
               {FILTER_OPTIONS.categories.map(c => <option key={c} value={c}>{c}</option>)}
-            </select>
-            <select className="px-4 py-3 bg-gray-100/50 rounded-2xl font-bold text-[10px] uppercase outline-none" value={activeLanguage} onChange={(e) => {setActiveLanguage(e.target.value); setCurrentPage(1);}}>
-              <option value="All">All Languages</option>
-              {FILTER_OPTIONS.languages.map(l => <option key={l} value={l}>{l}</option>)}
             </select>
             <select className="px-4 py-3 bg-gray-100/50 rounded-2xl font-bold text-[10px] uppercase outline-none" value={activeState} onChange={(e) => {setActiveState(e.target.value); setCurrentPage(1);}}>
               <option value="All">All Locations</option>
@@ -256,7 +257,7 @@ function News() {
               ))}
             </div>
 
-            {/* PAGINATION CONTROLS RESTORED */}
+            {/* PAGINATION CONTROLS */}
             {totalPages > 1 && (
               <div className="flex justify-center items-center gap-4 mt-16">
                 <button 

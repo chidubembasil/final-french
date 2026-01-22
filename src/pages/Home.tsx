@@ -49,23 +49,10 @@ export default function Home() {
                 
                 const data: GalleryItem[] = await response.json();
                 
-                console.log("Full API Response:", data);
-                console.log("Total items received:", data.length);
-                
-                // Filter items for the homepage - case insensitive comparison
+                // Filter items for the homepage
                 const filtered = data.filter(item => {
-                    const purposeMatch = item.purpose?.toLowerCase().trim() === "homepage image";
-                    console.log(`Item ${item.id}: purpose="${item.purpose}", matches: ${purposeMatch}`);
-                    return purposeMatch;
+                    return item.purpose?.toLowerCase().trim() === "homepage image";
                 });
-                
-                console.log("Filtered homepage images:", filtered);
-                console.log("Number of homepage images found:", filtered.length);
-                
-                if (filtered.length === 0) {
-                    console.warn("No items matched 'Homepage Image'. Available purposes:", 
-                        [...new Set(data.map(item => item.purpose))]);
-                }
                 
                 setSliderItems(filtered);
             } catch (error) {
@@ -79,6 +66,7 @@ export default function Home() {
         fetchSliderData();
     }, [CLIENT_KEY]);
 
+    // Updated Navigation Logic
     const getNavLinks = (subPurpose: string) => {
         const lowerSub = subPurpose?.toLowerCase().trim();
         if (lowerSub === 'fef') {
@@ -152,7 +140,6 @@ export default function Home() {
                                 {sliderItems.map((item, index) => {
                                     const links = getNavLinks(item.subPurpose);
                                     
-                                    // Alternating Gradient Logic
                                     const gradientClass = index % 2 === 0 
                                         ? "from-blue-900/80 via-blue-700/50 to-red-700/80" 
                                         : "from-red-800/80 via-red-600/50 to-blue-900/80";
@@ -185,6 +172,7 @@ export default function Home() {
                                                         </p>
                                                         <div className="flex flex-wrap gap-4 mt-8">
                                                             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                                                {/* GET STARTED BUTTON: Now points to the specific component anchor */}
                                                                 <a
                                                                     href={links.anchor}
                                                                     className="inline-block bg-blue-700 hover:bg-blue-800 text-white px-10 py-4 rounded-xl shadow-xl font-bold transition-all uppercase text-sm tracking-widest"
@@ -205,7 +193,6 @@ export default function Home() {
                                                     </motion.div>
                                                 </div>
 
-                                                {/* Slide Counter */}
                                                 <div className="absolute bottom-8 right-8 z-20 bg-black/40 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm font-medium">
                                                     {index + 1} / {sliderItems.length}
                                                 </div>
@@ -217,14 +204,13 @@ export default function Home() {
                         ) : (
                             <div className="w-full h-full flex items-center justify-center flex-col gap-4">
                                 <p className="text-white/50 italic text-xl">No homepage images found.</p>
-                                <p className="text-white/30 text-sm">Check console for debugging information</p>
                             </div>
                         )}
                     </AnimatePresence>
                 </div>
 
-                {/* Page Content Sections */}
                 <div className="flex flex-col gap-0 overflow-hidden">
+                    {/* Section IDs matching the getNavLinks anchor logic */}
                     <section id="about" className="scroll-mt-20">
                         <AboutUs />
                     </section>
