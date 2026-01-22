@@ -39,22 +39,22 @@ interface GalleryHero {
 }
 
 function Pedagogies() {
-     const XLogo = ({ className = "w-6 h-6" }: { className?: string }) => (
-        <svg 
-            viewBox="0 0 24 24" 
-            aria-hidden="true" 
-            className={className} 
-            fill="currentColor"
-        >
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
-        </svg>
-    );
+  const XLogo = ({ className = "w-4 h-4" }: { className?: string }) => (
+    <svg 
+      viewBox="0 0 24 24" 
+      aria-hidden="true" 
+      className={className} 
+      fill="currentColor"
+    >
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+    </svg>
+  );
+
   const [pedagogies, setPedagogies] = useState<Pedagogy[]>([]);
   const [heroData, setHeroData] = useState<GalleryHero | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
 
-  // Filter states
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [activeType, setActiveType] = useState<string>('All');
   const [pedLevel, setPedLevel] = useState<string>('All');
@@ -70,7 +70,6 @@ function Pedagogies() {
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
   const shareMenuRef = useRef<HTMLDivElement>(null);
 
-  // --- Helper: Determine file type ---
   const getItemType = (url: string) => {
     if (!url) return 'link';
     const lower = url.toLowerCase();
@@ -128,7 +127,6 @@ function Pedagogies() {
     }
   };
 
-  // --- DYNAMIC HERO FETCHING WITH COMPREHENSIVE DEBUGGING ---
   useEffect(() => {
     const loadAllData = async () => {
       setLoading(true);
@@ -138,84 +136,18 @@ function Pedagogies() {
           fetch(`${CLIENT_KEY}api/pedagogies`)
         ]);
 
-        if (!heroRes.ok) {
-          throw new Error(`Gallery API failed: ${heroRes.status}`);
-        }
-
         const heroes = await heroRes.json();
         const peds = await pedRes.json();
 
-        // === COMPREHENSIVE DEBUG LOGS ===
-        console.log("=== PEDAGOGIES HERO DEBUG ===");
-        console.log("1. Raw API Response:", heroes);
-        console.log("2. Response type:", typeof heroes);
-        console.log("3. Has .data property?", heroes.data ? "YES" : "NO");
-        console.log("4. Is array?", Array.isArray(heroes) ? "YES" : "NO");
-        
-        // Handle both Strapi and direct array responses
         const heroArray = Array.isArray(heroes) ? heroes : (heroes.data || []);
-        
-        console.log("5. Hero array length:", heroArray.length);
-        console.log("6. Hero array:", heroArray);
-        
-        // Log EVERY item's purpose and subPurpose
-        console.log("7. All items with their purposes:");
-        heroArray.forEach((item: any, index: number) => {
-          const attr = item.attributes || item;
-          console.log(`   [${index}] ID: ${item.id || attr.id}`, {
-            purpose: `"${attr.purpose}"`,
-            subPurpose: `"${attr.subPurpose}"`,
-            title: attr.title
-          });
-        });
-        
-        // Attempt to find the hero with case-insensitive matching
         const hero = heroArray.find((item: any) => {
-            const attr = item.attributes || item;
-            const purpose = attr.purpose?.toLowerCase().trim();
-            const subPurpose = attr.subPurpose?.toLowerCase().trim();
-            
-            const matches = purpose === "other page" && subPurpose === "resources";
-            
-            console.log(`8. Checking item ${item.id || attr.id}:`, {
-              original_purpose: attr.purpose,
-              normalized_purpose: purpose,
-              original_subPurpose: attr.subPurpose,
-              normalized_subPurpose: subPurpose,
-              matches: matches
-            });
-            
-            return matches;
+          const attr = item.attributes || item;
+          return attr.purpose?.toLowerCase().trim() === "other page" && 
+                 attr.subPurpose?.toLowerCase().trim() === "resources";
         });
-        
-        console.log("9. Hero search result:", hero ? "FOUND ✅" : "NOT FOUND ❌");
-        
-        if (hero) {
-          console.log("10. Hero data:", hero);
-          const heroData = hero.attributes || hero;
-          console.log("11. Setting hero data:", heroData);
-          setHeroData(heroData);
-        } else {
-          console.error("❌ NO HERO FOUND!");
-          console.log("12. Available purpose/subPurpose combinations:");
-          const combinations = heroArray.map((item: any) => {
-            const attr = item.attributes || item;
-            return {
-              id: item.id || attr.id,
-              purpose: attr.purpose,
-              subPurpose: attr.subPurpose
-            };
-          });
-          console.table(combinations);
-          
-          console.log("13. What we're looking for:");
-          console.log("   purpose: 'Other Page' (case insensitive)");
-          console.log("   subPurpose: 'Resources' (case insensitive)");
-        }
-        console.log("=== END PEDAGOGIES HERO DEBUG ===");
 
-        const pedArray = Array.isArray(peds) ? peds : peds.data || [];
-        setPedagogies(pedArray);
+        if (hero) setHeroData(hero.attributes || hero);
+        setPedagogies(Array.isArray(peds) ? peds : peds.data || []);
       } catch (err) {
         console.error("Failed to fetch data:", err);
       } finally {
@@ -255,80 +187,61 @@ function Pedagogies() {
   const currentItems = filteredPedagogies.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
   const totalPages = Math.ceil(filteredPedagogies.length / itemsPerPage);
 
+  // --- FIXED HANDLE SHARE LOGIC ---
   const handleShare = (e: React.MouseEvent, platform: string, item: Pedagogy) => {
     e.stopPropagation();
     const shareUrl = item.url;
     const text = `Check out this resource: ${item.title}`;
+
     if (platform === 'copy') {
       navigator.clipboard.writeText(shareUrl);
       setCopiedId(item.id);
       setTimeout(() => setCopiedId(null), 2000);
       return;
     }
-    const links: Record<string, string> = {
-      x: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`,
-      whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(text + " " + shareUrl)}`,
+
+    const shareLinks: Record<string, string> = {
+      x: `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`,
+      whatsapp: `https://wa.me/?text=${encodeURIComponent(text + " " + shareUrl)}`,
     };
-    window.open(links[platform], '_blank');
+
+    const targetUrl = shareLinks[platform];
+    if (targetUrl) {
+      const newWindow = window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      // If window.open is blocked by the browser, fallback to current window redirect
+      if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+        window.location.href = targetUrl;
+      }
+    }
     setSharingId(null);
   };
 
   return (
     <main className="pt-20 bg-gray-50/30 min-h-screen">
-      {/* --- DYNAMIC HERO SECTION --- */}
+      {/* Hero Section */}
       <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
         {loading ? (
-          /* Loading State */
           <div className="w-full h-full flex items-center justify-center">
-            <div className="flex flex-col items-center gap-4">
-              <Loader2 className="animate-spin text-white/40" size={48} />
-              <p className="text-white/60 font-medium">Loading resources...</p>
-            </div>
+            <Loader2 className="animate-spin text-white/40" size={48} />
           </div>
         ) : heroData ? (
           <>
-            {/* Dynamic Cover Image from Backend */}
-            <img 
-                src={heroData.mediaUrl} 
-                alt={heroData.title} 
-                className="absolute inset-0 w-full h-full object-cover z-0 transition-opacity duration-700" 
-            />
-            
-            {/* Overlay for Readability */}
+            <img src={heroData.mediaUrl} alt={heroData.title} className="absolute inset-0 w-full h-full object-cover z-0" />
             <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/90 via-blue-800/60 to-red-700/60" />
-            
-            {/* Dynamic Content */}
             <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-20 gap-5">
               <div className="flex items-center gap-2 text-white px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full">
                 <Library size={18} />
                 <p className="text-sm font-bold uppercase tracking-widest">Resources</p>
               </div>
-              
-              {/* Dynamic Title */}
-              <h1 className="text-white text-4xl md:text-7xl font-bold font-serif max-w-3xl leading-tight">
-                {heroData.title}
-              </h1>
-              
-              {/* Dynamic Description */}
-              <p className="text-white/90 text-xl max-w-xl">
-                {heroData.description}
-              </p>
+              <h1 className="text-white text-4xl md:text-7xl font-bold font-serif max-w-3xl leading-tight">{heroData.title}</h1>
+              <p className="text-white/90 text-xl max-w-xl">{heroData.description}</p>
             </div>
           </>
-        ) : (
-          /* No Hero Found - Show Fallback */
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="text-center text-white/60 max-w-md px-6">
-              <Library size={64} className="mx-auto mb-4 opacity-40" />
-              <p className="text-lg mb-2">Hero image not found</p>
-              <p className="text-sm text-white/40">Check console for debugging details</p>
-            </div>
-          </div>
-        )}
+        ) : null}
       </div>
 
       <div className="px-4 md:px-8 py-12 max-w-7xl mx-auto">
-        {/* FILTERS */}
+        {/* Filters */}
         <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-gray-100 mb-12 space-y-8">
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="relative flex-1">
@@ -336,7 +249,7 @@ function Pedagogies() {
               <input 
                 type="text" 
                 placeholder="Search resources..." 
-                className="w-full pl-14 pr-6 py-4 rounded-2xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500 transition-all shadow-inner" 
+                className="w-full pl-14 pr-6 py-4 rounded-2xl bg-gray-50 outline-none focus:ring-2 focus:ring-blue-500 transition-all" 
                 value={searchQuery} 
                 onChange={(e) => {setSearchQuery(e.target.value); setCurrentPage(1);}} 
               />
@@ -346,14 +259,13 @@ function Pedagogies() {
                 <button 
                   key={t} 
                   onClick={() => {setActiveType(t); setCurrentPage(1);}} 
-                  className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all whitespace-nowrap ${activeType === t ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
+                  className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase transition-all whitespace-nowrap ${activeType === t ? 'bg-white text-blue-700 shadow-sm' : 'text-gray-400'}`}
                 >
                   {t}
                 </button>
               ))}
             </div>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-6 border-t border-gray-50">
             <select value={pedLevel} onChange={(e) => {setPedLevel(e.target.value); setCurrentPage(1);}} className="px-4 py-3.5 rounded-2xl bg-gray-50 text-xs font-bold text-gray-600 outline-none">
               {levelOptions.map(l => <option key={l} value={l}>{l}</option>)}
@@ -367,133 +279,85 @@ function Pedagogies() {
           </div>
         </div>
 
-        {/* GRID */}
-        {loading ? (
-          <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-600" size={40} /></div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {currentItems.map((item) => (
-              <div 
-                key={item.id} 
-                onClick={() => setPreviewItem(item)} 
-                className="group bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all flex flex-col relative cursor-pointer"
-              >
-                <div className="flex justify-between items-start mb-6">
-                  <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                    {getItemType(item.url) === 'pdf' && <FileText size={24} />}
-                    {getItemType(item.url) === 'video' && <Video size={24} />}
-                    {getItemType(item.url) === 'audio' && <Music size={24} />}
-                    {getItemType(item.url) === 'link' && <BookOpen size={24} />}
-                  </div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); setSharingId(sharingId === item.id ? null : item.id); }}
-                      className="p-3 hover:bg-gray-100 rounded-full transition-colors"
-                    >
-                      <Share2 size={18} />
-                    </button>
-                    {getItemType(item.url) === 'pdf' && (
-                      <button 
-                        onClick={(e) => handleDownloadPDF(e, item)}
-                        className="p-3 hover:bg-gray-100 rounded-full transition-colors text-blue-600"
-                      >
-                        {downloadingId === item.id ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
-                      </button>
-                    )}
-                  </div>
+        {/* Resources Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {currentItems.map((item) => (
+            <div key={item.id} onClick={() => setPreviewItem(item)} className="group bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all flex flex-col relative cursor-pointer">
+              <div className="flex justify-between items-start mb-6">
+                <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                  {getItemType(item.url) === 'pdf' && <FileText size={24} />}
+                  {getItemType(item.url) === 'video' && <Video size={24} />}
+                  {getItemType(item.url) === 'audio' && <Music size={24} />}
+                  {getItemType(item.url) === 'link' && <BookOpen size={24} />}
                 </div>
-
-                {sharingId === item.id && (
-                  <div ref={shareMenuRef} className="absolute top-20 right-8 z-30 bg-white border border-gray-100 p-4 rounded-[1.5rem] shadow-2xl flex gap-5">
-                    <button onClick={(e) => handleShare(e, 'x', item)} className="hover:text-blue-400 transition-colors"><XLogo className="w-4 h-4 text-gray-400" /></button>
-                    <button onClick={(e) => handleShare(e, 'whatsapp', item)} className="hover:text-green-500 transition-colors"><MessageCircle size={20}/></button>
-                    <button onClick={(e) => handleShare(e, 'copy', item)} className="relative">
-                      {copiedId === item.id ? <Check size={20} className="text-green-500" /> : <Copy size={20} />}
+                <div className="flex gap-2">
+                  <button onClick={(e) => { e.stopPropagation(); setSharingId(sharingId === item.id ? null : item.id); }} className="p-3 hover:bg-gray-100 rounded-full">
+                    <Share2 size={18} />
+                  </button>
+                  {getItemType(item.url) === 'pdf' && (
+                    <button onClick={(e) => handleDownloadPDF(e, item)} className="p-3 hover:bg-gray-100 rounded-full text-blue-600">
+                      {downloadingId === item.id ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
                     </button>
-                  </div>
-                )}
-
-                <h3 className="text-2xl font-bold text-slate-800 mb-3 group-hover:text-blue-600 transition-colors">{item.title}</h3>
-                <p className="text-gray-500 text-sm line-clamp-3 mb-6 leading-relaxed">{item.description}</p>
-                <div className="mt-auto pt-6 border-t border-gray-50 flex items-center justify-between text-blue-600 font-bold text-xs uppercase tracking-widest">
-                  Preview Resource <ExternalLink size={14} />
+                  )}
                 </div>
               </div>
-            ))}
-          </div>
-        )}
 
-        {/* PAGINATION */}
+              {sharingId === item.id && (
+                <div ref={shareMenuRef} className="absolute top-20 right-8 z-30 bg-white border border-gray-100 p-4 rounded-[1.5rem] shadow-2xl flex gap-5">
+                  <button onClick={(e) => handleShare(e, 'x', item)} className="hover:text-blue-400 text-gray-400">
+                    <XLogo />
+                  </button>
+                  <button onClick={(e) => handleShare(e, 'whatsapp', item)} className="hover:text-green-500 text-gray-400">
+                    <MessageCircle size={20}/>
+                  </button>
+                  <button onClick={(e) => handleShare(e, 'copy', item)} className="text-gray-400">
+                    {copiedId === item.id ? <Check size={20} className="text-green-500" /> : <Copy size={20} />}
+                  </button>
+                </div>
+              )}
+
+              <h3 className="text-2xl font-bold text-slate-800 mb-3 group-hover:text-blue-600">{item.title}</h3>
+              <p className="text-gray-500 text-sm line-clamp-3 mb-6">{item.description}</p>
+              <div className="mt-auto pt-6 border-t border-gray-50 flex items-center justify-between text-blue-600 font-bold text-xs uppercase tracking-widest">
+                Preview Resource <ExternalLink size={14} />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-4 py-12">
-            <button 
-              disabled={currentPage === 1} 
-              onClick={() => setCurrentPage(p => p - 1)} 
-              className="p-4 bg-white rounded-2xl border hover:bg-gray-50 disabled:opacity-20 transition-all shadow-sm"
-            >
-              <ChevronLeft />
-            </button>
-            <span className="font-bold text-gray-500 bg-white px-6 py-3 rounded-2xl border shadow-sm">
-              Page {currentPage} of {totalPages}
-            </span>
-            <button 
-              disabled={currentPage === totalPages} 
-              onClick={() => setCurrentPage(p => p + 1)} 
-              className="p-4 bg-white rounded-2xl border hover:bg-gray-50 disabled:opacity-20 transition-all shadow-sm"
-            >
-              <ChevronRight />
-            </button>
+            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-4 bg-white rounded-2xl border disabled:opacity-20 shadow-sm"><ChevronLeft /></button>
+            <span className="font-bold text-gray-500 bg-white px-6 py-3 rounded-2xl border">Page {currentPage} of {totalPages}</span>
+            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="p-4 bg-white rounded-2xl border disabled:opacity-20 shadow-sm"><ChevronRight /></button>
           </div>
         )}
       </div>
 
-      {/* PREVIEW MODAL */}
+      {/* Preview Modal */}
       {previewItem && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-md">
           <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-[3.5rem] p-10 relative overflow-y-auto">
-            <button 
-              className="absolute top-8 right-8 p-3 hover:bg-gray-100 rounded-full transition-colors" 
-              onClick={() => setPreviewItem(null)}
-            >
-              <X size={28} />
-            </button>
-            
-            <div className="flex items-center gap-2 text-blue-600 font-bold mb-6">
-              <GraduationCap size={24} />
-              <span className="uppercase tracking-widest text-sm">Educational Material</span>
-            </div>
-            
+            <button className="absolute top-8 right-8 p-3 hover:bg-gray-100 rounded-full" onClick={() => setPreviewItem(null)}><X size={28} /></button>
+            <div className="flex items-center gap-2 text-blue-600 font-bold mb-6"><GraduationCap size={24} /> <span className="uppercase tracking-widest text-sm">Educational Material</span></div>
             <h2 className="text-4xl font-bold text-slate-900 mb-8">{previewItem.title}</h2>
-            
-            <div className="rounded-[2.5rem] overflow-hidden bg-gray-50 border border-gray-100 shadow-inner">
+            <div className="rounded-[2.5rem] overflow-hidden bg-gray-50 border shadow-inner">
               {getItemType(previewItem.url) === 'pdf' ? (
                 <iframe src={previewItem.url} className="w-full h-[65vh]" title={previewItem.title} />
               ) : getItemType(previewItem.url) === 'video' ? (
                 <div className="aspect-video">
                   {previewItem.url.includes('youtube') || previewItem.url.includes('youtu.be') ? (
-                    <iframe 
-                      className="w-full h-full"
-                      src={`https://www.youtube.com/embed/${previewItem.url.split('v=')[1] || previewItem.url.split('/').pop()}`}
-                      allowFullScreen
-                    />
+                    <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${previewItem.url.split('v=')[1] || previewItem.url.split('/').pop()}`} allowFullScreen />
                   ) : (
                     <video src={previewItem.url} controls className="w-full h-full" />
                   )}
                 </div>
               ) : getItemType(previewItem.url) === 'audio' ? (
-                <div className="py-20 flex flex-col items-center">
-                  <Music size={80} className="text-blue-200 mb-6" />
-                  <audio src={previewItem.url} controls className="w-full max-w-md" />
-                </div>
+                <div className="py-20 flex flex-col items-center"><Music size={80} className="text-blue-200 mb-6" /><audio src={previewItem.url} controls className="w-full max-w-md" /></div>
               ) : (
-                <div className="py-24 text-center">
-                  <BookOpen size={80} className="mx-auto text-gray-200 mb-6" />
-                  <a 
-                    href={previewItem.url} 
-                    target="_blank" 
-                    rel="noreferrer" 
-                    className="px-10 py-5 bg-blue-600 text-white rounded-[2rem] font-bold shadow-xl hover:bg-blue-700 transition-all inline-flex items-center gap-3"
-                  >
+                <div className="py-24 text-center"><BookOpen size={80} className="mx-auto text-gray-200 mb-6" />
+                  <a href={previewItem.url} target="_blank" rel="noreferrer" className="px-10 py-5 bg-blue-600 text-white rounded-[2rem] font-bold shadow-xl hover:bg-blue-700 transition-all inline-flex items-center gap-3">
                     Open Resource <ExternalLink size={20} />
                   </a>
                 </div>
