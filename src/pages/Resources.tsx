@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
-import Ifclasse from "../assets/img/Capture.png"
+import Ifclasse from "../assets/img/capture.png"
 
 // --- Interfaces ---
 interface Pedagogy {
