@@ -12,7 +12,6 @@ import {
   ChevronRight,
   ExternalLink,
   Share2,
-  Twitter,
   MessageCircle,
   Copy,
   Check,
@@ -40,6 +39,16 @@ interface GalleryHero {
 }
 
 function Pedagogies() {
+     const XLogo = ({ className = "w-6 h-6" }: { className?: string }) => (
+        <svg 
+            viewBox="0 0 24 24" 
+            aria-hidden="true" 
+            className={className} 
+            fill="currentColor"
+        >
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+        </svg>
+    );
   const [pedagogies, setPedagogies] = useState<Pedagogy[]>([]);
   const [heroData, setHeroData] = useState<GalleryHero | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -119,7 +128,7 @@ function Pedagogies() {
     }
   };
 
-  // --- DYNAMIC HERO FETCHING ---
+  // --- DYNAMIC HERO FETCHING WITH COMPREHENSIVE DEBUGGING ---
   useEffect(() => {
     const loadAllData = async () => {
       setLoading(true);
@@ -129,23 +138,86 @@ function Pedagogies() {
           fetch(`${CLIENT_KEY}api/pedagogies`)
         ]);
 
+        if (!heroRes.ok) {
+          throw new Error(`Gallery API failed: ${heroRes.status}`);
+        }
+
         const heroes = await heroRes.json();
         const peds = await pedRes.json();
 
-        // Dynamically find the hero based on Purpose: "Other Page" and SubPurpose: "Resources"
-        const hero = (heroes.data || heroes).find((item: any) => {
-            const attr = item.attributes || item;
-            return attr.purpose === "Other Page" && attr.subPurpose === "Resources";
+        // === COMPREHENSIVE DEBUG LOGS ===
+        console.log("=== PEDAGOGIES HERO DEBUG ===");
+        console.log("1. Raw API Response:", heroes);
+        console.log("2. Response type:", typeof heroes);
+        console.log("3. Has .data property?", heroes.data ? "YES" : "NO");
+        console.log("4. Is array?", Array.isArray(heroes) ? "YES" : "NO");
+        
+        // Handle both Strapi and direct array responses
+        const heroArray = Array.isArray(heroes) ? heroes : (heroes.data || []);
+        
+        console.log("5. Hero array length:", heroArray.length);
+        console.log("6. Hero array:", heroArray);
+        
+        // Log EVERY item's purpose and subPurpose
+        console.log("7. All items with their purposes:");
+        heroArray.forEach((item: any, index: number) => {
+          const attr = item.attributes || item;
+          console.log(`   [${index}] ID: ${item.id || attr.id}`, {
+            purpose: `"${attr.purpose}"`,
+            subPurpose: `"${attr.subPurpose}"`,
+            title: attr.title
+          });
         });
         
+        // Attempt to find the hero with case-insensitive matching
+        const hero = heroArray.find((item: any) => {
+            const attr = item.attributes || item;
+            const purpose = attr.purpose?.toLowerCase().trim();
+            const subPurpose = attr.subPurpose?.toLowerCase().trim();
+            
+            const matches = purpose === "other page" && subPurpose === "resources";
+            
+            console.log(`8. Checking item ${item.id || attr.id}:`, {
+              original_purpose: attr.purpose,
+              normalized_purpose: purpose,
+              original_subPurpose: attr.subPurpose,
+              normalized_subPurpose: subPurpose,
+              matches: matches
+            });
+            
+            return matches;
+        });
+        
+        console.log("9. Hero search result:", hero ? "FOUND ✅" : "NOT FOUND ❌");
+        
         if (hero) {
-          setHeroData(hero.attributes || hero);
+          console.log("10. Hero data:", hero);
+          const heroData = hero.attributes || hero;
+          console.log("11. Setting hero data:", heroData);
+          setHeroData(heroData);
+        } else {
+          console.error("❌ NO HERO FOUND!");
+          console.log("12. Available purpose/subPurpose combinations:");
+          const combinations = heroArray.map((item: any) => {
+            const attr = item.attributes || item;
+            return {
+              id: item.id || attr.id,
+              purpose: attr.purpose,
+              subPurpose: attr.subPurpose
+            };
+          });
+          console.table(combinations);
+          
+          console.log("13. What we're looking for:");
+          console.log("   purpose: 'Other Page' (case insensitive)");
+          console.log("   subPurpose: 'Resources' (case insensitive)");
         }
+        console.log("=== END PEDAGOGIES HERO DEBUG ===");
 
         const pedArray = Array.isArray(peds) ? peds : peds.data || [];
         setPedagogies(pedArray);
       } catch (err) {
-        console.error("Failed to fetch pedagogies:", err);
+        console.error("Failed to fetch data:", err);
       } finally {
         setLoading(false);
       }
@@ -194,7 +266,7 @@ function Pedagogies() {
       return;
     }
     const links: Record<string, string> = {
-      twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`,
+      x: `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`,
       whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(text + " " + shareUrl)}`,
     };
     window.open(links[platform], '_blank');
@@ -205,7 +277,15 @@ function Pedagogies() {
     <main className="pt-20 bg-gray-50/30 min-h-screen">
       {/* --- DYNAMIC HERO SECTION --- */}
       <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
-        {heroData ? (
+        {loading ? (
+          /* Loading State */
+          <div className="w-full h-full flex items-center justify-center">
+            <div className="flex flex-col items-center gap-4">
+              <Loader2 className="animate-spin text-white/40" size={48} />
+              <p className="text-white/60 font-medium">Loading resources...</p>
+            </div>
+          </div>
+        ) : heroData ? (
           <>
             {/* Dynamic Cover Image from Backend */}
             <img 
@@ -236,15 +316,19 @@ function Pedagogies() {
             </div>
           </>
         ) : (
-          /* Skeleton Loader for Hero */
+          /* No Hero Found - Show Fallback */
           <div className="w-full h-full flex items-center justify-center">
-            <Loader2 className="animate-spin text-white/20" size={48} />
+            <div className="text-center text-white/60 max-w-md px-6">
+              <Library size={64} className="mx-auto mb-4 opacity-40" />
+              <p className="text-lg mb-2">Hero image not found</p>
+              <p className="text-sm text-white/40">Check console for debugging details</p>
+            </div>
           </div>
         )}
       </div>
 
       <div className="px-4 md:px-8 py-12 max-w-7xl mx-auto">
-        {/* FILTERS ... (rest of your existing UI) */}
+        {/* FILTERS */}
         <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-gray-100 mb-12 space-y-8">
           <div className="flex flex-col lg:flex-row gap-6">
             <div className="relative flex-1">
@@ -292,7 +376,7 @@ function Pedagogies() {
               <div 
                 key={item.id} 
                 onClick={() => setPreviewItem(item)} 
-                className="group bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all flex flex-col relative"
+                className="group bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all flex flex-col relative cursor-pointer"
               >
                 <div className="flex justify-between items-start mb-6">
                   <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-colors">
@@ -321,7 +405,7 @@ function Pedagogies() {
 
                 {sharingId === item.id && (
                   <div ref={shareMenuRef} className="absolute top-20 right-8 z-30 bg-white border border-gray-100 p-4 rounded-[1.5rem] shadow-2xl flex gap-5">
-                    <button onClick={(e) => handleShare(e, 'twitter', item)} className="hover:text-blue-400 transition-colors"><Twitter size={20}/></button>
+                    <button onClick={(e) => handleShare(e, 'x', item)} className="hover:text-blue-400 transition-colors"><XLogo className="w-4 h-4 text-gray-400" /></button>
                     <button onClick={(e) => handleShare(e, 'whatsapp', item)} className="hover:text-green-500 transition-colors"><MessageCircle size={20}/></button>
                     <button onClick={(e) => handleShare(e, 'copy', item)} className="relative">
                       {copiedId === item.id ? <Check size={20} className="text-green-500" /> : <Copy size={20} />}
