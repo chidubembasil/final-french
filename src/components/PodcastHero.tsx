@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function PodcastHero() {
-    const [podcasts, setPodcasts] = useState([]);
+    const [podcasts, setPodcasts] = useState<any[]>([]);
     const [currentPlaying, setCurrentPlaying] = useState<any>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     
@@ -12,63 +12,65 @@ export default function PodcastHero() {
     const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || "";
 
     useEffect(() => {
-        // UPDATED: Added filter to only fetch audio media types
-        // Adjust the field name 'mediaType' to match your specific Strapi/API field name
-        fetch(`${CLIENT_KEY}api/podcasts?filters[mediaType][$eq]=audio&limit=4`)
-            .then(res => {
+        // Using a cleaner fetch pattern
+        const fetchPodcasts = async () => {
+            try {
+                const res = await fetch(`${CLIENT_KEY}api/podcasts?filters[mediaType][$eq]=audio&limit=4`);
                 if (!res.ok) throw new Error('Failed to fetch');
-                return res.json();
-            })
-            .then(data => {
-                const finalData = Array.isArray(data) ? data : (data?.data || []);
-                setPodcasts(finalData);
-            })
-            .catch(err => {
+                const data = await res.json();
+                
+                // FIX 1: Ensure we extract the data correctly regardless of Strapi version
+                const rawData = Array.isArray(data) ? data : (data?.data || []);
+                const formattedData = rawData.map((item: any) => ({
+                    id: item.id,
+                    ...(item.attributes || item) // Flatten attributes if they exist
+                }));
+                
+                setPodcasts(formattedData);
+            } catch (err) {
                 console.error("Podcast Hero fetch error:", err);
-                setPodcasts([]);
-            });
+            }
+        };
+        fetchPodcasts();
     }, [CLIENT_KEY]);
 
+    // FIX 2: Helper to get the correct URL
+    const getAudioUrl = (podcast: any) => {
+        if (!podcast) return "";
+        const url = podcast.audioUrl || podcast.file;
+        if (!url) return "";
+        // If the URL is relative (starts with /), prefix it with the CLIENT_KEY
+        return url.startsWith('http') ? url : `${CLIENT_KEY.replace(/\/$/, '')}${url}`;
+    };
+
     const togglePlay = (podcast: any) => {
-        const audioSrc = podcast.audioUrl || podcast.file;
+        const audioSrc = getAudioUrl(podcast);
         
-        // Safety check: Don't try to play if there is no audio source
         if (!audioSrc) {
-            console.warn("No audio source found for this podcast");
+            console.error("No valid audio source found for:", podcast.title);
             return;
         }
 
         if (currentPlaying?.id === podcast.id) {
             if (isPlaying) {
                 audioRef.current?.pause();
-                setIsPlaying(false);
             } else {
-                audioRef.current?.play();
-                setIsPlaying(true);
+                audioRef.current?.play().catch(e => console.error("Playback error:", e));
             }
         } else {
+            // New song selected
             if (audioRef.current) {
+                setCurrentPlaying(podcast);
                 audioRef.current.src = audioSrc;
                 audioRef.current.load();
+                // We use a timeout or the onCanPlay event usually, 
+                // but play() returns a promise we can use:
                 audioRef.current.play()
-                    .then(() => {
-                        setCurrentPlaying(podcast);
-                        setIsPlaying(true);
-                    })
+                    .then(() => setIsPlaying(true))
                     .catch(err => console.error("Playback failed:", err));
             }
         }
     };
-
-    useEffect(() => {
-        if (currentPlaying && audioRef.current) {
-            const audioSrc = currentPlaying.audioUrl || currentPlaying.file;
-            if (audioRef.current.src !== audioSrc) {
-                audioRef.current.src = audioSrc;
-                audioRef.current.play().catch(() => {});
-            }
-        }
-    }, [currentPlaying]);
 
     const featured = podcasts.length > 0 ? podcasts[0] : null;
 
@@ -95,12 +97,12 @@ export default function PodcastHero() {
                     <div className="relative w-full rounded-[2.5rem] p-8 md:p-12 mb-8 overflow-hidden bg-gradient-to-r from-blue-900 via-blue-700 to-red-600 text-white flex flex-col md:flex-row items-center gap-10 shadow-2xl">
                         <div className="flex-1 space-y-4">
                             <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded text-[10px] font-black uppercase">
-                                {isPlaying && currentPlaying?.id === (featured as any).id ? 'Now Playing' : 'Featured Episode'}
+                                {isPlaying && currentPlaying?.id === featured.id ? 'Now Playing' : 'Featured Episode'}
                             </span>
-                            <h3 className="text-3xl md:text-4xl font-bold">{(featured as any).title}</h3>
-                            <p className="opacity-80">Hosted by {(featured as any).author}</p>
+                            <h3 className="text-3xl md:text-4xl font-bold">{featured.title}</h3>
+                            <p className="opacity-80">Hosted by {featured.author}</p>
                             
-                            {currentPlaying?.id === (featured as any).id && (
+                            {currentPlaying?.id === featured.id && isPlaying && (
                                 <div className="flex items-center gap-3 text-white/60">
                                     <Volume2 size={16} className="animate-pulse" />
                                     <span className="text-xs font-medium">Playing on this page</span>
@@ -113,7 +115,7 @@ export default function PodcastHero() {
                             className="w-full md:w-1/2 bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 flex items-center justify-center aspect-video relative group cursor-pointer"
                         >
                             <div className="w-20 h-20 bg-red-600 rounded-full flex items-center justify-center shadow-2xl group-hover:scale-110 transition-transform">
-                                {isPlaying && currentPlaying?.id === (featured as any).id ? (
+                                {isPlaying && currentPlaying?.id === featured.id ? (
                                     <Pause fill="white" color="white" size={34} />
                                 ) : (
                                     <Play fill="white" color="white" size={34} />
@@ -124,8 +126,11 @@ export default function PodcastHero() {
                 )}
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {Array.isArray(podcasts) && podcasts.slice(1, 3).map((p: any) => (
-                        <div key={p.id || p._id} className={`p-6 rounded-[2rem] border transition-all flex items-center gap-6 group ${currentPlaying?.id === p.id ? 'border-blue-500 bg-blue-50/50' : 'bg-white border-gray-100 hover:border-blue-200'}`}>
+                    {podcasts.slice(1, 3).map((p: any) => (
+                        <div 
+                            key={p.id} 
+                            className={`p-6 rounded-[2rem] border transition-all flex items-center gap-6 group ${currentPlaying?.id === p.id ? 'border-blue-500 bg-blue-50/50' : 'bg-white border-gray-100 hover:border-blue-200'}`}
+                        >
                             <div 
                                 onClick={() => togglePlay(p)}
                                 className="w-24 h-24 bg-gray-100 rounded-2xl flex items-center justify-center cursor-pointer relative overflow-hidden"
@@ -139,10 +144,7 @@ export default function PodcastHero() {
                                 <h4 className="font-bold text-lg line-clamp-1">{p.title}</h4>
                                 <p className="text-sm text-gray-500 mb-2">{p.author}</p>
                                 <button 
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        togglePlay(p);
-                                    }} 
+                                    onClick={() => togglePlay(p)} 
                                     className="text-blue-600 font-bold text-xs uppercase tracking-widest flex items-center gap-2"
                                 >
                                     {currentPlaying?.id === p.id && isPlaying ? 'Pause Episode' : 'Play Episode'}

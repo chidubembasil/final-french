@@ -40,33 +40,35 @@ export default function Home() {
             try {
                 setLoading(true);
                 setError(null);
-                
                 const response = await fetch(`${CLIENT_KEY}api/galleries`);
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
+                const data = await response.json();
+                const rawData = Array.isArray(data) ? data : (data.data || []);
                 
-                const data: GalleryItem[] = await response.json();
-                
-                // Filter items for the homepage
-                const filtered = data.filter(item => {
-                    return item.purpose?.toLowerCase().trim() === "homepage image";
-                });
+                // Map and Filter items for the homepage
+                const filtered = rawData.map((item: any) => ({
+                    id: item.id,
+                    ...(item.attributes || item)
+                })).filter((item: any) => item.purpose?.toLowerCase().trim() === "homepage image");
                 
                 setSliderItems(filtered);
-            } catch (error) {
-                console.error("Error fetching gallery data:", error);
-                setError(error instanceof Error ? error.message : "Failed to load slider images");
+            } catch (err) {
+                console.error("Error fetching gallery data:", err);
+                setError(err instanceof Error ? err.message : "Failed to load slider images");
             } finally {
                 setLoading(false);
             }
         };
-
         fetchSliderData();
     }, [CLIENT_KEY]);
 
-    // Updated Navigation Logic
+    /**
+     * Maps the API subPurpose to internal routes and section IDs
+     * fef -> #resource
+     * bac -> #bac
+     * atoile -> #activities
+     */
     const getNavLinks = (subPurpose: string) => {
         const lowerSub = subPurpose?.toLowerCase().trim();
         if (lowerSub === 'fef') {
@@ -82,24 +84,19 @@ export default function Home() {
     if (loading) {
         return (
             <div className="h-screen w-full flex items-center justify-center bg-white">
-                <div className="flex flex-col items-center gap-4">
-                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-                    <p className="text-slate-500 font-medium animate-pulse">Loading Experience...</p>
-                </div>
+                <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="h-screen w-full flex items-center justify-center bg-white">
-                <div className="flex flex-col items-center gap-4 max-w-md text-center">
-                    <div className="text-red-500 text-5xl">⚠️</div>
-                    <h2 className="text-2xl font-bold text-slate-800">Failed to Load</h2>
-                    <p className="text-slate-600">{error}</p>
+            <div className="h-screen w-full flex items-center justify-center bg-white px-4 text-center">
+                <div className="max-w-md">
+                    <p className="text-red-500 font-bold mb-4">Error: {error}</p>
                     <button 
-                        onClick={() => window.location.reload()} 
-                        className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                        onClick={() => window.location.reload()}
+                        className="bg-blue-600 text-white px-6 py-2 rounded-lg"
                     >
                         Retry
                     </button>
@@ -109,131 +106,111 @@ export default function Home() {
     }
 
     return (
-        <>
-            <main className='w-full h-fit pt-12 bg-white'>
-                
-                {/* Dynamic Hero Slider Section */}
-                <div id="slider" className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
-                    <AnimatePresence mode="wait">
-                        {sliderItems.length > 0 ? (
-                            <Swiper 
-                                key={`home-swiper-${sliderItems.length}`}
-                                modules={[Autoplay, Navigation, Pagination]}
-                                autoplay={{ 
-                                    delay: 7000, 
-                                    disableOnInteraction: false,
-                                    pauseOnMouseEnter: true
-                                }}
-                                loop={sliderItems.length > 1}
-                                slidesPerView={1}
-                                spaceBetween={0}
-                                speed={800}
-                                observer={true}
-                                observeParents={true}
-                                pagination={{
-                                    clickable: true,
-                                    dynamicBullets: true,
-                                }}
-                                navigation={sliderItems.length > 1}
-                                className="h-full w-full"
-                            >
-                                {sliderItems.map((item, index) => {
-                                    const links = getNavLinks(item.subPurpose);
-                                    
-                                    const gradientClass = index % 2 === 0 
-                                        ? "from-blue-900/80 via-blue-700/50 to-red-700/80" 
-                                        : "from-red-800/80 via-red-600/50 to-blue-900/80";
+        <main className='w-full h-fit pt-12 bg-white scroll-smooth'>
+            {/* Hero Slider Section */}
+            <div id="slider" className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
+                <AnimatePresence mode="wait">
+                    {sliderItems.length > 0 ? (
+                        <Swiper 
+                            key={`home-swiper-${sliderItems.length}`}
+                            modules={[Autoplay, Navigation, Pagination]}
+                            autoplay={{ delay: 7000, disableOnInteraction: false }}
+                            loop={sliderItems.length > 1}
+                            slidesPerView={1}
+                            pagination={{ clickable: true, dynamicBullets: true }}
+                            navigation={sliderItems.length > 1}
+                            className="h-full w-full"
+                        >
+                            {sliderItems.map((item, index) => {
+                                const links = getNavLinks(item.subPurpose);
+                                const gradientClass = index % 2 === 0 
+                                    ? "from-blue-900/80 via-blue-700/50 to-red-700/80" 
+                                    : "from-red-800/80 via-red-600/50 to-blue-900/80";
 
-                                    return (
-                                        <SwiperSlide key={`slide-${item.id}-${index}`}>
-                                            <div className="relative w-full h-full">
-                                                <img
-                                                    src={item.mediaUrl}
-                                                    alt={item.title || `Slide ${index + 1}`}
-                                                    className="absolute inset-0 w-full h-full object-cover z-0"
-                                                    loading={index === 0 ? "eager" : "lazy"}
-                                                />
-                                                
-                                                <div className={`absolute inset-0 z-[5] bg-gradient-to-br ${gradientClass}`} />
-                                                
-                                                <div className="absolute inset-0 flex flex-col justify-center items-start px-10 md:px-20 z-10">
-                                                    <motion.div
-                                                        initial={{ opacity: 0, y: 30 }}
-                                                        whileInView={{ opacity: 1, y: 0 }}
-                                                        viewport={{ once: false }}
-                                                        transition={{ duration: 0.8, delay: 0.2 }}
-                                                        className="max-w-4xl"
-                                                    >
-                                                        <h2 className="text-5xl md:text-7xl font-bold text-white max-w-2xl font-serif leading-tight drop-shadow-lg">
-                                                            {item.title}
-                                                        </h2>
-                                                        <p className="text-white/90 mt-4 max-w-lg text-lg md:text-xl drop-shadow-md">
-                                                            {item.description}
-                                                        </p>
-                                                        <div className="flex flex-wrap gap-4 mt-8">
-                                                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                                                {/* GET STARTED BUTTON: Now points to the specific component anchor */}
-                                                                <a
-                                                                    href={links.anchor}
-                                                                    className="inline-block bg-blue-700 hover:bg-blue-800 text-white px-10 py-4 rounded-xl shadow-xl font-bold transition-all uppercase text-sm tracking-widest"
-                                                                >
-                                                                    Get Started
-                                                                </a>
-                                                            </motion.div>
-                                                            
-                                                            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                                                <Link
-                                                                    to={links.page}
-                                                                    className="inline-block bg-transparent border-2 border-white text-white hover:bg-white hover:text-blue-900 px-10 py-4 rounded-xl shadow-xl font-bold transition-all uppercase text-sm tracking-widest"
-                                                                >
-                                                                    Learn More
-                                                                </Link>
-                                                            </motion.div>
-                                                        </div>
-                                                    </motion.div>
-                                                </div>
+                                return (
+                                    <SwiperSlide key={`slide-${item.id}-${index}`}>
+                                        <div className="relative w-full h-full">
+                                            <img
+                                                src={item.mediaUrl}
+                                                alt={item.title}
+                                                className="absolute inset-0 w-full h-full object-cover z-0"
+                                            />
+                                            <div className={`absolute inset-0 z-[5] bg-gradient-to-br ${gradientClass}`} />
+                                            
+                                            <div className="absolute inset-0 flex flex-col justify-center items-start px-10 md:px-20 z-10">
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 30 }}
+                                                    whileInView={{ opacity: 1, y: 0 }}
+                                                    transition={{ duration: 0.8, delay: 0.2 }}
+                                                    className="max-w-4xl"
+                                                >
+                                                    <h2 className="text-5xl md:text-7xl font-bold text-white max-w-2xl font-serif leading-tight drop-shadow-lg">
+                                                        {item.title}
+                                                    </h2>
+                                                    <p className="text-white/90 mt-4 max-w-lg text-lg md:text-xl drop-shadow-md">
+                                                        {item.description}
+                                                    </p>
 
-                                                <div className="absolute bottom-8 right-8 z-20 bg-black/40 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm font-medium">
-                                                    {index + 1} / {sliderItems.length}
-                                                </div>
+                                                    <div className="flex flex-wrap gap-4 mt-8">
+                                                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                                            {/* GET STARTED: Scrolls to section ID */}
+                                                            <a
+                                                                href={links.anchor}
+                                                                className="inline-block bg-blue-700 hover:bg-blue-800 text-white px-10 py-4 rounded-xl shadow-xl font-bold transition-all uppercase text-sm tracking-widest"
+                                                            >
+                                                                Get Started
+                                                            </a>
+                                                        </motion.div>
+                                                        
+                                                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                                            {/* LEARN MORE: Navigates to page route */}
+                                                            <Link
+                                                                to={links.page}
+                                                                className="inline-block bg-transparent border-2 border-white text-white hover:bg-white hover:text-blue-900 px-10 py-4 rounded-xl shadow-xl font-bold transition-all uppercase text-sm tracking-widest"
+                                                            >
+                                                                Learn More
+                                                            </Link>
+                                                        </motion.div>
+                                                    </div>
+                                                </motion.div>
                                             </div>
-                                        </SwiperSlide>
-                                    );
-                                })}
-                            </Swiper>
-                        ) : (
-                            <div className="w-full h-full flex items-center justify-center flex-col gap-4">
-                                <p className="text-white/50 italic text-xl">No homepage images found.</p>
-                            </div>
-                        )}
-                    </AnimatePresence>
-                </div>
+                                        </div>
+                                    </SwiperSlide>
+                                );
+                            })}
+                        </Swiper>
+                    ) : (
+                        <div className="w-full h-full flex items-center justify-center text-white/50 italic">
+                            No homepage images found.
+                        </div>
+                    )}
+                </AnimatePresence>
+            </div>
 
-                <div className="flex flex-col gap-0 overflow-hidden">
-                    {/* Section IDs matching the getNavLinks anchor logic */}
-                    <section id="about" className="scroll-mt-20">
-                        <AboutUs />
-                    </section>
-                    
-                    <section id="bac" className="scroll-mt-20">
-                        <BACSection />
-                    </section>
+            {/* Scrollable Content Sections */}
+            <div className="flex flex-col gap-0 overflow-hidden">
+                <section id="about" className="scroll-mt-20">
+                    <AboutUs />
+                </section>
+                
+                <section id="bac" className="scroll-mt-20">
+                    <BACSection />
+                </section>
 
-                    <section id="activities" className="scroll-mt-20">
-                        <InteractiveActivities />
-                    </section>
+                <section id="activities" className="scroll-mt-20">
+                    <InteractiveActivities />
+                </section>
 
-                    <PodcastHero />
+                <PodcastHero />
 
-                    <section id="resource" className="scroll-mt-20">
-                        <ResourceHero />
-                    </section>
+                <section id="resource" className="scroll-mt-20">
+                    <ResourceHero />
+                </section>
 
-                    <NewsHero />
-                    <GalleryHero />
-                    <PartnersSection />
-                </div>
-            </main>
-        </>
+                <NewsHero />
+                <GalleryHero />
+                <PartnersSection />
+            </div>
+        </main>
     );
 }
