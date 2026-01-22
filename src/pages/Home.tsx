@@ -32,19 +32,45 @@ interface GalleryItem {
 export default function Home() {
     const [sliderItems, setSliderItems] = useState<GalleryItem[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
     useEffect(() => {
         const fetchSliderData = async () => {
             try {
+                setLoading(true);
+                setError(null);
+                
                 const response = await fetch(`${CLIENT_KEY}api/galleries`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
                 const data: GalleryItem[] = await response.json();
                 
-                // Filter items for the homepage
-                const filtered = data.filter(item => item.purpose === "Homepage Image");
+                console.log("Full API Response:", data);
+                console.log("Total items received:", data.length);
+                
+                // Filter items for the homepage - case insensitive comparison
+                const filtered = data.filter(item => {
+                    const purposeMatch = item.purpose?.toLowerCase().trim() === "homepage image";
+                    console.log(`Item ${item.id}: purpose="${item.purpose}", matches: ${purposeMatch}`);
+                    return purposeMatch;
+                });
+                
+                console.log("Filtered homepage images:", filtered);
+                console.log("Number of homepage images found:", filtered.length);
+                
+                if (filtered.length === 0) {
+                    console.warn("No items matched 'Homepage Image'. Available purposes:", 
+                        [...new Set(data.map(item => item.purpose))]);
+                }
+                
                 setSliderItems(filtered);
             } catch (error) {
                 console.error("Error fetching gallery data:", error);
+                setError(error instanceof Error ? error.message : "Failed to load slider images");
             } finally {
                 setLoading(false);
             }
@@ -54,7 +80,7 @@ export default function Home() {
     }, [CLIENT_KEY]);
 
     const getNavLinks = (subPurpose: string) => {
-        const lowerSub = subPurpose?.toLowerCase();
+        const lowerSub = subPurpose?.toLowerCase().trim();
         if (lowerSub === 'fef') {
             return { page: "/resource", anchor: "#resource" };
         } else if (lowerSub === 'bac') {
@@ -76,6 +102,24 @@ export default function Home() {
         );
     }
 
+    if (error) {
+        return (
+            <div className="h-screen w-full flex items-center justify-center bg-white">
+                <div className="flex flex-col items-center gap-4 max-w-md text-center">
+                    <div className="text-red-500 text-5xl">⚠️</div>
+                    <h2 className="text-2xl font-bold text-slate-800">Failed to Load</h2>
+                    <p className="text-slate-600">{error}</p>
+                    <button 
+                        onClick={() => window.location.reload()} 
+                        className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <>
             <main className='w-full h-fit pt-12 bg-white'>
@@ -85,17 +129,24 @@ export default function Home() {
                     <AnimatePresence mode="wait">
                         {sliderItems.length > 0 ? (
                             <Swiper 
-                                // Fresh key ensures Swiper rebuilds when data arrives
                                 key={`home-swiper-${sliderItems.length}`}
                                 modules={[Autoplay, Navigation, Pagination]}
                                 autoplay={{ 
                                     delay: 7000, 
-                                    disableOnInteraction: false 
+                                    disableOnInteraction: false,
+                                    pauseOnMouseEnter: true
                                 }}
                                 loop={sliderItems.length > 1}
                                 slidesPerView={1}
-                                observer={true}           // Watches for changes in DOM
-                                observeParents={true}     // Watches for changes in parents
+                                spaceBetween={0}
+                                speed={800}
+                                observer={true}
+                                observeParents={true}
+                                pagination={{
+                                    clickable: true,
+                                    dynamicBullets: true,
+                                }}
+                                navigation={sliderItems.length > 1}
                                 className="h-full w-full"
                             >
                                 {sliderItems.map((item, index) => {
@@ -107,12 +158,13 @@ export default function Home() {
                                         : "from-red-800/80 via-red-600/50 to-blue-900/80";
 
                                     return (
-                                        <SwiperSlide key={item.id}>
+                                        <SwiperSlide key={`slide-${item.id}-${index}`}>
                                             <div className="relative w-full h-full">
                                                 <img
                                                     src={item.mediaUrl}
-                                                    alt={item.title}
+                                                    alt={item.title || `Slide ${index + 1}`}
                                                     className="absolute inset-0 w-full h-full object-cover z-0"
+                                                    loading={index === 0 ? "eager" : "lazy"}
                                                 />
                                                 
                                                 <div className={`absolute inset-0 z-[5] bg-gradient-to-br ${gradientClass}`} />
@@ -123,6 +175,7 @@ export default function Home() {
                                                         whileInView={{ opacity: 1, y: 0 }}
                                                         viewport={{ once: false }}
                                                         transition={{ duration: 0.8, delay: 0.2 }}
+                                                        className="max-w-4xl"
                                                     >
                                                         <h2 className="text-5xl md:text-7xl font-bold text-white max-w-2xl font-serif leading-tight drop-shadow-lg">
                                                             {item.title}
@@ -151,14 +204,20 @@ export default function Home() {
                                                         </div>
                                                     </motion.div>
                                                 </div>
+
+                                                {/* Slide Counter */}
+                                                <div className="absolute bottom-8 right-8 z-20 bg-black/40 backdrop-blur-sm px-4 py-2 rounded-full text-white text-sm font-medium">
+                                                    {index + 1} / {sliderItems.length}
+                                                </div>
                                             </div>
                                         </SwiperSlide>
                                     );
                                 })}
                             </Swiper>
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center">
-                                <p className="text-white/50 italic">No homepage images found.</p>
+                            <div className="w-full h-full flex items-center justify-center flex-col gap-4">
+                                <p className="text-white/50 italic text-xl">No homepage images found.</p>
+                                <p className="text-white/30 text-sm">Check console for debugging information</p>
                             </div>
                         )}
                     </AnimatePresence>
