@@ -1,10 +1,20 @@
 import { useState, useEffect } from 'react';
 import logo from '../assets/img/logo.png';
 import logo2 from '../assets/img/ambassade de france.png'
-import { Instagram, Facebook, Twitter, Youtube, Mail, MapPin, Linkedin, ArrowUp } from "lucide-react";
+import { Instagram, Facebook, Youtube, Mail, MapPin, Linkedin, ArrowUp } from "lucide-react";
 import { Link } from "react-router-dom";
 
 function Footer() {
+    const XLogo = ({ className = "w-6 h-6" }: { className?: string }) => (
+        <svg 
+            viewBox="0 0 24 24" 
+            aria-hidden="true" 
+            className={className} 
+            fill="currentColor"
+        >
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+        </svg>
+    );
     // --- Scroll to Top Logic ---
     const [isVisible, setIsVisible] = useState(false);
 
@@ -58,7 +68,7 @@ function Footer() {
                             { icon: <Facebook size={18} />, link: "https://www.facebook.com/profile.php?id=100095181674120" },
                             { icon: <Instagram size={18} />, link: "https://www.instagram.com/reel/DRR_PogEd-o/?igsh=MWFjd3g2cjcydm41bQ==" },
                             { icon: <Linkedin size={18} />, link: "https://www.linkedin.com/company/embassy-of-france-in-nigeria/" },
-                            { icon: <Twitter size={18} />, link: "https://x.com/ATLM_Naija" },
+                            { icon: <XLogo className="w-4 h-4 text-gray-400" />, link: "https://x.com/ATLM_Naija" },
                             { icon: <Youtube size={18} />, link: "https://www.youtube.com/@ATLM_Naija" }
                         ].map((social, i) => (
                             <a 

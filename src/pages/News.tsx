@@ -1,6 +1,11 @@
-import { Newspaper, Search, Loader2, X, Calendar, MapPin, ChevronLeft, ChevronRight, ArrowLeft, Share2, Twitter, Linkedin, MessageCircle, Copy, Check } from "lucide-react";
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { 
+  Newspaper, Search, Loader2, X, Calendar, MapPin, 
+  ChevronLeft, ChevronRight, ArrowLeft, Share2, 
+  MessageCircle, Linkedin, Copy, Check 
+} from "lucide-react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 
+// --- Types & Interfaces ---
 interface BlogPost {
   id: number;
   title: string;
@@ -21,6 +26,16 @@ interface GalleryHero {
 }
 
 function News() {
+  const XLogo = ({ className = "w-6 h-6" }: { className?: string }) => (
+        <svg 
+            viewBox="0 0 24 24" 
+            aria-hidden="true" 
+            className={className} 
+            fill="currentColor"
+        >
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+        </svg>
+    );
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [heroData, setHeroData] = useState<GalleryHero | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -117,7 +132,7 @@ function News() {
     }
 
     const links: Record<string, string> = {
-      twitter: `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+      X: `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
       linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
       whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(text + " " + url)}`,
     };
@@ -208,8 +223,8 @@ function News() {
                           <button onClick={(e) => handleShare(e, 'whatsapp', post)} className="flex items-center gap-3 w-full p-3 hover:bg-green-50 text-green-600 rounded-xl transition-colors">
                             <MessageCircle size={14} /> <span className="text-[10px] font-bold uppercase">WhatsApp</span>
                           </button>
-                          <button onClick={(e) => handleShare(e, 'twitter', post)} className="flex items-center gap-3 w-full p-3 hover:bg-blue-50 text-blue-400 rounded-xl transition-colors">
-                            <Twitter size={14} /> <span className="text-[10px] font-bold uppercase">Twitter</span>
+                          <button onClick={(e) => handleShare(e, 'XLogo', post)} className="flex items-center gap-3 w-full p-3 hover:bg-blue-50 text-blue-400 rounded-xl transition-colors">
+                            <XLogo className="w-4 h-4 text-gray-400" /> <span className="text-[10px] font-bold uppercase">X</span>
                           </button>
                           <button onClick={(e) => handleShare(e, 'linkedin', post)} className="flex items-center gap-3 w-full p-3 hover:bg-blue-50 text-blue-700 rounded-xl transition-colors">
                             <Linkedin size={14} /> <span className="text-[10px] font-bold uppercase">LinkedIn</span>
@@ -292,8 +307,8 @@ function News() {
                     <button onClick={() => handleShare(undefined, 'whatsapp', selectedPost)} className="p-2 hover:bg-green-100 text-green-600 rounded-lg transition-colors" title="Share on WhatsApp">
                       <MessageCircle size={18} />
                     </button>
-                    <button onClick={() => handleShare(undefined, 'twitter', selectedPost)} className="p-2 hover:bg-blue-100 text-blue-400 rounded-lg transition-colors" title="Share on Twitter">
-                      <Twitter size={18} />
+                    <button onClick={() => handleShare(undefined, 'xlogo', selectedPost)} className="p-2 hover:bg-blue-100 text-blue-400 rounded-lg transition-colors" title="Share on X">
+                      <XLogo className="w-4 h-4 text-gray-400" />
                     </button>
                     <button onClick={() => handleShare(undefined, 'linkedin', selectedPost)} className="p-2 hover:bg-blue-100 text-blue-700 rounded-lg transition-colors" title="Share on LinkedIn">
                       <Linkedin size={18} />

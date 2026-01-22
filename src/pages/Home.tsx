@@ -28,6 +28,7 @@ export default function Home() {
     const [sliderItems, setSliderItems] = useState<GalleryItem[]>([]);
     const [loading, setLoading] = useState(true);
     const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
+    
 
     useEffect(() => {
         const fetchSliderData = async () => {
@@ -77,77 +78,85 @@ export default function Home() {
                 
                 {/* Dynamic Hero Slider Section */}
                 <div id="slider" className="relative w-full h-[90dvh] overflow-hidden">
-                    <Swiper 
-                        key="home-swiper"
-                        modules={[Autoplay]}
-                        autoplay={{ delay: 7000, disableOnInteraction: false }}
-                        loop={sliderItems.length > 1}
-                        slidesPerView={1}
-                        className="h-full w-full"
-                    >
-                        {sliderItems.map((item, index) => {
-                            const links = getNavLinks(item.subPurpose);
-                            
-                            /** * ALTERNATING GRADIENT LOGIC:
-                             * Index 0, 2, 4... (Even): Blue to Red
-                             * Index 1, 3, 5... (Odd): Red to Blue
-                             */
-                            const gradientClass = index % 2 === 0 
-                                ? "from-blue-900/80 via-blue-700/50 to-red-700/80" 
-                                : "from-red-800/80 via-red-600/50 to-blue-900/80";
+                    {/* FIX: Added a unique key based on array length. 
+                        This forces Swiper to re-initialize when the 3 API items arrive.
+                    */}
+                    {sliderItems.length > 0 && (
+                        <Swiper 
+                            key={`home-swiper-${sliderItems.length}`}
+                            modules={[Autoplay]}
+                            autoplay={{ 
+                                delay: 7000, 
+                                disableOnInteraction: false 
+                            }}
+                            loop={sliderItems.length > 1}
+                            slidesPerView={1}
+                            className="h-full w-full"
+                        >
+                            {sliderItems.map((item, index) => {
+                                const links = getNavLinks(item.subPurpose);
+                                
+                                /** * ALTERNATING GRADIENT LOGIC (Preserved):
+                                 * Index 0, 2, 4... (Even): Blue to Red
+                                 * Index 1, 3, 5... (Odd): Red to Blue
+                                 */
+                                const gradientClass = index % 2 === 0 
+                                    ? "from-blue-900/80 via-blue-700/50 to-red-700/80" 
+                                    : "from-red-800/80 via-red-600/50 to-blue-900/80";
 
-                            return (
-                                <SwiperSlide key={item.id}>
-                                    <div className="relative w-full h-full">
-                                        <img
-                                            src={item.mediaUrl}
-                                            alt={item.title}
-                                            className="absolute inset-0 w-full h-full object-cover z-0"
-                                        />
-                                        
-                                        {/* Dynamic Gradient Overlay */}
-                                        <div className={`absolute inset-0 z-[5] bg-gradient-to-br ${gradientClass}`} />
-                                        
-                                        <div className="absolute inset-0 flex flex-col justify-center items-start px-10 md:px-20 z-10">
-                                            <motion.div
-                                                initial={{ opacity: 0, y: 30 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                transition={{ duration: 0.8, delay: 0.2 }}
-                                            >
-                                                <h2 className="text-5xl md:text-7xl font-bold text-white max-w-2xl font-serif leading-tight drop-shadow-lg">
-                                                    {item.title}
-                                                </h2>
-                                                <p className="text-white/90 mt-4 max-w-lg text-lg md:text-xl drop-shadow-md">
-                                                    {item.description}
-                                                </p>
-                                                <div className="flex flex-wrap gap-4 mt-8">
-                                                    {/* GET STARTED: Anchors to component on same page */}
-                                                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                                        <a
-                                                            href={links.anchor}
-                                                            className="inline-block bg-blue-700 hover:bg-blue-800 text-white px-10 py-4 rounded-xl shadow-xl font-bold transition-all uppercase text-sm tracking-widest"
-                                                        >
-                                                            Get Started
-                                                        </a>
-                                                    </motion.div>
-                                                    
-                                                    {/* LEARN MORE: Navigates to full route */}
-                                                    <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                                        <Link
-                                                            to={links.page}
-                                                            className="inline-block bg-transparent border-2 border-white text-white hover:bg-white hover:text-blue-900 px-10 py-4 rounded-xl shadow-xl font-bold transition-all uppercase text-sm tracking-widest"
-                                                        >
-                                                            Learn More
-                                                        </Link>
-                                                    </motion.div>
-                                                </div>
-                                            </motion.div>
+                                return (
+                                    <SwiperSlide key={item.id}>
+                                        <div className="relative w-full h-full">
+                                            <img
+                                                src={item.mediaUrl}
+                                                alt={item.title}
+                                                className="absolute inset-0 w-full h-full object-cover z-0"
+                                            />
+                                            
+                                            {/* Dynamic Gradient Overlay (Preserved) */}
+                                            <div className={`absolute inset-0 z-[5] bg-gradient-to-br ${gradientClass}`} />
+                                            
+                                            <div className="absolute inset-0 flex flex-col justify-center items-start px-10 md:px-20 z-10">
+                                                <motion.div
+                                                    initial={{ opacity: 0, y: 30 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ duration: 0.8, delay: 0.2 }}
+                                                >
+                                                    <h2 className="text-5xl md:text-7xl font-bold text-white max-w-2xl font-serif leading-tight drop-shadow-lg">
+                                                        {item.title}
+                                                    </h2>
+                                                    <p className="text-white/90 mt-4 max-w-lg text-lg md:text-xl drop-shadow-md">
+                                                        {item.description}
+                                                    </p>
+                                                    <div className="flex flex-wrap gap-4 mt-8">
+                                                        {/* GET STARTED: Anchors to component on same page */}
+                                                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                                            <a
+                                                                href={links.anchor}
+                                                                className="inline-block bg-blue-700 hover:bg-blue-800 text-white px-10 py-4 rounded-xl shadow-xl font-bold transition-all uppercase text-sm tracking-widest"
+                                                            >
+                                                                Get Started
+                                                            </a>
+                                                        </motion.div>
+                                                        
+                                                        {/* LEARN MORE: Navigates to full route */}
+                                                        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                                                            <Link
+                                                                to={links.page}
+                                                                className="inline-block bg-transparent border-2 border-white text-white hover:bg-white hover:text-blue-900 px-10 py-4 rounded-xl shadow-xl font-bold transition-all uppercase text-sm tracking-widest"
+                                                            >
+                                                                Learn More
+                                                            </Link>
+                                                        </motion.div>
+                                                    </div>
+                                                </motion.div>
+                                            </div>
                                         </div>
-                                    </div>
-                                </SwiperSlide>
-                            );
-                        })}
-                    </Swiper>
+                                    </SwiperSlide>
+                                );
+                            })}
+                        </Swiper>
+                    )}
                 </div>
 
                 <div className="flex flex-col gap-0 overflow-hidden">
