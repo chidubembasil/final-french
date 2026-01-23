@@ -26,7 +26,7 @@ interface Exercise {
   title: string;
   description: string;
   exerciseType: string;
-  difficulty: string;
+  /* difficulty: string; */
   publishedAt: string | null;
   content: RawQuestion[];
 }
@@ -47,7 +47,7 @@ function Activities() {
   const [modalStage, setModalStage] = useState<'info' | 'test' | 'result'>('info');
   const [loading, setLoading] = useState(true);
   const [activeType, setActiveType] = useState<string>("All");
-  const [activeDifficulty, setActiveDifficulty] = useState<string>("All");
+ /*  const [activeDifficulty, setActiveDifficulty] = useState<string>("All"); */
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
@@ -111,10 +111,10 @@ function Activities() {
     return ["All", ...Array.from(types)];
   }, [exercisesList]);
 
-  const difficultyOptions = useMemo(() => {
+  /* const difficultyOptions = useMemo(() => {
     const diffs = new Set(exercisesList.map(ex => ex.difficulty).filter(Boolean));
     return ["All", ...Array.from(diffs)];
-  }, [exercisesList]);
+  }, [exercisesList]); */
 
   const handleOpenExercise = (id: number) => {
     const activity = exercisesMap[id];
@@ -129,10 +129,10 @@ function Activities() {
     return exercisesList.filter((ex) => {
       const matchesSearch = ex.title?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesType = activeType === "All" || ex.exerciseType === activeType;
-      const matchesDiff = activeDifficulty === "All" || ex.difficulty === activeDifficulty;
-      return matchesSearch && matchesType && matchesDiff;
+      /* const matchesDiff = activeDifficulty === "All" || ex.difficulty === activeDifficulty; */
+      return matchesSearch && matchesType 
     });
-  }, [exercisesList, searchQuery, activeType, activeDifficulty]);
+  }, [exercisesList, searchQuery, activeType]);
 
   const currentExercises = filteredExercises.slice((currentPage - 1) * exercisesPerPage, currentPage * exercisesPerPage);
   const totalPages = Math.ceil(filteredExercises.length / exercisesPerPage);
@@ -173,7 +173,7 @@ function Activities() {
 
       <section className="py-12 px-6 md:px-20 max-w-7xl mx-auto">
         {/* FILTER BAR */}
-        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 mb-12 flex flex-col lg:flex-row gap-6 items-end">
+        <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 mb-12 flex flex-col items-center justify-center lg:flex-row lg:gap-6 lg:items-end">
           <div className="flex-1 w-full">
             <p className="text-[10px] font-black uppercase text-blue-600 mb-2 ml-1">Search Activity</p>
             <div className="relative">
@@ -181,16 +181,16 @@ function Activities() {
               <input type="text" placeholder="Search..." className="w-full pl-12 pr-6 py-3.5 rounded-xl bg-gray-50 outline-none text-sm" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 sm:flex sm:justify-center sm:items-center sm:flex-row">
             {typeOptions.map((t) => (
               <button key={t} onClick={() => {setActiveType(t); setCurrentPage(1);}} className={`px-4 py-2.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeType === t ? "bg-blue-600 text-white shadow-md" : "bg-gray-100 text-gray-400"}`}>{t}</button>
             ))}
           </div>
-          <div className="flex flex-wrap gap-2">
+          {/* <div className="flex flex-wrap gap-2">
             {difficultyOptions.map((d) => (
               <button key={d} onClick={() => {setActiveDifficulty(d); setCurrentPage(1);}} className={`px-4 py-2.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeDifficulty === d ? "bg-red-600 text-white shadow-md" : "bg-gray-100 text-gray-400"}`}>{d}</button>
             ))}
-          </div>
+          </div> */}
         </div>
 
         {/* GRID */}

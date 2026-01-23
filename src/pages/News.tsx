@@ -48,6 +48,8 @@ function News() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
+
+  // Your requested useRef
   const shareMenuRef = useRef<HTMLDivElement>(null);
 
   const FILTER_OPTIONS = {
@@ -75,6 +77,7 @@ function News() {
       .catch(err => console.error("Hero Fetch Error:", err))
       .finally(() => setLoadingHero(false));
 
+    // Ref logic for clicking outside
     const handleClickOutside = (event: MouseEvent) => {
       if (shareMenuRef.current && !shareMenuRef.current.contains(event.target as Node)) {
         setSharingId(null);
@@ -113,32 +116,23 @@ function News() {
   const totalPages = Math.ceil(filteredBlogs.length / itemsPerPage);
   const currentBlogs = filteredBlogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const handleShare = (e: React.MouseEvent | undefined, platform: string, post: BlogPost) => {
-    if (e) {
-      e.stopPropagation();
-      e.preventDefault();
-    }
+  const handleShare = (platform: string, post: BlogPost) => {
     const url = `${window.location.origin}/news/${post.slug}`;
-    const text = `Read this article: ${post.title}`;
-
+    const text = `Read this: ${post.title}`;
+    
     if (platform === 'copy') {
       navigator.clipboard.writeText(url);
       setCopiedId(post.id);
       setTimeout(() => setCopiedId(null), 2000);
       return;
     }
-
-    const links: Record<string, string> = {
-      x: `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
-      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+    
+    const links: any = {
       whatsapp: `https://wa.me/?text=${encodeURIComponent(text + " " + url)}`,
+      linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
+      x: `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
     };
-
-    const targetUrl = links[platform];
-    if (targetUrl) {
-      window.open(targetUrl, '_blank', 'noopener,noreferrer');
-    }
-    setSharingId(null);
+    window.open(links[platform], '_blank');
   };
 
   const handlePostClick = (post: BlogPost) => {
@@ -147,7 +141,6 @@ function News() {
 
   return (
     <main className="pt-20 bg-gray-50/30 min-h-screen relative">
-      {/* HERO SECTION - Keep as is */}
       <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
         {loadingHero ? (
           <div className="absolute inset-0 animate-pulse bg-slate-800" />
@@ -167,7 +160,6 @@ function News() {
         )}
       </div>
 
-      {/* FILTER BAR - Keep as is */}
       <div className="sticky top-20 z-30 w-full bg-white/95 backdrop-blur-xl border-b border-gray-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -193,7 +185,6 @@ function News() {
         </div>
       </div>
 
-      {/* NEWS GRID - Keep as is, handlePostClick now navigates */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-16">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
@@ -213,19 +204,12 @@ function News() {
                       <Share2 size={16} />
                     </button>
                     {sharingId === post.id && (
-                      <div ref={shareMenuRef} className="absolute right-0 mt-2 w-44 bg-white rounded-2xl shadow-2xl border border-gray-100 p-2 z-50 flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
-                        <button onClick={(e) => handleShare(e, 'whatsapp', post)} className="flex items-center gap-3 w-full p-3 hover:bg-green-50 text-green-600 rounded-xl transition-colors">
-                          <MessageCircle size={14} /> <span className="text-[10px] font-bold uppercase">WhatsApp</span>
-                        </button>
-                        <button onClick={(e) => handleShare(e, 'x', post)} className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 text-gray-900 rounded-xl transition-colors">
-                          <XLogo /> <span className="text-[10px] font-bold uppercase">X</span>
-                        </button>
-                        <button onClick={(e) => handleShare(e, 'linkedin', post)} className="flex items-center gap-3 w-full p-3 hover:bg-blue-50 text-blue-700 rounded-xl transition-colors">
-                          <Linkedin size={14} /> <span className="text-[10px] font-bold uppercase">LinkedIn</span>
-                        </button>
-                        <button onClick={(e) => handleShare(e, 'copy', post)} className="flex items-center gap-3 w-full p-3 hover:bg-gray-50 text-gray-600 rounded-xl transition-colors">
-                          {copiedId === post.id ? <Check size={14} className="text-green-500" /> : <Copy size={14} />} 
-                          <span className="text-[10px] font-bold uppercase">{copiedId === post.id ? 'Copied' : 'Copy Link'}</span>
+                      <div ref={shareMenuRef} className="absolute right-0 mt-2 flex items-center gap-3 bg-white p-2 rounded-2xl border shadow-xl" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={() => handleShare('whatsapp', post)} className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"><MessageCircle size={18} /></button>
+                        <button onClick={() => handleShare('x', post)} className="p-2 text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"><XLogo /></button>
+                        <button onClick={() => handleShare('linkedin', post)} className="p-2 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors"><Linkedin size={18} /></button>
+                        <button onClick={() => handleShare('copy', post)} className="flex items-center gap-2 p-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors">
+                          {copiedId === post.id ? <Check size={18} className="text-green-500" /> : <Copy size={18} />}
                         </button>
                       </div>
                     )}
@@ -246,7 +230,6 @@ function News() {
               ))}
             </div>
 
-            {/* PAGINATION CONTROLS - Keep as is */}
             {totalPages > 1 && (
               <div className="flex justify-center items-center gap-4 mt-16">
                 <button 

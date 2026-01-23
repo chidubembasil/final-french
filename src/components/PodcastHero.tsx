@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 export default function PodcastHero() {
-    const [podcasts, setPodcasts] = useState<any[]>([]);
+    const [latestPodcast, setLatestPodcast] = useState<any>(null);
     const [currentPlaying, setCurrentPlaying] = useState<any>(null);
     const [isPlaying, setIsPlaying] = useState(false);
     
@@ -12,43 +12,51 @@ export default function PodcastHero() {
     const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || "";
 
     useEffect(() => {
-        const fetchPodcasts = async () => {
+        const fetchLatestPodcast = async () => {
             try {
-                const res = await fetch(`${CLIENT_KEY}api/podcasts?filters[mediaType][$eq]=audio&limit=4`);
+                // Sort by createdAt (or publishedAt/date) descending → newest first
+                // filters[mediaType][$eq]=audio ensures only audio podcasts
+                const res = await fetch(
+                    `${CLIENT_KEY}api/podcasts?` +
+                    `filters[mediaType][$eq]=audio&` +
+                    `sort=createdAt:desc&` +          // ← key change: sort newest first
+                    `pagination[limit]=1`             // ← only get the latest one
+                );
+
                 if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                 const data = await res.json();
                 
                 const rawData = Array.isArray(data) ? data : (data?.data || []);
-                const formattedData = rawData.map((item: any) => ({
+                const formatted = rawData.map((item: any) => ({
                     id: item.id,
                     ...(item.attributes || item)
                 }));
-                
-                setPodcasts(formattedData);
+
+                // Take the first (newest) item — or null if empty
+                setLatestPodcast(formatted[0] || null);
+
             } catch (err) {
-                console.error("Podcast Hero fetch error:", err);
+                console.error("Latest podcast fetch error:", err);
+                setLatestPodcast(null);
             }
         };
-        fetchPodcasts();
+
+        fetchLatestPodcast();
     }, [CLIENT_KEY]);
 
     const getAudioUrl = (podcast: any) => {
         if (!podcast) return "";
 
-        // Use audioUrl from your schema (it's absolute in the example)
         let url = podcast.audioUrl;
 
-        // Fallbacks in case the field name varies in some responses
         if (!url) url = podcast.file?.url || podcast.media?.url || podcast.url || "";
 
         if (!url) return "";
 
-        // If it's already a full URL (http/https), return it directly
         if (url.startsWith('http://') || url.startsWith('https://')) {
             return url;
         }
 
-        // Otherwise treat as relative path and prepend base URL
         const base = CLIENT_KEY.replace(/\/$/, '');
         return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
     };
@@ -72,7 +80,6 @@ export default function PodcastHero() {
         const audio = audioRef.current;
         if (!audio) return;
 
-        // If clicking the same podcast → just toggle play/pause
         if (currentPlaying?.id === podcast.id) {
             if (isPlaying) {
                 audio.pause();
@@ -84,7 +91,6 @@ export default function PodcastHero() {
             return;
         }
 
-        // New podcast selected
         audio.pause();
         audio.currentTime = 0;
         audio.src = audioSrc;
@@ -107,7 +113,8 @@ export default function PodcastHero() {
             });
     };
 
-    const featured = podcasts.length > 0 ? podcasts[0] : null;
+    // We now only use latestPodcast (no array slicing needed)
+    const featured = latestPodcast;
 
     return (
         <main className="w-full py-16 flex flex-col items-center bg-white">
@@ -125,7 +132,7 @@ export default function PodcastHero() {
                 <span className='px-4 py-1 rounded-full flex items-center gap-2 bg-red-100 text-red-600 text-xs font-bold uppercase'>
                     <Headphones size={14}/> Listen to learners and teachers
                 </span>
-                <h2 className='font-serif text-4xl font-bold text-center'>Featured Podcasts</h2>
+                <h2 className='font-serif text-4xl font-bold text-center'>Featured Podcast</h2>
                 <div className='w-24 h-1 bg-blue-600'></div>
             </div>
 
@@ -134,7 +141,7 @@ export default function PodcastHero() {
                     <div className="relative w-full rounded-[2.5rem] p-8 md:p-12 mb-8 overflow-hidden bg-gradient-to-r from-blue-900 via-blue-700 to-red-600 text-white flex flex-col md:flex-row items-center gap-10 shadow-2xl">
                         <div className="flex-1 space-y-4">
                             <span className="bg-white/20 backdrop-blur-md px-3 py-1 rounded text-[10px] font-black uppercase">
-                                {isPlaying && currentPlaying?.id === featured.id ? 'Now Playing' : 'Featured Episode'}
+                                {isPlaying && currentPlaying?.id === featured.id ? 'Now Playing' : 'Latest Episode'}
                             </span>
                             <h3 className="text-3xl md:text-4xl font-bold">{featured.title}</h3>
                             <p className="opacity-80">Hosted by {featured.author || 'Unknown Host'}</p>
@@ -162,45 +169,7 @@ export default function PodcastHero() {
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {podcasts.slice(1, 3).map((p: any) => (
-                        <div 
-                            key={p.id} 
-                            className={`p-6 rounded-[2rem] border transition-all flex items-center gap-6 group ${
-                                currentPlaying?.id === p.id && isPlaying 
-                                    ? 'border-blue-500 bg-blue-50/50 shadow-md' 
-                                    : 'bg-white border-gray-100 hover:border-blue-200'
-                            }`}
-                        >
-                            <div 
-                                onClick={() => togglePlay(p)}
-                                className="w-24 h-24 bg-gray-100 rounded-2xl flex items-center justify-center cursor-pointer relative overflow-hidden"
-                            >
-                                <Headphones 
-                                    size={32} 
-                                    className={currentPlaying?.id === p.id && isPlaying ? 'text-blue-500' : 'text-gray-400'} 
-                                />
-                                <div className="absolute inset-0 bg-blue-600/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                    {isPlaying && currentPlaying?.id === p.id ? (
-                                        <Pause size={24} className="text-blue-600" />
-                                    ) : (
-                                        <Play size={24} className="text-blue-600" />
-                                    )}
-                                </div>
-                            </div>
-                            <div className="flex-1">
-                                <h4 className="font-bold text-lg line-clamp-1">{p.title}</h4>
-                                <p className="text-sm text-gray-500 mb-2">{p.author || 'Unknown Host'}</p>
-                                <button 
-                                    onClick={() => togglePlay(p)} 
-                                    className="text-blue-600 font-bold text-xs uppercase tracking-widest flex items-center gap-2 hover:underline"
-                                >
-                                    {currentPlaying?.id === p.id && isPlaying ? 'Pause Episode' : 'Play Episode'}
-                                </button>
-                            </div>
-                        </div>
-                    ))}
-                </div>
+                {/* Removed the grid of additional podcasts as requested */}
             </div>
 
             <button 

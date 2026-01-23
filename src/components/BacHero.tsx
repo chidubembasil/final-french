@@ -1,5 +1,5 @@
 import { GraduationCap, Building2, Globe2 } from "lucide-react";
-import { Link } from "react-router-dom";
+// import { Link } from "react-router-dom";
 
 export default function BACSection() {
   const pillars = [
@@ -57,7 +57,7 @@ export default function BACSection() {
         {/* Pillars Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
           {pillars.map((pillar, i) => (
-            <Link to={"/bac"} key={i} className="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all group">
+            <div key={i} className="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all group">
               <div className={`w-14 h-14 ${pillar.color} rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform shadow-lg shadow-gray-200`}>
                 {pillar.icon}
               </div>
@@ -65,7 +65,7 @@ export default function BACSection() {
               <p className="text-gray-500 leading-relaxed">
                 {pillar.desc}
               </p>
-            </Link>
+            </div>
           ))}
         </div>
 

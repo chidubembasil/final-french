@@ -110,17 +110,13 @@ function Pedagogies() {
       const link = document.createElement("a");
       link.href = downloadUrl;
 
-      // Use title as base filename (cleaned)
+      // Filename = cleaned title + .pdf
       let filename = item.title
-        .replace(/[^a-z0-9]/gi, '_')
-        .replace(/_+/g, '_')
-        .replace(/^_+|_+$/g, '');
-      
-      const type = getItemType(item.url);
-      if (type === 'pdf') filename += '.pdf';
-      else if (type === 'video') filename += '.mp4';
-      else if (type === 'audio') filename += '.mp3';
-      else filename += '.file';
+        .replace(/[^a-z0-9]/gi, '_')      // replace non-alphanum with _
+        .replace(/_+/g, '_')              // collapse multiple _
+        .replace(/^_+|_+$/g, '');         // trim leading/trailing _
+
+      filename += '.pdf';
 
       link.download = filename;
       document.body.appendChild(link);

@@ -70,9 +70,11 @@ export default function ResourceHero() {
                         // Safe access to styles
                         const styles = getTypeStyles(res?.type);
                         return (
-                            <div 
+                            <a
+                                href={res.url}
+                                target="_blank" 
+                                rel="noopener noreferrer"
                                 key={res?.id || res?._id || index}
-                                onClick={() => navigate(res.url)}
                                 className="group flex items-center p-8 bg-white rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative overflow-hidden cursor-pointer"
                             >
                                 <div className={`w-16 h-16 shrink-0 rounded-2xl ${styles.bg} ${styles.text} flex items-center justify-center`}>
@@ -93,7 +95,7 @@ export default function ResourceHero() {
                                     <a href={res.url} target="_blank" rel="noopener noreferrer" className='text-black bg-black text'><ArrowRight size={20}  /></a>
                                     
                                 </div>
-                            </div>
+                            </a>
                         );
                     })
                 ) : (
