@@ -72,13 +72,13 @@ export default function Home() {
     const getNavLinks = (subPurpose: string) => {
         const lowerSub = subPurpose?.toLowerCase().trim();
         if (lowerSub === 'fef') {
-            return { page: "/resource", anchor: "/#resource" };
+            return { page: "/resource", anchor: "#resource" };
         } else if (lowerSub === 'atoile') {
-            return { page: "/activities", anchor: "/#activities" };
+            return { page: "/activities", anchor: "#activities" };
         } else if (lowerSub === 'bac') {
-            return { page: "/bac", anchor: "/#bac" };
+            return { page: "/bac", anchor: "#bac" };
         }
-        return { page: "/", anchor: "/#about" };
+        return { page: "/", anchor: "#about" };
     };
 
     if (loading) {

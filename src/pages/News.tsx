@@ -4,9 +4,12 @@ import {
   Copy, Check, ChevronLeft, ChevronRight 
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useParams, useNavigate } from "react-router-dom"; // Removed useLocation here
+import {  useNavigate, useLocation } from "react-router-dom";
 
 // --- Types & Interfaces ---
+
+
+//useParams,
 interface BlogPost {
   id: number;
   title: string;
@@ -34,8 +37,8 @@ function News() {
   );
 
   const navigate = useNavigate();
-  // Removed: const location = useLocation(); 
-  const { slug } = useParams<{ slug: string }>();
+  const location = useLocation();
+ /*  const { slug } = useParams<{ slug: string }>(); */
 
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [heroData, setHeroData] = useState<GalleryHero | null>(null);
@@ -105,17 +108,24 @@ function News() {
   useEffect(() => { fetchBlogs(); }, [fetchBlogs]);
 
   useEffect(() => {
-    if (slug && blogs.length > 0) {
-      const post = blogs.find(b => b.slug === slug);
-      if (post) {
-        setSelectedPost(post);
-      } else {
-        navigate('/news', { replace: true });
-      }
-    } else if (!slug && selectedPost) {
-      setSelectedPost(null);
+  const pathSlug = location.pathname.startsWith('/news/')
+    ? location.pathname.replace('/news/', '')
+    : null;
+
+  if (pathSlug && blogs.length > 0) {
+    const post = blogs.find(b => b.slug === pathSlug);
+    if (post) {
+      setSelectedPost(post);
+    } else {
+      navigate('/news', { replace: true });
     }
-  }, [slug, blogs, navigate, selectedPost]);
+  }
+
+  if (!pathSlug) {
+    setSelectedPost(null);
+  }
+}, [location.pathname, blogs, navigate]);
+
 
   const filteredBlogs = useMemo(() => {
     return blogs.filter(post => {
@@ -135,6 +145,8 @@ function News() {
       e.stopPropagation();
       e.preventDefault();
     }
+
+    // Use slug-based URL
     const url = `${window.location.origin}/news/${post.slug}`;
     const text = `Read this article: ${post.title}`;
 
@@ -159,10 +171,12 @@ function News() {
   };
 
   const handlePostClick = (post: BlogPost) => {
+    // Navigate to the slug-based URL
     navigate(`/news/${post.slug}`);
   };
 
   const handleClosePost = () => {
+    // Navigate back to news page
     navigate('/news');
   };
 
@@ -172,6 +186,7 @@ function News() {
 
   return (
     <main className="pt-20 bg-gray-50/30 min-h-screen relative">
+      {/* HERO SECTION */}
       <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
         {loadingHero ? (
           <div className="absolute inset-0 animate-pulse bg-slate-800" />
@@ -191,6 +206,7 @@ function News() {
         )}
       </div>
 
+      {/* FILTER BAR */}
       <div className="sticky top-20 z-30 w-full bg-white/95 backdrop-blur-xl border-b border-gray-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -216,6 +232,7 @@ function News() {
         </div>
       </div>
 
+      {/* NEWS GRID */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-16">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
@@ -268,13 +285,24 @@ function News() {
               ))}
             </div>
 
+            {/* PAGINATION CONTROLS */}
             {totalPages > 1 && (
               <div className="flex justify-center items-center gap-4 mt-16">
-                <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-4 bg-white rounded-2xl border disabled:opacity-30 shadow-sm hover:bg-gray-50 transition-colors">
+                <button 
+                  disabled={currentPage === 1} 
+                  onClick={() => setCurrentPage(p => p - 1)} 
+                  className="p-4 bg-white rounded-2xl border disabled:opacity-30 shadow-sm hover:bg-gray-50 transition-colors"
+                >
                   <ChevronLeft />
                 </button>
-                <span className="font-bold text-gray-500 bg-white px-6 py-3 rounded-2xl border">Page {currentPage} of {totalPages}</span>
-                <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="p-4 bg-white rounded-2xl border disabled:opacity-30 shadow-sm hover:bg-gray-50 transition-colors">
+                <span className="font-bold text-gray-500 bg-white px-6 py-3 rounded-2xl border">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button 
+                  disabled={currentPage === totalPages} 
+                  onClick={() => setCurrentPage(p => p + 1)} 
+                  className="p-4 bg-white rounded-2xl border disabled:opacity-30 shadow-sm hover:bg-gray-50 transition-colors"
+                >
                   <ChevronRight />
                 </button>
               </div>
@@ -283,8 +311,12 @@ function News() {
         )}
       </div>
 
+      {/* READER MODAL */}
       {selectedPost && (
-        <div className="fixed inset-0 z-[9999] bg-white overflow-y-auto flex flex-col" onClick={handleClosePost}>
+        <div 
+          className="fixed inset-0 z-[9999] bg-white overflow-y-auto flex flex-col" 
+          onClick={handleClosePost}
+        >
           <div className="sticky top-0 left-0 w-full p-4 md:p-10 flex justify-between items-center bg-white/80 backdrop-blur-md z-[100] border-b" onClick={(e) => e.stopPropagation()}>
             <button onClick={handleClosePost} className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-all">
               <ArrowLeft size={20} />
@@ -292,6 +324,7 @@ function News() {
             </button>
             <button onClick={handleClosePost} className="px-6 py-2 bg-red-600 text-white rounded-full text-xs font-bold uppercase shadow-lg hover:bg-red-700 transition-colors">Close</button>
           </div>
+
           <div className="flex-1 w-full max-w-4xl mx-auto px-6 py-10" onClick={(e) => e.stopPropagation()}>
             <div className="flex flex-col gap-8">
               <div className="space-y-6 text-center">
@@ -304,7 +337,7 @@ function News() {
                     <span className="flex items-center gap-2"><Calendar size={14}/> {new Date(selectedPost.updatedAt).toLocaleDateString()}</span>
                     <span className="flex items-center gap-2"><MapPin size={14}/> {selectedPost.state}</span>
                   </div>
-                  <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-2xl border">
+                  <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-2xl border" onClick={(e) => e.stopPropagation()}>
                     <button onClick={(e) => handleShare(e, 'whatsapp', selectedPost)} className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"><MessageCircle size={18} /></button>
                     <button onClick={(e) => handleShare(e, 'x', selectedPost)} className="p-2 text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"><XLogo /></button>
                     <button onClick={(e) => handleShare(e, 'linkedin', selectedPost)} className="p-2 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors"><Linkedin size={18} /></button>
@@ -317,10 +350,12 @@ function News() {
               <div className="aspect-[16/9] w-full rounded-[2.5rem] overflow-hidden shadow-2xl border">
                 <img src={selectedPost.coverImage} className="w-full h-full object-cover" alt={selectedPost.title} />
               </div>
-              <div className="prose prose-lg prose-slate max-w-none mt-4 text-gray-600 leading-[1.8] space-y-8 text-lg">
-                {selectedPost.content.split('\n').filter(p => p.trim() !== '').map((para, i) => (
-                  <p key={i}>{para}</p>
-                ))}
+              <div className="prose prose-lg prose-slate max-w-none mt-4">
+                <div className="text-gray-600 leading-[1.8] space-y-8 text-lg">
+                  {selectedPost.content.split('\n').filter(p => p.trim() !== '').map((para, i) => (
+                    <p key={i}>{para}</p>
+                  ))}
+                </div>
               </div>
               <div className="h-20" />
             </div>
