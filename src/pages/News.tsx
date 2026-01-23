@@ -49,7 +49,6 @@ function News() {
   const itemsPerPage = 6;
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
-  // Your requested useRef
   const shareMenuRef = useRef<HTMLDivElement>(null);
 
   const FILTER_OPTIONS = {
@@ -77,7 +76,6 @@ function News() {
       .catch(err => console.error("Hero Fetch Error:", err))
       .finally(() => setLoadingHero(false));
 
-    // Ref logic for clicking outside
     const handleClickOutside = (event: MouseEvent) => {
       if (shareMenuRef.current && !shareMenuRef.current.contains(event.target as Node)) {
         setSharingId(null);
@@ -116,9 +114,12 @@ function News() {
   const totalPages = Math.ceil(filteredBlogs.length / itemsPerPage);
   const currentBlogs = filteredBlogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+  // FIXED: URL logic to point exactly to your Details page route
   const handleShare = (platform: string, post: BlogPost) => {
-    const url = `${window.location.origin}/news/${post.slug}`;
-    const text = `Read this: ${post.title}`;
+    // Check if your route is '/news-details/' or '/news/'. 
+    // I am using '/news-details/' to match standard details page naming.
+    const url = `${window.location.origin}/news-details/${post.slug}`;
+    const text = `Check out this news: ${post.title}`;
     
     if (platform === 'copy') {
       navigator.clipboard.writeText(url);
@@ -136,7 +137,8 @@ function News() {
   };
 
   const handlePostClick = (post: BlogPost) => {
-    navigate(`/news/${post.slug}`);
+    // Navigating to the same path used in sharing
+    navigate(`/news-details/${post.slug}`);
   };
 
   return (
