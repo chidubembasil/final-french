@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Headphones, Play } from "lucide-react";
+import { Headphones, Play, X } from "lucide-react";
 
 interface Podcast {
   id: number;
@@ -18,6 +18,7 @@ const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || "";
 export default function LatestPodcasts() {
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activePlayer, setActivePlayer] = useState<number | null>(null);
 
   const BASE_URL = CLIENT_KEY.endsWith("/")
     ? CLIENT_KEY.slice(0, -1)
@@ -65,16 +66,16 @@ export default function LatestPodcasts() {
         <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full 
           bg-blue-50 text-blue-700 font-semibold text-sm mb-6">
           <Headphones size={16} />
-          Podcasts à la une
+          Featured Podcasts
         </div>
 
         <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900">
-          Derniers Épisodes
+          Latest Episodes
         </h2>
 
         <p className="mt-5 text-slate-500 max-w-2xl mx-auto leading-relaxed">
-          Découvrez nos podcasts récents autour de la langue, de la culture et
-          des expériences francophones.
+          Explore our newest podcast episodes covering language, culture,
+          and real-world francophone experiences.
         </p>
 
         {/* French flag accent */}
@@ -87,75 +88,105 @@ export default function LatestPodcasts() {
 
       {/* Cards */}
       <div className="grid gap-12 md:grid-cols-3">
-        {podcasts.map((podcast) => (
-          <article
-            key={podcast.id}
-            className="group relative rounded-[2rem] bg-white border border-slate-100 
-              shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden"
-          >
-            {/* Top accent bar */}
-            <div className="h-1 w-full bg-gradient-to-r from-blue-700 via-white to-red-600" />
+        {podcasts.map((podcast) => {
+          const isActive = activePlayer === podcast.id;
 
-            <div className="p-8 flex flex-col h-full">
-              {/* Media badge */}
-              <span
-                className={`inline-block mb-4 px-4 py-1 rounded-full text-xs font-bold tracking-wide
-                  ${
-                    podcast.mediaType === "audio"
-                      ? "bg-blue-50 text-blue-700"
-                      : "bg-red-50 text-red-700"
-                  }`}
-              >
-                {podcast.mediaType === "audio" ? "Podcast Audio" : "Podcast Vidéo"}
-              </span>
+          return (
+            <article
+              key={podcast.id}
+              className="group relative rounded-[2rem] bg-white border border-slate-100 
+                shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden"
+            >
+              {/* Top accent bar */}
+              <div className="h-1 w-full bg-gradient-to-r from-blue-700 via-white to-red-600" />
 
-              {/* Title */}
-              <h3 className="text-xl font-extrabold text-slate-900 leading-snug mb-3">
-                {podcast.title}
-              </h3>
-
-              {/* Description */}
-              <p className="text-slate-500 text-sm leading-relaxed mb-8 line-clamp-3">
-                {podcast.description}
-              </p>
-
-              {/* Player */}
-              <div className="mt-auto">
-                {podcast.mediaType === "audio" && podcast.audioUrl && (
-                  <iframe
-                    src={podcast.audioUrl}
-                    title={podcast.title}
-                    allow="autoplay"
-                    sandbox="allow-same-origin allow-scripts"
-                    className="w-full h-20 rounded-xl border border-slate-200 bg-slate-50"
-                  />
-                )}
-
-                {podcast.mediaType === "video" && podcast.videoUrl && (
-                  <iframe
-                    src={podcast.videoUrl}
-                    title={podcast.title}
-                    allow="autoplay; fullscreen"
-                    sandbox="allow-same-origin allow-scripts allow-presentation"
-                    className="w-full h-48 rounded-xl border border-slate-200 bg-black"
-                  />
-                )}
-              </div>
-
-              {/* Footer */}
-              <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100 text-xs text-slate-400">
-                <span>
-                  {new Date(podcast.createdAt).toDateString()}
+              <div className="p-8 flex flex-col h-full">
+                {/* Media badge */}
+                <span
+                  className={`inline-block mb-4 px-4 py-1 rounded-full text-xs font-bold tracking-wide
+                    ${
+                      podcast.mediaType === "audio"
+                        ? "bg-blue-50 text-blue-700"
+                        : "bg-red-50 text-red-700"
+                    }`}
+                >
+                  {podcast.mediaType === "audio"
+                    ? "Audio Podcast"
+                    : "Video Podcast"}
                 </span>
 
-                <span className="flex items-center gap-2 font-semibold text-red-600">
-                  <Play size={14} />
-                  Écouter
-                </span>
+                {/* Title */}
+                <h3 className="text-xl font-extrabold text-slate-900 mb-3">
+                  {podcast.title}
+                </h3>
+
+                {/* Description */}
+                <p className="text-slate-500 text-sm mb-8 line-clamp-3">
+                  {podcast.description}
+                </p>
+
+                {/* Player / Play Button */}
+                <div className="mt-auto">
+                  {!isActive && (
+                    <button
+                      onClick={() => setActivePlayer(podcast.id)}
+                      className="w-full flex items-center justify-center gap-3 
+                        py-4 rounded-xl font-semibold text-white
+                        bg-gradient-to-r from-blue-700 to-red-600
+                        hover:opacity-90 transition"
+                    >
+                      <Play size={18} />
+                      Play Episode
+                    </button>
+                  )}
+
+                  {isActive && (
+                    <div className="space-y-4">
+                      {podcast.mediaType === "audio" && podcast.audioUrl && (
+                        <iframe
+                          src={podcast.audioUrl}
+                          title={podcast.title}
+                          sandbox="allow-same-origin allow-scripts"
+                          className="w-full h-20 rounded-xl border border-slate-200"
+                        />
+                      )}
+
+                      {podcast.mediaType === "video" && podcast.videoUrl && (
+                        <iframe
+                          src={podcast.videoUrl}
+                          title={podcast.title}
+                          sandbox="allow-same-origin allow-scripts allow-presentation"
+                          className="w-full h-48 rounded-xl border border-slate-200"
+                        />
+                      )}
+
+                      <button
+                        onClick={() => setActivePlayer(null)}
+                        className="w-full flex items-center justify-center gap-2
+                          py-2 text-sm font-semibold text-slate-500
+                          hover:text-red-600 transition"
+                      >
+                        <X size={14} />
+                        Close player
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100 text-xs text-slate-400">
+                  <span>
+                    {new Date(podcast.createdAt).toDateString()}
+                  </span>
+
+                  <span className="font-semibold text-blue-700">
+                    Listen now
+                  </span>
+                </div>
               </div>
-            </div>
-          </article>
-        ))}
+            </article>
+          );
+        })}
       </div>
     </section>
   );
