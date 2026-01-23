@@ -11,62 +11,71 @@ export default function PodcastHero() {
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const navigate = useNavigate();
+  
+  // Ensure the key doesn't cause a double slash or missing slash
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || '';
+  const cleanUrl = CLIENT_KEY.endsWith('/') ? CLIENT_KEY : `${CLIENT_KEY}/`;
 
   useEffect(() => {
     const fetchLatestThree = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch(`${CLIENT_KEY}api/podcasts?populate=*`);
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        console.log("Fetching from:", `${cleanUrl}api/podcasts?populate=*`);
+        const res = await fetch(`${cleanUrl}api/podcasts?populate=*`);
+        
+        if (!res.ok) throw new Error(`Server responded with ${res.status}`);
         
         const json = await res.json();
+        console.log("API Response:", json); // Check your console to see the structure!
+
+        // Strapi sometimes nests data under .data
         const allItems = json.data || [];
 
-        // Manual Sort: Newest first
-        const sorted = allItems.sort((a: any, b: any) => {
-          const dateA = new Date(a.attributes?.createdAt || a.createdAt).getTime();
-          const dateB = new Date(b.attributes?.createdAt || b.createdAt).getTime();
+        // 1. Manual Sort: Absolute newest items first
+        const sorted = [...allItems].sort((a: any, b: any) => {
+          // Fallback check: handles both a.attributes.createdAt and a.createdAt
+          const dateA = new Date(a.attributes?.createdAt || a.createdAt || 0).getTime();
+          const dateB = new Date(b.attributes?.createdAt || b.createdAt || 0).getTime();
           return dateB - dateA; 
         });
 
+        // 2. Map and Slice
         const lastThree = sorted.slice(0, 3).map((item: any) => ({
           id: item.id,
-          ...(item.attributes || item),
+          ...(item.attributes || item), // Flatten attributes if they exist
         }));
 
         setFeaturedItems(lastThree);
       } catch (err) {
-        console.error('Logic error:', err);
+        console.error('Fetch error:', err);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchLatestThree();
-  }, [CLIENT_KEY]);
+  }, [cleanUrl]);
 
   const getMediaUrl = (item: any) => {
     if (!item) return '';
-    const fileData = item.file?.data?.attributes || item.media?.data?.attributes || item.file;
+    // Check all possible nesting locations for the file URL
+    const fileData = item.file?.data?.attributes || item.media?.data?.attributes || item.file?.attributes || item.file;
     const url = item.audioUrl || item.videoUrl || fileData?.url || '';
+    
     if (!url) return '';
     if (url.startsWith('http')) return url;
-    return `${CLIENT_KEY}${url.startsWith('/') ? url.slice(1) : url}`;
+    return `${cleanUrl}${url.startsWith('/') ? url.slice(1) : url}`;
   };
 
   const handleToggle = (item: any) => {
-    // If clicking a different item, stop everything first
     if (currentPlaying?.id !== item.id) {
       audioRef.current?.pause();
       if (videoRef.current) videoRef.current.pause();
-      
       setCurrentPlaying(item);
       setIsPlaying(true);
       return;
     }
 
-    // Toggle logic for the same item
     if (item.mediaType === 'video' && videoRef.current) {
       videoRef.current.paused ? videoRef.current.play() : videoRef.current.pause();
     } else if (audioRef.current) {
@@ -76,35 +85,68 @@ export default function PodcastHero() {
   };
 
   return (
-    <main className="w-full py-16 flex flex-col items-center bg-white">
+    <main className="w-full py-16 flex flex-col items-center bg-white min-h-[400px]">
       <audio 
         ref={audioRef} 
         src={currentPlaying?.mediaType !== 'video' ? getMediaUrl(currentPlaying) : ''}
+        autoPlay
         onPlay={() => setIsPlaying(true)}
         onPause={() => setIsPlaying(false)}
-        autoPlay
       />
 
       <div className="flex flex-col items-center gap-3 mb-10 text-center">
-        <span className="px-4 py-1 rounded-full bg-red-50 text-red-600 text-xs font-bold uppercase tracking-widest">
-          Newest Additions
+        <span className="px-4 py-1 rounded-full bg-red-100 text-red-600 text-xs font-bold uppercase tracking-widest">
+          Latest Releases
         </span>
-        <h2 className="font-serif text-4xl font-bold text-slate-900">Multimedia Archive</h2>
-        <div className="w-20 h-1 bg-blue-600 rounded-full"></div>
+        <h2 className="font-serif text-4xl font-bold text-slate-900">Featured Content</h2>
+        <div className="w-24 h-1 bg-blue-600"></div>
       </div>
 
-      <div className="w-[90%] max-w-5xl flex flex-col gap-8">
+      <div className="w-[90%] max-w-6xl flex flex-col gap-6">
         {isLoading ? (
-          <div className="flex justify-center py-20"><Loader2 className="animate-spin text-blue-600" size={40} /></div>
-        ) : featuredItems.map((item) => {
-          const isThisPlaying = currentPlaying?.id === item.id;
-          const isVideo = item.mediaType === 'video';
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <Loader2 className="animate-spin text-blue-600" size={40} />
+            <p className="text-slate-400 animate-pulse font-medium">Connecting to library...</p>
+          </div>
+        ) : featuredItems.length > 0 ? (
+          featuredItems.map((item) => {
+            const isThisPlaying = currentPlaying?.id === item.id;
+            const isVideo = item.mediaType === 'video' || item.mediaType === 'Video';
 
-          return (
-            <div key={item.id} className="group relative bg-white border border-slate-200 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300">
-              <div className="flex flex-col md:flex-row items-stretch">
-                
-                <div className="w-full md:w-72 bg-slate-900 flex items-center justify-center relative min-h-[200px]">
+            return (
+              <div 
+                key={item.id} 
+                className="relative w-full rounded-[2.5rem] p-8 md:p-12 overflow-hidden bg-gradient-to-r from-blue-900 via-blue-800 to-[#E31E24] text-white flex flex-col md:flex-row items-center gap-10 shadow-2xl"
+              >
+                <div className="flex-1 space-y-5 z-10">
+                  <div className="flex gap-2 items-center">
+                    <span className="bg-white/20 px-3 py-1 rounded-lg text-[10px] font-black uppercase">
+                      {isVideo ? 'Video' : 'Audio'}
+                    </span>
+                    {isThisPlaying && isPlaying && (
+                      <span className="flex items-center gap-1 text-xs font-bold text-white">
+                        <Volume2 size={14} className="animate-pulse" /> Playing
+                      </span>
+                    )}
+                  </div>
+
+                  <h3 className="text-3xl md:text-5xl font-bold leading-tight">
+                    {item.title}
+                  </h3>
+
+                  <p className="text-white/80 italic">
+                    By {item.author || 'French Institute'}
+                  </p>
+
+                  <button 
+                    onClick={() => navigate(`/podcast/${item.slug || item.id}`)}
+                    className="flex items-center gap-2 text-sm font-bold hover:underline"
+                  >
+                    View Details <ArrowRight size={16} />
+                  </button>
+                </div>
+
+                <div className="w-full md:w-[450px] aspect-video md:aspect-square bg-white/10 rounded-[2rem] flex items-center justify-center overflow-hidden relative border border-white/5">
                   {isVideo && isThisPlaying ? (
                     <video 
                       ref={videoRef}
@@ -116,61 +158,38 @@ export default function PodcastHero() {
                       onPause={() => setIsPlaying(false)}
                     />
                   ) : (
-                    <div className="flex flex-col items-center gap-3 text-white/40">
-                      {isVideo ? <Video size={48} /> : <Headphones size={48} />}
-                    </div>
-                  )}
-                  
-                  {(!isThisPlaying || (!isVideo && isThisPlaying)) && (
                     <button 
                       onClick={() => handleToggle(item)}
-                      className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/40 transition-all"
+                      className="w-24 h-24 bg-white text-blue-900 rounded-full flex items-center justify-center shadow-xl hover:scale-110 transition-transform z-20"
                     >
-                      <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center text-slate-900 shadow-2xl scale-90 group-hover:scale-100 transition-transform">
-                        {isThisPlaying && isPlaying ? <Pause size={30} /> : <Play size={30} className="ml-1" />}
-                      </div>
+                      {isThisPlaying && isPlaying && !isVideo ? (
+                        <Pause size={40} />
+                      ) : (
+                        <Play size={40} className="ml-2" />
+                      )}
                     </button>
                   )}
-                </div>
 
-                <div className="flex-1 p-8 flex flex-col justify-center">
-                  <div className="flex items-center gap-3 mb-3">
-                    <span className="text-[10px] font-bold text-blue-600 uppercase tracking-tighter bg-blue-50 px-2 py-0.5 rounded">
-                      {item.mediaType}
-                    </span>
-                    {isThisPlaying && isPlaying && (
-                      <div className="flex items-center gap-1 text-red-600 text-xs font-bold">
-                        <Volume2 size={14} className="animate-pulse" />
-                        Live
-                      </div>
-                    )}
-                  </div>
-                  <h3 className="text-2xl font-bold text-slate-900 mb-2">{item.title}</h3>
-                  <p className="text-slate-500 text-sm mb-6 line-clamp-2 italic">
-                    By {item.author || 'Admin'}
-                  </p>
-                  
-                  <div className="flex items-center justify-between mt-auto">
-                    <button 
-                      onClick={() => navigate(`/podcast/${item.slug || item.id}`)}
-                      className="text-slate-900 font-bold text-sm flex items-center gap-1 hover:gap-2 transition-all underline underline-offset-4"
-                    >
-                      View Full Episode <ArrowRight size={16} />
-                    </button>
+                  <div className="absolute top-4 right-4 bg-white/10 p-2 rounded-full">
+                    {isVideo ? <Video size={20} /> : <Headphones size={20} />}
                   </div>
                 </div>
-
               </div>
-            </div>
-          );
-        })}
+            );
+          })
+        ) : (
+          <div className="py-20 text-gray-400 text-center border-2 border-dashed border-gray-100 rounded-[2.5rem]">
+            No items found. Please check if your Strapi items have the correct permissions.
+          </div>
+        )}
       </div>
 
       <button
         onClick={() => navigate('/podcast')}
-        className="mt-12 bg-slate-900 text-white px-12 py-4 rounded-full font-bold hover:bg-blue-600 transition-colors shadow-lg"
+        className="mt-12 bg-slate-900 text-white px-10 py-4 rounded-2xl flex items-center gap-3 hover:bg-blue-600 transition font-bold"
       >
-        View All Content
+        Browse Full Archive
+        <ArrowRight size={20} />
       </button>
     </main>
   );
