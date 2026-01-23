@@ -15,7 +15,7 @@ export default function PodcastHero() {
         const fetchPodcasts = async () => {
             try {
                 const res = await fetch(`${CLIENT_KEY}api/podcasts?filters[mediaType][$eq]=audio&limit=4`);
-                if (!res.ok) throw new Error('Failed to fetch');
+                if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                 const data = await res.json();
                 
                 const rawData = Array.isArray(data) ? data : (data?.data || []);
@@ -34,44 +34,77 @@ export default function PodcastHero() {
 
     const getAudioUrl = (podcast: any) => {
         if (!podcast) return "";
-        const url = podcast.audioUrl || podcast.file;
+
+        // Use audioUrl from your schema (it's absolute in the example)
+        let url = podcast.audioUrl;
+
+        // Fallbacks in case the field name varies in some responses
+        if (!url) url = podcast.file?.url || podcast.media?.url || podcast.url || "";
+
         if (!url) return "";
-        return url.startsWith('http') ? url : `${CLIENT_KEY.replace(/\/$/, '')}${url}`;
+
+        // If it's already a full URL (http/https), return it directly
+        if (url.startsWith('http://') || url.startsWith('https://')) {
+            return url;
+        }
+
+        // Otherwise treat as relative path and prepend base URL
+        const base = CLIENT_KEY.replace(/\/$/, '');
+        return `${base}${url.startsWith('/') ? '' : '/'}${url}`;
     };
 
     const togglePlay = (podcast: any) => {
+        if (!podcast) return;
+
         const audioSrc = getAudioUrl(podcast);
-        
+        console.log("Trying to play podcast:", {
+            title: podcast.title,
+            audioSrc,
+            currentPlayingId: currentPlaying?.id,
+            isPlaying
+        });
+
         if (!audioSrc) {
-            console.error("No valid audio source found for:", podcast.title);
+            console.warn("No valid audio URL found for:", podcast.title);
             return;
         }
 
-        // SAME PODCAST
+        const audio = audioRef.current;
+        if (!audio) return;
+
+        // If clicking the same podcast → just toggle play/pause
         if (currentPlaying?.id === podcast.id) {
             if (isPlaying) {
-                audioRef.current?.pause();
+                audio.pause();
             } else {
-                audioRef.current?.play()
-                    .then(() => setIsPlaying(true)) // ✅ FIX
-                    .catch(e => console.error("Playback error:", e));
+                audio.play().catch(err => {
+                    console.error("Resume play failed:", err);
+                });
             }
             return;
         }
 
-        // NEW PODCAST
-        if (audioRef.current) {
-            audioRef.current.pause();           // ✅ FIX
-            audioRef.current.currentTime = 0;   // ✅ FIX
+        // New podcast selected
+        audio.pause();
+        audio.currentTime = 0;
+        audio.src = audioSrc;
+        audio.load();
 
-            setCurrentPlaying(podcast);
-            audioRef.current.src = audioSrc;
-            audioRef.current.load();
+        setCurrentPlaying(podcast);
 
-            audioRef.current.play()
-                .then(() => setIsPlaying(true))
-                .catch(err => console.error("Playback failed:", err));
-        }
+        audio.play()
+            .then(() => {
+                setIsPlaying(true);
+                console.log("Playback started successfully");
+            })
+            .catch(err => {
+                console.error("Playback failed:", err.name, err.message);
+                if (err.name === "NotAllowedError") {
+                    console.warn("Autoplay/interaction blocked by browser");
+                } else if (err.message.includes("CORS")) {
+                    console.warn("CORS issue detected — check server headers for audio file");
+                }
+            });
     };
 
     const featured = podcasts.length > 0 ? podcasts[0] : null;
@@ -81,9 +114,11 @@ export default function PodcastHero() {
             <audio 
                 ref={audioRef} 
                 preload="auto"
+                crossOrigin="anonymous"
                 onEnded={() => setIsPlaying(false)}
                 onPause={() => setIsPlaying(false)}
                 onPlay={() => setIsPlaying(true)}
+                onError={(e) => console.error("Audio element error:", e)}
             />
 
             <div className="flex flex-col items-center gap-3 mb-10">
@@ -102,7 +137,7 @@ export default function PodcastHero() {
                                 {isPlaying && currentPlaying?.id === featured.id ? 'Now Playing' : 'Featured Episode'}
                             </span>
                             <h3 className="text-3xl md:text-4xl font-bold">{featured.title}</h3>
-                            <p className="opacity-80">Hosted by {featured.author}</p>
+                            <p className="opacity-80">Hosted by {featured.author || 'Unknown Host'}</p>
                             
                             {currentPlaying?.id === featured.id && isPlaying && (
                                 <div className="flex items-center gap-3 text-white/60">
@@ -131,23 +166,34 @@ export default function PodcastHero() {
                     {podcasts.slice(1, 3).map((p: any) => (
                         <div 
                             key={p.id} 
-                            className={`p-6 rounded-[2rem] border transition-all flex items-center gap-6 group ${currentPlaying?.id === p.id ? 'border-blue-500 bg-blue-50/50' : 'bg-white border-gray-100 hover:border-blue-200'}`}
+                            className={`p-6 rounded-[2rem] border transition-all flex items-center gap-6 group ${
+                                currentPlaying?.id === p.id && isPlaying 
+                                    ? 'border-blue-500 bg-blue-50/50 shadow-md' 
+                                    : 'bg-white border-gray-100 hover:border-blue-200'
+                            }`}
                         >
                             <div 
                                 onClick={() => togglePlay(p)}
                                 className="w-24 h-24 bg-gray-100 rounded-2xl flex items-center justify-center cursor-pointer relative overflow-hidden"
                             >
-                                <Headphones size={32} className={currentPlaying?.id === p.id ? 'text-blue-500' : 'text-gray-400'} />
+                                <Headphones 
+                                    size={32} 
+                                    className={currentPlaying?.id === p.id && isPlaying ? 'text-blue-500' : 'text-gray-400'} 
+                                />
                                 <div className="absolute inset-0 bg-blue-600/10 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                    {isPlaying && currentPlaying?.id === p.id ? <Pause size={24} className="text-blue-600" /> : <Play size={24} className="text-blue-600" />}
+                                    {isPlaying && currentPlaying?.id === p.id ? (
+                                        <Pause size={24} className="text-blue-600" />
+                                    ) : (
+                                        <Play size={24} className="text-blue-600" />
+                                    )}
                                 </div>
                             </div>
                             <div className="flex-1">
                                 <h4 className="font-bold text-lg line-clamp-1">{p.title}</h4>
-                                <p className="text-sm text-gray-500 mb-2">{p.author}</p>
+                                <p className="text-sm text-gray-500 mb-2">{p.author || 'Unknown Host'}</p>
                                 <button 
                                     onClick={() => togglePlay(p)} 
-                                    className="text-blue-600 font-bold text-xs uppercase tracking-widest flex items-center gap-2"
+                                    className="text-blue-600 font-bold text-xs uppercase tracking-widest flex items-center gap-2 hover:underline"
                                 >
                                     {currentPlaying?.id === p.id && isPlaying ? 'Pause Episode' : 'Play Episode'}
                                 </button>

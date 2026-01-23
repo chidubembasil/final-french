@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 
 interface Podcast {
   id: number;
+  documentId?: string;
   title: string;
   slug: string;
   description: string;
@@ -43,44 +44,99 @@ function Podcast() {
   const [currentPage, setCurrentPage] = useState(1);
   const [activePodcast, setActivePodcast] = useState<Podcast | null>(null);
   const itemsPerPage = 6;
-  const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
+  const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || '';
 
-  // Extract unique topics from podcasts data
+  // Dynamically get unique values from fetched data
   const availableTopics = useMemo(() => {
-    const topics = podcasts.map(p => p.topic).filter(Boolean);
+    const topics = podcasts.map(p => p.topic).filter(Boolean) as string[];
     return Array.from(new Set(topics)).sort();
   }, [podcasts]);
 
+  const availableLevels = useMemo(() => {
+    const levels = podcasts.map(p => p.cefrLevel).filter(Boolean) as string[];
+    return ['All', ...Array.from(new Set(levels)).sort()];
+  }, [podcasts]);
+
   useEffect(() => {
-    fetch(`${CLIENT_KEY}api/galleries`)
-      .then(res => res.json())
-      .then((data: any[]) => {
-        const hero = data.find(item => item.purpose === "Other Page" && item.subPurpose === "Podcasts");
-        if (hero) setHeroData(hero);
+    const baseUrl = CLIENT_KEY.replace(/\/$/, '');
+
+    // Hero fetch (unchanged logic)
+    fetch(`${baseUrl}/api/galleries`)
+      .then(res => {
+        if (!res.ok) throw new Error('Hero fetch failed');
+        return res.json();
       })
+      .then((data: any) => {
+        const raw = Array.isArray(data) ? data : (data.data || []);
+        const hero = raw.find((item: any) => 
+          item.purpose === "Other Page" && item.subPurpose === "Podcasts"
+        );
+        if (hero) {
+          setHeroData({
+            title: hero.title || hero.attributes?.title || '',
+            description: hero.description || hero.attributes?.description || '',
+            mediaUrl: hero.mediaUrl || hero.attributes?.mediaUrl || '',
+          });
+        }
+      })
+      .catch(err => console.error("Hero fetch error:", err))
       .finally(() => setLoadingHero(false));
 
-    fetch(`${CLIENT_KEY}api/podcasts`)
-      .then(res => res.json())
-      .then(data => setPodcasts(Array.isArray(data) ? data : (data.data || [])))
-      .catch(err => console.error("Podcast Fetch Error:", err))
+    // Podcasts fetch – add filters for published + mediaType if desired
+    // You can extend filters later (e.g. &filters[cefrLevel][$eq]=B2)
+    const podcastQuery = `${baseUrl}/api/podcasts?` +
+      `filters[status][$eq]=published&` +           // only published (adjust field name)
+      `filters[mediaType][$in]=audio&filters[mediaType][$in]=video&` + // both types
+      `sort=publishedAt:desc&` +                    // newest first
+      `pagination[page]=1&pagination[pageSize]=100`; // fetch many at once (adjust as needed)
+
+    fetch(podcastQuery)
+      .then(res => {
+        if (!res.ok) throw new Error(`Podcasts fetch failed: ${res.status}`);
+        return res.json();
+      })
+      .then(data => {
+        const raw = Array.isArray(data) ? data : (data.data || []);
+        const formatted = raw.map((item: any) => {
+          const attrs = item.attributes || item;
+          return {
+            id: item.id,
+            ...attrs,
+            // Make media URLs absolute if relative
+            audioUrl: attrs.audioUrl?.startsWith('http') 
+              ? attrs.audioUrl 
+              : `${baseUrl}${attrs.audioUrl?.startsWith('/') ? '' : '/'}${attrs.audioUrl || ''}`,
+            videoUrl: attrs.videoUrl?.startsWith('http') 
+              ? attrs.videoUrl 
+              : `${baseUrl}${attrs.videoUrl?.startsWith('/') ? '' : '/'}${attrs.videoUrl || ''}`,
+          };
+        });
+        setPodcasts(formatted);
+      })
+      .catch(err => console.error("Podcasts fetch error:", err))
       .finally(() => setLoadingPodcasts(false));
   }, [CLIENT_KEY]);
 
-  // Local Filtering Logic
+  // Client-side filtering (fast & works offline after load)
   const filteredPodcasts = useMemo(() => {
     return podcasts.filter(item => {
-      const matchesSearch = item.title.toLowerCase().includes(search.toLowerCase()) || 
-                          item.description.toLowerCase().includes(search.toLowerCase());
-      const matchesLevel = levelFilter === 'All' || item.cefrLevel === levelFilter;
-      const matchesMedia = mediaFilter === 'All' || item.mediaType.toLowerCase() === mediaFilter.toLowerCase();
-      const matchesTopic = topicFilter === 'All' || item.topic === topicFilter;
+      const matchesSearch = 
+        item.title.toLowerCase().includes(search.toLowerCase()) || 
+        item.description.toLowerCase().includes(search.toLowerCase()) ||
+        item.topic?.toLowerCase().includes(search.toLowerCase());
+
+      const matchesLevel  = levelFilter === 'All'  || item.cefrLevel === levelFilter;
+      const matchesMedia  = mediaFilter === 'All'  || item.mediaType.toLowerCase() === mediaFilter.toLowerCase();
+      const matchesTopic  = topicFilter === 'All'  || item.topic === topicFilter;
 
       return matchesSearch && matchesLevel && matchesMedia && matchesTopic;
     });
   }, [podcasts, search, levelFilter, mediaFilter, topicFilter]);
 
-  const currentPodcasts = filteredPodcasts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const currentPodcasts = filteredPodcasts.slice(
+    (currentPage - 1) * itemsPerPage, 
+    currentPage * itemsPerPage
+  );
   const totalPages = Math.ceil(filteredPodcasts.length / itemsPerPage);
 
   const handleCopyTranscript = (text: string) => {
@@ -97,6 +153,7 @@ function Podcast() {
 
   useEffect(() => {
     document.body.style.overflow = activePodcast ? "hidden" : "unset";
+    return () => { document.body.style.overflow = "unset"; };
   }, [activePodcast]);
 
   return (
@@ -120,8 +177,12 @@ function Podcast() {
                 <Headphones size={17} />
                 <p className="text-sm font-medium uppercase tracking-widest">À toi le micro</p>
               </div>
-              <h1 className="text-white text-5xl md:text-7xl font-bold font-serif max-w-3xl leading-tight">{heroData?.title}</h1>
-              <p className="text-white/90 text-lg md:text-xl max-w-xl leading-relaxed">{heroData?.description}</p>
+              <h1 className="text-white text-5xl md:text-7xl font-bold font-serif max-w-3xl leading-tight">
+                {heroData?.title || "Podcasts"}
+              </h1>
+              <p className="text-white/90 text-lg md:text-xl max-w-xl leading-relaxed">
+                {heroData?.description || "Listen to learners and teachers"}
+              </p>
             </div>
           </>
         )}
@@ -138,22 +199,33 @@ function Podcast() {
                 placeholder="Search podcasts..." 
                 className="w-full pl-11 pr-4 py-3 rounded-2xl border border-gray-200 bg-gray-50/50 outline-none focus:ring-2 focus:ring-blue-500" 
                 value={search} 
-                onChange={(e) => setSearch(e.target.value)} 
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }} 
               />
             </div>
             <select 
               className="px-4 py-3 rounded-2xl border border-gray-200 bg-gray-50/50 font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500" 
               value={topicFilter} 
-              onChange={(e) => setTopicFilter(e.target.value)}
+              onChange={(e) => {
+                setTopicFilter(e.target.value);
+                setCurrentPage(1);
+              }}
             >
               <option value="All">All Topics</option>
-              {availableTopics.map(t => <option key={t} value={t}>{t}</option>)}
+              {availableTopics.map(t => (
+                <option key={t} value={t}>{t}</option>
+              ))}
             </select>
             <div className="flex bg-gray-100 p-1 rounded-xl">
               {['All', 'Audio', 'Video'].map(m => (
                 <button 
                   key={m} 
-                  onClick={() => setMediaFilter(m)} 
+                  onClick={() => {
+                    setMediaFilter(m);
+                    setCurrentPage(1);
+                  }} 
                   className={`flex-1 py-3 rounded-lg text-xs font-bold transition-all ${mediaFilter === m ? 'bg-white text-blue-800 shadow-sm' : 'text-gray-500'}`}
                 >
                   {m}
@@ -162,10 +234,13 @@ function Podcast() {
             </div>
           </div>
           <div className="flex gap-2 pt-4 border-t border-gray-100 overflow-x-auto no-scrollbar">
-            {['All', 'A1', 'A2', 'B1', 'B2', 'C1'].map(lvl => (
+            {availableLevels.map(lvl => (
               <button 
                 key={lvl} 
-                onClick={() => setLevelFilter(lvl)} 
+                onClick={() => {
+                  setLevelFilter(lvl);
+                  setCurrentPage(1);
+                }} 
                 className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all shrink-0 ${levelFilter === lvl ? 'bg-blue-800 border-blue-800 text-white' : 'bg-white border-gray-200 text-gray-600'}`}
               >
                 {lvl}
@@ -186,29 +261,49 @@ function Podcast() {
               {currentPodcasts.map((item) => (
                 <div key={item.id} className="group bg-white rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all flex flex-col h-full overflow-hidden">
                   <div className="relative aspect-video bg-slate-900">
-                    {item.mediaType === 'video' ? (
-                      <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${getYouTubeID(item.videoUrl)}`} title={item.title} frameBorder="0" allowFullScreen loading="lazy" />
+                    {item.mediaType === 'video' && item.videoUrl ? (
+                      <iframe 
+                        className="w-full h-full" 
+                        src={`https://www.youtube.com/embed/${getYouTubeID(item.videoUrl)}`} 
+                        title={item.title} 
+                        frameBorder="0" 
+                        allowFullScreen 
+                        loading="lazy" 
+                      />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-slate-900 relative">
-                        <PlayCircle className="text-white fill-blue-600 cursor-pointer hover:scale-110 transition-transform" size={50} onClick={() => setActivePodcast(item)} />
+                        <PlayCircle 
+                          className="text-white fill-blue-600 cursor-pointer hover:scale-110 transition-transform" 
+                          size={50} 
+                          onClick={() => setActivePodcast(item)} 
+                        />
                       </div>
                     )}
                   </div>
                   <div className="p-8 flex flex-col flex-grow">
-                    <div className="flex items-center gap-2 mb-3">
-                      <span className="px-2 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold uppercase rounded">{item.cefrLevel}</span>
-                      <span className="text-[10px] text-gray-400 font-bold uppercase">{item.topic}</span>
-                      <span className="px-2 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold uppercase rounded">{item.mediaType}</span>
+                    <div className="flex items-center gap-2 mb-3 flex-wrap">
+                      {item.cefrLevel && (
+                        <span className="px-2 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold uppercase rounded">{item.cefrLevel}</span>
+                      )}
+                      {item.topic && (
+                        <span className="text-[10px] text-gray-400 font-bold uppercase">{item.topic}</span>
+                      )}
+                      <span className="px-2 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold uppercase rounded">
+                        {item.mediaType}
+                      </span>
                     </div>
                     <h3 className="text-xl font-bold text-slate-900 mb-2 line-clamp-1">{item.title}</h3>
                     <p className="text-gray-500 text-sm line-clamp-2 mb-6 flex-grow">{item.description}</p>
                     
                     <div className="mb-6 py-4 border-y border-gray-50 flex items-center justify-between text-[10px] font-black text-gray-400 uppercase">
-                       <span className="flex items-center gap-1"><Layers size={12} className="text-blue-500"/> {item.topic}</span>
-                       <span className="flex items-center gap-1"><User size={12}/> {item.audience}</span>
+                      <span className="flex items-center gap-1"><Layers size={12} className="text-blue-500"/> {item.topic || '—'}</span>
+                      <span className="flex items-center gap-1"><User size={12}/> {item.audience || '—'}</span>
                     </div>
 
-                    <button onClick={() => setActivePodcast(item)} className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all">
+                    <button 
+                      onClick={() => setActivePodcast(item)} 
+                      className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all"
+                    >
                       Listen & View Transcript
                     </button>
                   </div>
@@ -218,11 +313,19 @@ function Podcast() {
 
             {totalPages > 1 && (
               <div className="flex justify-center items-center gap-4 mt-12">
-                <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-4 bg-white border border-gray-100 rounded-2xl disabled:opacity-20 hover:bg-gray-50 transition-all shadow-sm">
+                <button 
+                  disabled={currentPage === 1} 
+                  onClick={() => setCurrentPage(p => p - 1)} 
+                  className="p-4 bg-white border border-gray-100 rounded-2xl disabled:opacity-20 hover:bg-gray-50 transition-all shadow-sm"
+                >
                   <ChevronLeft size={20} />
                 </button>
                 <p className="text-xs font-black text-gray-400 uppercase">Page {currentPage} of {totalPages}</p>
-                <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="p-4 bg-white border border-gray-100 rounded-2xl disabled:opacity-20 hover:bg-gray-50 transition-all shadow-sm">
+                <button 
+                  disabled={currentPage === totalPages} 
+                  onClick={() => setCurrentPage(p => p + 1)} 
+                  className="p-4 bg-white border border-gray-100 rounded-2xl disabled:opacity-20 hover:bg-gray-50 transition-all shadow-sm"
+                >
                   <ChevronRight size={20} />
                 </button>
               </div>
@@ -241,43 +344,62 @@ function Podcast() {
             </button>
             <div className="flex gap-3">
               <button 
-                onClick={(e) => { e.stopPropagation(); handleCopyTranscript(activePodcast.transcript); }}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-[10px] font-black uppercase hover:bg-gray-200"
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  if (activePodcast.transcript) handleCopyTranscript(activePodcast.transcript); 
+                }}
+                disabled={!activePodcast.transcript}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-[10px] font-black uppercase hover:bg-gray-200 disabled:opacity-50"
               >
                 {copied ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
-                {copied ? 'Copied' : 'Copy'}
+                {copied ? 'Copied' : 'Copy Transcript'}
               </button>
-              <button onClick={() => setActivePodcast(null)} className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-all"><X size={24} /></button>
+              <button onClick={() => setActivePodcast(null)} className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-all">
+                <X size={24} />
+              </button>
             </div>
           </div>
 
           <div className="flex-1 w-full max-w-4xl mx-auto px-6 py-12" onClick={e => e.stopPropagation()}>
             <div className="space-y-8">
-              <div className="flex gap-2">
-                <span className="px-3 py-1 bg-blue-600 text-white text-[10px] font-black uppercase rounded-lg">{activePodcast.topic}</span>
-                <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-lg">{activePodcast.cefrLevel}</span>
+              <div className="flex gap-2 flex-wrap">
+                {activePodcast.topic && (
+                  <span className="px-3 py-1 bg-blue-600 text-white text-[10px] font-black uppercase rounded-lg">{activePodcast.topic}</span>
+                )}
+                {activePodcast.cefrLevel && (
+                  <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-lg">{activePodcast.cefrLevel}</span>
+                )}
               </div>
               <h2 className="text-4xl md:text-6xl font-bold font-serif text-slate-900 leading-tight">{activePodcast.title}</h2>
               <div className="flex flex-wrap gap-6 py-4 border-b border-gray-100 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                <span className="flex items-center gap-2"><User size={14} className="text-blue-600"/> {activePodcast.audience}</span>
+                <span className="flex items-center gap-2"><User size={14} className="text-blue-600"/> {activePodcast.audience || '—'}</span>
                 <span className="flex items-center gap-2"><Calendar size={14}/> {new Date(activePodcast.updatedAt).toLocaleDateString()}</span>
                 <span className="flex items-center gap-2"><Layers size={14}/> ID: {activePodcast.id}</span>
               </div>
 
-              {activePodcast.mediaType === 'audio' && (
+              {activePodcast.mediaType === 'audio' && activePodcast.audioUrl && (
                 <div className="bg-slate-900 p-8 rounded-[2.5rem] shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
                   <div className="flex items-center gap-4">
-                     <div className="p-4 bg-white/10 rounded-2xl"><Headphones className="text-white" size={30}/></div>
-                     <p className="text-white font-bold">{activePodcast.title}</p>
+                    <div className="p-4 bg-white/10 rounded-2xl"><Headphones className="text-white" size={30}/></div>
+                    <p className="text-white font-bold">{activePodcast.title}</p>
                   </div>
-                  <audio src={activePodcast.audioUrl} controls autoPlay className="w-full md:w-auto" />
-                  {activePodcast.audioUrl && (
-                    <a href={activePodcast.audioUrl} download className="p-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all"><Download size={20}/></a>
-                  )}
+                  <audio 
+                    src={activePodcast.audioUrl} 
+                    controls 
+                    autoPlay 
+                    className="w-full md:w-auto flex-1" 
+                  />
+                  <a 
+                    href={activePodcast.audioUrl} 
+                    download 
+                    className="p-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all shrink-0"
+                  >
+                    <Download size={20}/>
+                  </a>
                 </div>
               )}
 
-              {activePodcast.mediaType === 'video' && activePodcast.videoUrl && (
+              {activePodcast.mediaType === 'video' && activePodcast.videoUrl && getYouTubeID(activePodcast.videoUrl) && (
                 <div className="aspect-video rounded-[2.5rem] overflow-hidden shadow-2xl">
                   <iframe 
                     className="w-full h-full" 
@@ -289,12 +411,14 @@ function Podcast() {
                 </div>
               )}
 
-              <div className="prose prose-lg max-w-none pt-10">
-                <h4 className="text-slate-900 font-black uppercase tracking-widest text-xs mb-6">Full Transcript</h4>
-                <div className="text-gray-600 leading-[1.8] text-lg whitespace-pre-wrap italic bg-gray-50 p-8 rounded-[2rem]">
-                  {activePodcast.transcript}
+              {activePodcast.transcript && (
+                <div className="prose prose-lg max-w-none pt-10">
+                  <h4 className="text-slate-900 font-black uppercase tracking-widest text-xs mb-6">Full Transcript</h4>
+                  <div className="text-gray-600 leading-[1.8] text-lg whitespace-pre-wrap italic bg-gray-50 p-8 rounded-[2rem]">
+                    {activePodcast.transcript}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
