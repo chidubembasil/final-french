@@ -16,6 +16,7 @@ import Gallery from "./pages/Gallery";
 import News from "./pages/News";
 import BAC from "./pages/Bac";
 import Activites from "./pages/Activity";
+import NewsDetail from "./pages/NewsDetail";
 
 const App: React.FC = () => {
   return (
@@ -35,6 +36,7 @@ const App: React.FC = () => {
             <Route path="/bac" element={<BAC />} />
             <Route path="/activities" element={<Activites />} />
             <Route path="*" element={<Home />} />
+            <Route path="/news/:slug" element={<NewsDetail />} />
           </Routes>
         </main>
 

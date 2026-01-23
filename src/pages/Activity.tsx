@@ -18,7 +18,7 @@ import {
 interface RawQuestion {
   question: string;
   options: string[];
-  correctAnswer: number; // JSON: 1,2,3,4 → App: 0,1,2,3
+  correctAnswer: number; // comes as 1,2,3,4 from backend
 }
 
 interface Exercise {
@@ -54,7 +54,6 @@ function Activities() {
   const exercisesPerPage = 8;
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || '';
 
-  // LOCK SCROLL WHEN MODAL IS OPEN
   useEffect(() => {
     document.body.style.overflow = selectedEx || fetchError ? 'hidden' : 'unset';
   }, [selectedEx, fetchError]);
@@ -66,14 +65,14 @@ function Activities() {
           fetch(`${CLIENT_KEY}api/galleries`),
           fetch(`${CLIENT_KEY}api/exercises`)
         ]);
-        
+
         if (!heroRes.ok || !exRes.ok) throw new Error("Fetch failed");
 
         const heroJson = await heroRes.json();
         const exJson = await exRes.json();
 
-        const matchingHero = (heroJson.data || heroJson).find((item: any) => 
-          (item.attributes?.purpose || item.purpose) === "Other Page" && 
+        const matchingHero = (heroJson.data || heroJson).find((item: any) =>
+          (item.attributes?.purpose || item.purpose) === "Other Page" &&
           (item.attributes?.subPurpose || item.subPurpose) === "Activities"
         );
         if (matchingHero) {
@@ -87,16 +86,14 @@ function Activities() {
 
         const rawExercises = Array.isArray(exJson) ? exJson : (exJson.data || []);
         const tempMap: Record<number, DetailedExercise> = {};
-        
+
         rawExercises.forEach((item: any) => {
           const data = item.attributes ? { id: item.id, ...item.attributes } : item;
           let parsedContent: RawQuestion[] = [];
           if (data.content) {
             const rawContent = typeof data.content === 'string' ? JSON.parse(data.content) : data.content;
-            parsedContent = rawContent.map((q: RawQuestion) => ({
-              ...q,
-              correctAnswer: q.correctAnswer - 1  // 1-based → 0-based
-            }));
+            // We keep correctAnswer as-is (1-based), we only subtract when comparing
+            parsedContent = rawContent;
           }
           tempMap[data.id] = { ...data, content: parsedContent };
         });
@@ -113,7 +110,6 @@ function Activities() {
     fetchData();
   }, [CLIENT_KEY]);
 
-  // DYNAMIC TYPES FILTER FROM API DATA
   const typeOptions = useMemo(() => {
     const types = new Set(exercisesList.map(ex => ex.exerciseType).filter(Boolean));
     return ["All", ...Array.from(types).sort()];
@@ -130,8 +126,9 @@ function Activities() {
 
   const filteredExercises = useMemo(() => {
     return exercisesList.filter((ex) => {
-      const matchesSearch = ex.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                           ex.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesSearch =
+        ex.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        ex.description?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesType = activeType === "All" || ex.exerciseType === activeType;
       return matchesSearch && matchesType;
     });
@@ -146,15 +143,21 @@ function Activities() {
   const score = useMemo(() => {
     if (!selectedEx || modalStage !== 'result') return 0;
     return selectedEx.content.reduce((acc, q, idx) => {
+      // Compare with 1-based user answer
       return userAnswers[idx] === q.correctAnswer ? acc + 1 : acc;
     }, 0);
   }, [selectedEx, modalStage, userAnswers]);
 
   const getIcon = (type: string) => {
     const t = type?.toLowerCase() || '';
-    if (t.includes('mcq')) return <PlayCircle size={32} />;
-    if (t.includes('gap')) return <PenTool size={32} />;
-    return <Book size={32} />;
+    if (t.includes('mcq')) return <PlayCircle size={24} />;
+    if (t.includes('gap')) return <PenTool size={24} />;
+    return <Book size={24} />;
+  };
+
+  // Helper to convert 1-based index to letter (1→A, 2→B, etc.)
+  const getOptionLabel = (index: number) => {
+    return String.fromCharCode(65 + index - 1); // 1 → A, 2 → B, 3 → C, 4 → D
   };
 
   return (
@@ -186,7 +189,7 @@ function Activities() {
       </div>
 
       <section className="py-8 sm:py-12 px-4 sm:px-6 md:px-20 max-w-7xl mx-auto">
-        {/* FILTER BAR – only search + type filter now */}
+        {/* FILTER BAR */}
         <div className="bg-white p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] shadow-sm border border-gray-100 mb-8 sm:mb-12 flex flex-col lg:flex-row gap-5 sm:gap-6">
           <div className="flex-1 w-full">
             <p className="text-[10px] sm:text-xs font-black uppercase text-blue-600 mb-2 ml-1">Search Activity</p>
@@ -213,7 +216,7 @@ function Activities() {
                   setActiveType(t);
                   setCurrentPage(1);
                 }}
-                className={`px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-[10px] sm:text-[10px] md:text-xs font-black uppercase transition-all flex-shrink-0 ${
+                className={`px-3.5 sm:px-4 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-[10px] sm:text-xs font-black uppercase transition-all flex-shrink-0 ${
                   activeType === t
                     ? "bg-blue-600 text-white shadow-md"
                     : "bg-gray-100 text-gray-500 hover:bg-gray-200"
@@ -241,17 +244,17 @@ function Activities() {
                 key={item.id}
                 className="group bg-white rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-8 border border-gray-100 shadow-sm hover:shadow-xl transition-all flex flex-col hover:-translate-y-1"
               >
-                <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl sm:rounded-2xl bg-blue-50 flex items-center justify-center mb-4 sm:mb-6 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
+                <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-blue-50 flex items-center justify-center mb-4 sm:mb-6 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
                   {getIcon(item.exerciseType)}
                 </div>
-                <h3 className="text-xl sm:text-2xl font-bold text-slate-800 mb-2 line-clamp-2">{item.title}</h3>
+                <h3 className="text-lg sm:text-xl font-bold text-slate-800 mb-2 line-clamp-2">{item.title}</h3>
                 <p className="text-gray-500 text-sm line-clamp-3 mb-4 sm:mb-6 flex-grow">{item.description}</p>
                 <button
                   onClick={() => handleOpenExercise(item.id)}
-                  className="flex items-center gap-2 font-bold text-blue-700 mt-auto text-sm sm:text-base group/btn"
+                  className="flex items-center gap-2 font-bold text-blue-700 mt-auto text-sm group/btn"
                 >
                   Start Exercise
-                  <ArrowRight size={16} className="sm:size-18 group-hover/btn:translate-x-2 transition-transform" />
+                  <ArrowRight size={16} className="group-hover/btn:translate-x-2 transition-transform" />
                 </button>
               </div>
             ))
@@ -292,7 +295,7 @@ function Activities() {
       {(selectedEx || fetchError) && (
         <div className="fixed inset-0 z-[999] bg-slate-900/60 backdrop-blur-xl flex items-center justify-center p-4 sm:p-6">
           <div className="fixed inset-0" onClick={() => { setSelectedEx(null); setFetchError(null); }} />
-          
+
           <div className="relative bg-white w-full max-w-lg sm:max-w-2xl md:max-w-3xl lg:max-w-4xl rounded-[2rem] sm:rounded-[3rem] shadow-2xl animate-in fade-in zoom-in duration-300 flex flex-col max-h-[90vh] sm:max-h-[88vh]">
             <button
               onClick={() => { setSelectedEx(null); setFetchError(null); }}
@@ -303,6 +306,7 @@ function Activities() {
 
             <div className="overflow-y-auto flex-1 p-5 sm:p-8 md:p-12 custom-scrollbar">
               {fetchError ? (
+                // error content remains the same
                 <div className="text-center py-8 sm:py-10">
                   <AlertCircle size={48} className="mx-auto text-red-500 mb-4 sm:size-60" />
                   <h2 className="text-2xl sm:text-3xl font-bold mb-2">Error</h2>
@@ -315,7 +319,7 @@ function Activities() {
                 <>
                   {modalStage === 'info' && (
                     <div className="text-center py-4 sm:py-6">
-                      <div className="w-20 h-20 sm:w-24 sm:h-24 bg-blue-50 text-blue-600 rounded-[1.5rem] sm:rounded-[2rem] flex items-center justify-center mx-auto mb-6 sm:mb-8">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 bg-blue-50 text-blue-600 rounded-[1.5rem] sm:rounded-[2rem] flex items-center justify-center mx-auto mb-6 sm:mb-8">
                         {getIcon(selectedEx.exerciseType)}
                       </div>
                       <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-slate-900 mb-4">{selectedEx.title}</h2>
@@ -343,19 +347,24 @@ function Activities() {
                             {q.question}
                           </p>
                           <div className="grid grid-cols-1 gap-3 sm:gap-4">
-                            {q.options.map((opt, i) => (
-                              <button
-                                key={i}
-                                onClick={() => setUserAnswers(prev => ({ ...prev, [idx]: i }))}
-                                className={`px-5 sm:px-7 py-4 sm:py-5 border-2 rounded-[1.5rem] sm:rounded-[1.8rem] text-left font-medium sm:font-bold transition-all text-sm sm:text-base ${
-                                  userAnswers[idx] === i
-                                    ? "bg-blue-600 border-blue-600 text-white"
-                                    : "bg-white border-gray-200 hover:border-blue-400"
-                                }`}
-                              >
-                                {opt}
-                              </button>
-                            ))}
+                            {q.options.map((opt, i) => {
+                              const optionNumber = i + 1; // 1,2,3,4
+                              const isSelected = userAnswers[idx] === optionNumber;
+                              return (
+                                <button
+                                  key={i}
+                                  onClick={() => setUserAnswers(prev => ({ ...prev, [idx]: optionNumber }))}
+                                  className={`px-5 sm:px-7 py-4 sm:py-5 border-2 rounded-[1.5rem] sm:rounded-[1.8rem] text-left font-medium sm:font-bold transition-all text-sm sm:text-base flex items-center gap-3 ${
+                                    isSelected
+                                      ? "bg-blue-600 border-blue-600 text-white"
+                                      : "bg-white border-gray-200 hover:border-blue-400"
+                                  }`}
+                                >
+                                  <span className="font-black min-w-[1.8rem]">{getOptionLabel(optionNumber)}.</span>
+                                  {opt}
+                                </button>
+                              );
+                            })}
                           </div>
                         </div>
                       ))}
@@ -385,10 +394,12 @@ function Activities() {
                         >
                           <p className="font-bold text-base sm:text-lg mb-2 sm:mb-3">{idx + 1}. {q.question}</p>
                           <p className={`text-sm font-medium ${userAnswers[idx] === q.correctAnswer ? 'text-green-700' : 'text-red-700'}`}>
-                            Your Answer: {q.options[userAnswers[idx]]}
+                            Your Answer: {userAnswers[idx] ? `${getOptionLabel(userAnswers[idx])}. ${q.options[userAnswers[idx] - 1]}` : '—'}
                           </p>
                           {userAnswers[idx] !== q.correctAnswer && (
-                            <p className="text-sm text-slate-600 mt-1">Correct: {q.options[q.correctAnswer]}</p>
+                            <p className="text-sm text-slate-600 mt-1">
+                              Correct: {getOptionLabel(q.correctAnswer)}. {q.options[q.correctAnswer - 1]}
+                            </p>
                           )}
                         </div>
                       ))}

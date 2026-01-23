@@ -1,12 +1,11 @@
 import { 
   Newspaper, Search, Loader2, Calendar, MapPin, 
-  ArrowLeft, Share2, MessageCircle, Linkedin, 
+  Share2, MessageCircle, Linkedin, 
   Copy, Check, ChevronLeft, ChevronRight 
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
-//useParams, 
 // --- Types & Interfaces ---
 interface BlogPost {
   id: number;
@@ -35,9 +34,6 @@ function News() {
   );
 
   const navigate = useNavigate();
-  const location = useLocation();
- /*  const { slug } = useParams<{ slug: string }>(); */
-
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [heroData, setHeroData] = useState<GalleryHero | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -47,7 +43,6 @@ function News() {
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [activeState, setActiveState] = useState<string>('All');
   
-  const [selectedPost, setSelectedPost] = useState<BlogPost | null>(null);
   const [sharingId, setSharingId] = useState<number | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -105,26 +100,6 @@ function News() {
 
   useEffect(() => { fetchBlogs(); }, [fetchBlogs]);
 
-  useEffect(() => {
-  const pathSlug = location.pathname.startsWith('/news/')
-    ? location.pathname.replace('/news/', '')
-    : null;
-
-  if (pathSlug && blogs.length > 0) {
-    const post = blogs.find(b => b.slug === pathSlug);
-    if (post) {
-      setSelectedPost(post);
-    } else {
-      navigate('/news', { replace: true });
-    }
-  }
-
-  if (!pathSlug) {
-    setSelectedPost(null);
-  }
-}, [location.pathname, blogs, navigate]);
-
-
   const filteredBlogs = useMemo(() => {
     return blogs.filter(post => {
       const matchesSearch = post.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
@@ -143,8 +118,6 @@ function News() {
       e.stopPropagation();
       e.preventDefault();
     }
-
-    // Use slug-based URL
     const url = `${window.location.origin}/news/${post.slug}`;
     const text = `Read this article: ${post.title}`;
 
@@ -169,22 +142,12 @@ function News() {
   };
 
   const handlePostClick = (post: BlogPost) => {
-    // Navigate to the slug-based URL
     navigate(`/news/${post.slug}`);
   };
 
-  const handleClosePost = () => {
-    // Navigate back to news page
-    navigate('/news');
-  };
-
-  useEffect(() => {
-    document.body.style.overflow = selectedPost ? "hidden" : "unset";
-  }, [selectedPost]);
-
   return (
     <main className="pt-20 bg-gray-50/30 min-h-screen relative">
-      {/* HERO SECTION */}
+      {/* HERO SECTION - Keep as is */}
       <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
         {loadingHero ? (
           <div className="absolute inset-0 animate-pulse bg-slate-800" />
@@ -204,7 +167,7 @@ function News() {
         )}
       </div>
 
-      {/* FILTER BAR */}
+      {/* FILTER BAR - Keep as is */}
       <div className="sticky top-20 z-30 w-full bg-white/95 backdrop-blur-xl border-b border-gray-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -230,7 +193,7 @@ function News() {
         </div>
       </div>
 
-      {/* NEWS GRID */}
+      {/* NEWS GRID - Keep as is, handlePostClick now navigates */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-16">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
@@ -283,7 +246,7 @@ function News() {
               ))}
             </div>
 
-            {/* PAGINATION CONTROLS */}
+            {/* PAGINATION CONTROLS - Keep as is */}
             {totalPages > 1 && (
               <div className="flex justify-center items-center gap-4 mt-16">
                 <button 
@@ -308,58 +271,6 @@ function News() {
           </>
         )}
       </div>
-
-      {/* READER MODAL */}
-      {selectedPost && (
-        <div 
-          className="fixed inset-0 z-[9999] bg-white overflow-y-auto flex flex-col" 
-          onClick={handleClosePost}
-        >
-          <div className="sticky top-0 left-0 w-full p-4 md:p-10 flex justify-between items-center bg-white/80 backdrop-blur-md z-[100] border-b" onClick={(e) => e.stopPropagation()}>
-            <button onClick={handleClosePost} className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-all">
-              <ArrowLeft size={20} />
-              <span className="font-black uppercase tracking-widest text-[10px]">Back to News</span>
-            </button>
-            <button onClick={handleClosePost} className="px-6 py-2 bg-red-600 text-white rounded-full text-xs font-bold uppercase shadow-lg hover:bg-red-700 transition-colors">Close</button>
-          </div>
-
-          <div className="flex-1 w-full max-w-4xl mx-auto px-6 py-10" onClick={(e) => e.stopPropagation()}>
-            <div className="flex flex-col gap-8">
-              <div className="space-y-6 text-center">
-                <div className="inline-flex items-center gap-2 px-4 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest">
-                  <span>{selectedPost.category}</span>
-                </div>
-                <h2 className="text-4xl md:text-6xl font-bold font-serif text-slate-900 leading-[1.1]">{selectedPost.title}</h2>
-                <div className="flex flex-col md:flex-row items-center justify-center gap-6 pt-4 border-t">
-                  <div className="flex items-center gap-6 text-gray-400 text-xs font-bold uppercase tracking-widest">
-                    <span className="flex items-center gap-2"><Calendar size={14}/> {new Date(selectedPost.updatedAt).toLocaleDateString()}</span>
-                    <span className="flex items-center gap-2"><MapPin size={14}/> {selectedPost.state}</span>
-                  </div>
-                  <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-2xl border" onClick={(e) => e.stopPropagation()}>
-                    <button onClick={(e) => handleShare(e, 'whatsapp', selectedPost)} className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"><MessageCircle size={18} /></button>
-                    <button onClick={(e) => handleShare(e, 'x', selectedPost)} className="p-2 text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"><XLogo /></button>
-                    <button onClick={(e) => handleShare(e, 'linkedin', selectedPost)} className="p-2 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors"><Linkedin size={18} /></button>
-                    <button onClick={(e) => handleShare(e, 'copy', selectedPost)} className="flex items-center gap-2 p-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors">
-                      {copiedId === selectedPost.id ? <Check size={18} className="text-green-500" /> : <Copy size={18} />}
-                    </button>
-                  </div>
-                </div>
-              </div>
-              <div className="aspect-[16/9] w-full rounded-[2.5rem] overflow-hidden shadow-2xl border">
-                <img src={selectedPost.coverImage} className="w-full h-full object-cover" alt={selectedPost.title} />
-              </div>
-              <div className="prose prose-lg prose-slate max-w-none mt-4">
-                <div className="text-gray-600 leading-[1.8] space-y-8 text-lg">
-                  {selectedPost.content.split('\n').filter(p => p.trim() !== '').map((para, i) => (
-                    <p key={i}>{para}</p>
-                  ))}
-                </div>
-              </div>
-              <div className="h-20" />
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 }
