@@ -81,6 +81,21 @@ export default function Home() {
         return { page: "/", anchor: "#about" };
     };
 
+    // ─── Added helper for smooth scrolling ───────────────────────────────
+    const scrollToSection = (subPurpose: string) => {
+        const lower = subPurpose?.toLowerCase().trim();
+        let targetId = "about"; // fallback
+
+        if (lower === "fef")      targetId = "resource";
+        else if (lower === "atoile") targetId = "activities";
+        else if (lower === "bac")    targetId = "bac";
+
+        const element = document.getElementById(targetId);
+        if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+    };
+
     if (loading) {
         return (
             <div className="h-screen w-full flex items-center justify-center bg-white">
@@ -153,17 +168,15 @@ export default function Home() {
 
                                                     <div className="flex flex-wrap gap-4 mt-8">
                                                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                                            {/* GET STARTED: Scrolls to section ID on home page */}
-                                                            <Link
-                                                                to={links.anchor}
+                                                            <button
+                                                                onClick={() => scrollToSection(item.subPurpose)}
                                                                 className="inline-block bg-blue-700 hover:bg-blue-800 text-white px-10 py-4 rounded-xl shadow-xl font-bold transition-all uppercase text-sm tracking-widest"
                                                             >
                                                                 Get Started
-                                                            </Link>
+                                                            </button>
                                                         </motion.div>
                                                         
                                                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                                            {/* LEARN MORE: Navigates to page route */}
                                                             <Link
                                                                 to={links.page}
                                                                 className="inline-block bg-transparent border-2 border-white text-white hover:bg-white hover:text-blue-900 px-10 py-4 rounded-xl shadow-xl font-bold transition-all uppercase text-sm tracking-widest"

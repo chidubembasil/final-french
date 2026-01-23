@@ -90,8 +90,8 @@ export default function ResourceHero() {
                                     </p>
                                 </div>
                                 <div className="ml-4 opacity-20 group-hover:opacity-100 group-hover:translate-x-2 transition-all">
-                                    {res.url}
-                                    <ArrowRight size={20}  />
+                                    <a href={res.url} target="_blank" rel="noopener noreferrer" className='text-black bg-black text'><ArrowRight size={20}  /></a>
+                                    
                                 </div>
                             </div>
                         );

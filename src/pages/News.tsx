@@ -4,12 +4,9 @@ import {
   Copy, Check, ChevronLeft, ChevronRight 
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import {  useNavigate, useLocation } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 
 // --- Types & Interfaces ---
-
-
-//useParams,
 interface BlogPost {
   id: number;
   title: string;
@@ -38,7 +35,7 @@ function News() {
 
   const navigate = useNavigate();
   const location = useLocation();
- /*  const { slug } = useParams<{ slug: string }>(); */
+  const { slug } = useParams<{ slug: string }>();
 
   const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [heroData, setHeroData] = useState<GalleryHero | null>(null);
