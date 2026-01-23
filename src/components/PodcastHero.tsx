@@ -10,36 +10,33 @@ export default function PodcastHero() {
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const navigate = useNavigate();
+  
+  // Directly using the Client Key as the primary URL source
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || '';
-
-  const BASE_URL = CLIENT_KEY.endsWith('/')
-    ? CLIENT_KEY.slice(0, -1)
-    : CLIENT_KEY;
 
   useEffect(() => {
     const fetchAndProcessManually = async () => {
       setIsLoading(true);
       try {
-        // 1. Fetch all podcasts from the API
-        const res = await fetch(`${BASE_URL}/api/podcasts?populate=*`);
+        // 1. Fetch using the Client Key directly
+        const res = await fetch(`${CLIENT_KEY}api/podcasts?populate=*`);
         if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
         
         const json = await res.json();
         const allItems = json.data || [];
 
-        // 2. Filter: Only include items where mediaType is "audio"
+        // 2. Filter: Manual logic to sift through the data for audio types
         const audioItems = allItems.filter((item: any) => {
           const attr = item.attributes || item;
           return attr.mediaType === 'audio';
         });
 
         if (audioItems.length > 0) {
-          // 3. Logic: Sort by date to find the "lowest difference" from now
-          // (Essentially finding the highest timestamp)
+          // 3. Logic: Manual sort to find the most recent entry
           const sorted = audioItems.sort((a: any, b: any) => {
             const dateA = new Date(a.attributes?.createdAt || a.createdAt).getTime();
             const dateB = new Date(b.attributes?.createdAt || b.createdAt).getTime();
-            return dateB - dateA; // Newest first
+            return dateB - dateA; 
           });
 
           const winner = sorted[0];
@@ -56,7 +53,7 @@ export default function PodcastHero() {
     };
 
     fetchAndProcessManually();
-  }, [BASE_URL]);
+  }, [CLIENT_KEY]);
 
   const getAudioUrl = (podcast: any) => {
     if (!podcast) return '';
@@ -67,8 +64,10 @@ export default function PodcastHero() {
 
     const url = podcast.audioUrl || fileData?.url || '';
     if (!url) return '';
+    
+    // If it's a full URL, return it; otherwise, append it to the CLIENT_KEY
     if (url.startsWith('http')) return url;
-    return `${BASE_URL}${url.startsWith('/') ? url : `/${url}`}`;
+    return `${CLIENT_KEY}${url.startsWith('/') ? url.slice(1) : url}`;
   };
 
   const togglePlay = (podcast: any) => {
@@ -90,7 +89,6 @@ export default function PodcastHero() {
     audio.play().catch(console.error);
   };
 
-  // Helper to show how recent the podcast is
   const getTimeAgo = (dateString: string) => {
     const postDate = new Date(dateString).getTime();
     const now = new Date().getTime();
@@ -120,8 +118,6 @@ export default function PodcastHero() {
         </h2>
         <div className="w-24 h-1 bg-blue-600"></div>
       </div>
-
-      
 
       <div className="w-[90%] max-w-6xl mb-12">
         {isLoading ? (
@@ -170,7 +166,7 @@ export default function PodcastHero() {
             </div>
           </div>
         ) : (
-          <div className="py-20 text-gray-400 text-center">No podcasts found in the library.</div>
+          <div className="py-20 text-gray-400 text-center">No podcasts found.</div>
         )}
       </div>
 
