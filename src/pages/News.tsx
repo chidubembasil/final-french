@@ -118,7 +118,7 @@ function News() {
   const handleShare = (platform: string, post: BlogPost) => {
     // Check if your route is '/news-details/' or '/news/'. 
     // I am using '/news-details/' to match standard details page naming.
-    const url = `${window.location.origin}/news-details/${post.slug}`;
+    const url = `${window.location.origin}/#/news/${post.slug}`;
     const text = `Check out this news: ${post.title}`;
     
     if (platform === 'copy') {
