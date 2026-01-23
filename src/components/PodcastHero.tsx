@@ -17,30 +17,40 @@ export default function PodcastHero() {
     : CLIENT_KEY;
 
   useEffect(() => {
-    const fetchLatestPodcast = async () => {
+    const fetchLatestPodcastBySlug = async () => {
       setIsLoading(true);
       try {
-        const res = await fetch(
+        // Step 1: Get the slug of the latest podcast
+        const listRes = await fetch(
           `${BASE_URL}/api/podcasts?` +
             `filters[mediaType][$eq]=audio&` +
-            `sort[0]=createdAt:desc&` + // Ensures the most recent upload is first
-            `pagination[pageSize]=1&` + // Only gets one item
-            `populate=*`
+            `sort[0]=createdAt:desc&` +
+            `pagination[pageSize]=1&` +
+            `fields[0]=slug` // Only fetch the slug for efficiency
         );
+        const listData = await listRes.json();
+        const latestSlug = listData?.data?.[0]?.attributes?.slug || listData?.data?.[0]?.slug;
 
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
+        if (latestSlug) {
+          // Step 2: Fetch the full data using that slug
+          // This mimics the /api/podcasts/{slug} behavior using filters
+          const res = await fetch(
+            `${BASE_URL}/api/podcasts?` +
+              `filters[slug][$eq]=${latestSlug}&` +
+              `populate=*`
+          );
 
-        const data = await res.json();
-        const rawData = data?.data || [];
+          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
 
-        if (rawData.length > 0) {
-          const item = rawData[0];
-          setLatestPodcast({
-            id: item.id,
-            ...(item.attributes || item),
-          });
+          const data = await res.json();
+          const item = data?.data?.[0];
+
+          if (item) {
+            setLatestPodcast({
+              id: item.id,
+              ...(item.attributes || item),
+            });
+          }
         }
       } catch (err) {
         console.error('Latest podcast fetch error:', err);
@@ -49,53 +59,39 @@ export default function PodcastHero() {
       }
     };
 
-    fetchLatestPodcast();
+    fetchLatestPodcastBySlug();
   }, [BASE_URL]);
 
   const getAudioUrl = (podcast: any) => {
     if (!podcast) return '';
-
-    // Checks every common Strapi media path to find the actual file URL
     const fileData =
       podcast.file?.data?.attributes ||
       podcast.media?.data?.attributes ||
       podcast.file;
 
     const url = podcast.audioUrl || fileData?.url || '';
-
     if (!url) return '';
     if (url.startsWith('http')) return url;
-
     return `${BASE_URL}${url.startsWith('/') ? url : `/${url}`}`;
   };
 
   const togglePlay = (podcast: any) => {
     if (!podcast || !audioRef.current) return;
-
     const audio = audioRef.current;
     const audioSrc = getAudioUrl(podcast);
 
-    if (!audioSrc) {
-      console.error('No valid audio source found.');
-      return;
-    }
+    if (!audioSrc) return;
 
     if (currentPlaying?.id === podcast.id) {
-      if (isPlaying) {
-        audio.pause();
-      } else {
-        audio.play().catch(err => console.error('Playback failed:', err));
-      }
+      isPlaying ? audio.pause() : audio.play().catch(console.error);
       return;
     }
 
-    // Load and play new source
     audio.pause();
     audio.src = audioSrc;
     setCurrentPlaying(podcast);
     audio.load();
-
-    audio.play().catch(err => console.error('Autoplay failed:', err));
+    audio.play().catch(console.error);
   };
 
   return (
@@ -108,6 +104,7 @@ export default function PodcastHero() {
         onPlay={() => setIsPlaying(true)}
       />
 
+      {/* Title Section */}
       <div className="flex flex-col items-center gap-3 mb-10">
         <span className="px-4 py-1 rounded-full flex items-center gap-2 bg-red-100 text-red-600 text-xs font-bold uppercase">
           <Headphones size={14} /> Listen to learners and teachers
@@ -127,9 +124,7 @@ export default function PodcastHero() {
           <div className="relative w-full rounded-[2.5rem] p-8 md:p-12 overflow-hidden bg-gradient-to-r from-blue-900 via-blue-800 to-[#E31E24] text-white flex flex-col md:flex-row items-center gap-10 shadow-2xl">
             <div className="flex-1 space-y-5 z-10">
               <span className="bg-white/20 px-3 py-1 rounded-lg text-[10px] font-black uppercase">
-                {isPlaying && currentPlaying?.id === latestPodcast.id
-                  ? 'Now Playing'
-                  : 'Latest Episode'}
+                {isPlaying && currentPlaying?.id === latestPodcast.id ? 'Now Playing' : 'Latest Episode'}
               </span>
 
               <h3 className="text-3xl md:text-5xl font-bold">
@@ -141,10 +136,7 @@ export default function PodcastHero() {
               </p>
 
               <div className="flex items-center gap-4 pt-4">
-                <Volume2
-                  size={20}
-                  className={isPlaying ? 'animate-pulse' : 'opacity-40'}
-                />
+                <Volume2 size={20} className={isPlaying ? 'animate-pulse' : 'opacity-40'} />
                 <span className="text-sm">
                   {isPlaying ? 'Broadcasting…' : 'Click play to listen'}
                 </span>
@@ -155,7 +147,7 @@ export default function PodcastHero() {
               onClick={() => togglePlay(latestPodcast)}
               className="w-full md:w-[400px] bg-white/10 rounded-[2rem] p-10 flex items-center justify-center cursor-pointer hover:bg-white/20 transition"
             >
-              <div className="w-24 h-24 bg-white text-blue-900 rounded-full flex items-center justify-center">
+              <div className="w-24 h-24 bg-white text-blue-900 rounded-full flex items-center justify-center shadow-xl">
                 {isPlaying && currentPlaying?.id === latestPodcast.id ? (
                   <Pause size={40} />
                 ) : (
@@ -165,15 +157,13 @@ export default function PodcastHero() {
             </div>
           </div>
         ) : (
-          <div className="py-20 text-gray-400 text-center">
-            No podcasts available.
-          </div>
+          <div className="py-20 text-gray-400 text-center">No podcasts available.</div>
         )}
       </div>
 
       <button
         onClick={() => navigate('/podcast')}
-        className="bg-[#E31E24] text-white px-10 py-4 rounded-2xl flex items-center gap-3 hover:bg-red-700 transition"
+        className="bg-[#E31E24] text-white px-10 py-4 rounded-2xl flex items-center gap-3 hover:bg-red-700 transition font-bold"
       >
         Browse All Podcasts
         <ArrowRight size={20} />
