@@ -69,7 +69,7 @@ export default function NewsHero() {
 
             {/* --- Bottom Navigation --- */}
             <button 
-                onClick={() => navigate('/news')}
+                onClick={() => navigate('/news&blog')}
                 className='text-white bg-blue-700 px-8 py-3 rounded-xl flex items-center gap-2 hover:bg-blue-800 transition-all shadow-lg shadow-blue-200'
             >
                 Explore All Content <ArrowRight size={18}/>
