@@ -72,7 +72,7 @@ export default function ResourceHero() {
                         return (
                             <div 
                                 key={res?.id || res?._id || index}
-                                onClick={() => navigate('/resource')}
+                                onClick={() => navigate(res.url)}
                                 className="group flex items-center p-8 bg-white rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl hover:scale-[1.02] transition-all duration-300 relative overflow-hidden cursor-pointer"
                             >
                                 <div className={`w-16 h-16 shrink-0 rounded-2xl ${styles.bg} ${styles.text} flex items-center justify-center`}>

@@ -198,6 +198,7 @@ function Podcast() {
                     <div className="flex items-center gap-2 mb-3">
                       <span className="px-2 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold uppercase rounded">{item.cefrLevel}</span>
                       <span className="text-[10px] text-gray-400 font-bold uppercase">{item.topic}</span>
+                      <span className="px-2 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold uppercase rounded">{item.mediaType}</span>
                     </div>
                     <h3 className="text-xl font-bold text-slate-900 mb-2 line-clamp-1">{item.title}</h3>
                     <p className="text-gray-500 text-sm line-clamp-2 mb-6 flex-grow">{item.description}</p>
@@ -269,7 +270,7 @@ function Podcast() {
                      <div className="p-4 bg-white/10 rounded-2xl"><Headphones className="text-white" size={30}/></div>
                      <p className="text-white font-bold">{activePodcast.title}</p>
                   </div>
-                  <audio src={activePodcast.audioUrl} controls className="w-full md:w-auto" />
+                  <audio src={activePodcast.audioUrl} controls autoPlay className="w-full md:w-auto" />
                   {activePodcast.audioUrl && (
                     <a href={activePodcast.audioUrl} download className="p-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all"><Download size={20}/></a>
                   )}

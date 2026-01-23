@@ -18,7 +18,7 @@ import {
   Download
 } from "lucide-react";
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { PDFDocument, rgb, StandardFonts } from 'pdf-lib';
+import { useSearchParams } from 'react-router-dom'; // 1. Added for URL handling
 
 // --- Interfaces ---
 interface Pedagogy {
@@ -30,6 +30,8 @@ interface Pedagogy {
   level?: string;
   skillType?: string;
   theme?: string;
+  allowDownload?: boolean; 
+  slug?: string; // 2. Added slug support
 }
 
 interface GalleryHero {
@@ -41,23 +43,13 @@ interface GalleryHero {
 function Pedagogies() {
   // --- Custom Logo Components ---
   const XLogo = ({ className = "w-4 h-4" }: { className?: string }) => (
-    <svg 
-      viewBox="0 0 24 24" 
-      aria-hidden="true" 
-      className={className} 
-      fill="currentColor"
-    >
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
       <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
     </svg>
   );
 
   const IfClasseLogo = ({ className = "w-10 h-10" }: { className?: string }) => (
-    <svg 
-      viewBox="0 0 100 100" 
-      className={className}
-      fill="none" 
-      xmlns="http://www.w3.org/2000/svg"
-    >
+    <svg viewBox="0 0 100 100" className={className} fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect width="100" height="100" rx="15" fill="#45B1A8"/>
       <rect x="23" y="27" width="10" height="46" fill="white"/>
       <rect x="42" y="27" width="10" height="46" fill="white"/>
@@ -86,60 +78,69 @@ function Pedagogies() {
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const shareMenuRef = useRef<HTMLDivElement>(null);
 
+  const [searchParams, setSearchParams] = useSearchParams(); // 3. Manage URL params
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
   // --- Helpers ---
   const getItemType = (url: string) => {
     if (!url) return 'link';
     const lower = url.toLowerCase();
-    if (lower.endsWith('.pdf') || lower.includes('/image/upload/')) return 'pdf';
-    if (lower.match(/\.(mp4|webm|ogg|mov)$/) || lower.includes('/video/upload/') || lower.includes('youtube.com') || lower.includes('youtu.be')) return 'video';
-    if (lower.match(/\.(mp3|wav|aac|ogg)$/) || lower.includes('/audio/upload/')) return 'audio';
+    if (lower.includes('cloudinary.com')) {
+      if (lower.includes('/image/upload/') && lower.match(/\.pdf$/)) return 'pdf';
+      if (lower.includes('/video/upload/')) return 'video';
+      if (lower.includes('/raw/upload/') && lower.match(/\.pdf$/)) return 'pdf';
+      if (lower.includes('/image/upload/') && lower.match(/\.(mp3|wav|aac|ogg)$/)) return 'audio';
+    }
+    if (lower.endsWith('.pdf')) return 'pdf';
+    if (lower.match(/\.(mp4|webm|ogg|mov|avi)$/)) return 'video';
+    if (lower.match(/\.(mp3|wav|aac|ogg|flac)$/)) return 'audio';
+    if (lower.includes('youtube.com') || lower.includes('youtu.be')) return 'video';
     return 'link';
   };
 
-  const handleDownloadPDF = async (e: React.MouseEvent, item: Pedagogy) => {
-    e.stopPropagation(); 
+  const handleDownload = async (e: React.MouseEvent, item: Pedagogy) => {
+    e.stopPropagation();
+    if (!item.allowDownload) {
+      alert('Download is not available for this resource.');
+      return;
+    }
     setDownloadingId(item.id);
     try {
       const response = await fetch(item.url);
-      const existingPdfBytes = await response.arrayBuffer();
-      const pdfDoc = await PDFDocument.load(existingPdfBytes);
-      const helveticaFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-      const pages = pdfDoc.getPages();
-
-      pages.forEach((page) => {
-        const { width } = page.getSize();
-        page.drawText('À toi le micro Naija', {
-          x: width - 160,
-          y: 25,
-          size: 10,
-          font: helveticaFont,
-          color: rgb(0.05, 0.2, 0.5),
-          opacity: 0.7,
-        });
-      });
-
-      const pdfBytes = await pdfDoc.save();
-      const blob = new Blob([new Uint8Array(pdfBytes)], { type: "application/pdf" });
+      const blob = await response.blob();
       const downloadUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = downloadUrl;
-      link.download = `${item.title.replace(/\s+/g, '_')}_Naija.pdf`;
+      let filename = item.title.replace(/\s+/g, '_');
+      const urlParts = item.url.split('/');
+      const urlFilename = urlParts[urlParts.length - 1];
+      if (urlFilename.includes('.')) {
+        const extension = urlFilename.split('.').pop();
+        filename = `${filename}.${extension}`;
+      } else {
+        const type = getItemType(item.url);
+        if (type === 'pdf') filename += '.pdf';
+        else if (type === 'video') filename += '.mp4';
+        else if (type === 'audio') filename += '.mp3';
+      }
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       URL.revokeObjectURL(downloadUrl);
     } catch (err) {
-      window.open(item.url, '_blank');
+      console.error('Download failed:', err);
+      alert('Download failed. Please try again.');
     } finally {
       setDownloadingId(null);
     }
   };
 
+  // 4. FIXED: Share link now uses slug to trigger popup when visited
   const handleShare = (e: React.MouseEvent, platform: string, item: Pedagogy) => {
     e.stopPropagation(); 
-    const shareUrl = item.url;
+    const identifier = item.slug || item.id;
+    const shareUrl = `${window.location.origin}${window.location.pathname}?resource=${identifier}`;
     const text = `Check out this resource: ${item.title}`;
 
     if (platform === 'copy') {
@@ -157,6 +158,17 @@ function Pedagogies() {
     const targetUrl = shareLinks[platform];
     if (targetUrl) window.open(targetUrl, '_blank', 'noopener,noreferrer');
     setSharingId(null);
+  };
+
+  const getYouTubeEmbedUrl = (url: string) => {
+    if (url.includes('youtube.com/watch?v=')) {
+      const videoId = url.split('v=')[1]?.split('&')[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    } else if (url.includes('youtu.be/')) {
+      const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+      return `https://www.youtube.com/embed/${videoId}`;
+    }
+    return url;
   };
 
   // --- Effects ---
@@ -202,6 +214,21 @@ function Pedagogies() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [CLIENT_KEY]);
+
+  // 5. FIXED: Listen for slug in URL to auto-open popup
+  useEffect(() => {
+    const resourceSlug = searchParams.get('resource');
+    if (resourceSlug && pedagogies.length > 0) {
+      const item = pedagogies.find(p => p.slug === resourceSlug || p.id.toString() === resourceSlug);
+      if (item) setPreviewItem(item);
+    }
+  }, [pedagogies, searchParams]);
+
+  // 6. FIXED: Helper to close popup and clear URL
+  const handleClosePopup = () => {
+    setPreviewItem(null);
+    setSearchParams({}); // Removes the ?resource=slug from browser
+  };
 
   // --- Filter Logic ---
   const typeOptions = ["All", "pdf", "video", "audio", "link"];
@@ -249,18 +276,30 @@ function Pedagogies() {
         )}
       </div>
 
-      {/* 2. Brand Section with IfClasse SVG Logo */}
+      {/* 2. Brand Section */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 -mt-10 relative z-40">
-        <div className="bg-[#45B1A8] rounded-[3rem] p-8 md:p-12 shadow-2xl flex flex-col md:flex-row items-center gap-8 text-white">
-          <div className="bg-white p-4 rounded-3xl shadow-inner">
+        <div className="bg-white rounded-[3rem] p-8 md:p-12 shadow-2xl border border-gray-100 flex flex-col md:flex-row items-center gap-8 text-slate-900 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-blue-600 to-red-600" />
+          <div className="bg-white p-4 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 shrink-0">
             <IfClasseLogo className="w-20 h-20 md:w-24 md:h-24" />
           </div>
-          <div className="text-center md:text-left">
+          <div className="text-center md:text-left flex-1">
             <h2 className="text-3xl font-bold mb-2">IfClasse Pedagogical Portal</h2>
-            <p className="text-white/90 max-w-2xl text-lg">
+            <p className="text-gray-600 max-w-2xl text-lg mb-6 md:mb-0">
               Explore our comprehensive library of pedagogical resources designed to support 
               your French teaching and learning journey.
             </p>
+          </div>
+          <div className="shrink-0">
+            <a 
+              href="http://ifclasse.institutfrancais.com/" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-gradient-to-r hover:from-blue-600 hover:to-red-600 transition-all duration-300 shadow-lg group"
+            >
+              Visit Portal
+              <ExternalLink size={18} className="group-hover:translate-x-1 transition-transform" />
+            </a>
           </div>
         </div>
       </div>
@@ -310,7 +349,7 @@ function Pedagogies() {
         {/* 4. Resources Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {currentItems.map((item) => (
-            <div key={item.id} onClick={() => setPreviewItem(item)} className="group bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all flex flex-col relative cursor-pointer">
+            <div key={item.id} onClick={() => setSearchParams({ resource: item.slug || item.id.toString() })} className="group bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all flex flex-col relative cursor-pointer">
               <div className="flex justify-between items-start mb-6">
                 <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-[#45B1A8] group-hover:bg-[#45B1A8] group-hover:text-white transition-colors">
                   {getItemType(item.url) === 'pdf' && <FileText size={24} />}
@@ -326,28 +365,19 @@ function Pedagogies() {
                   >
                     <Share2 size={18} />
                   </button>
-                  
-                  {getItemType(item.url) === 'pdf' && (
+                  {item.allowDownload && (
                     <button 
-                      onClick={(e) => handleDownloadPDF(e, item)} 
+                      onClick={(e) => handleDownload(e, item)} 
                       className="p-3 hover:bg-gray-100 rounded-full text-[#45B1A8] transition-colors"
+                      title="Download resource"
                     >
                       {downloadingId === item.id ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
                     </button>
                   )}
-
                   {sharingId === item.id && (
-                    <div 
-                      ref={shareMenuRef} 
-                      className="absolute top-12 right-0 z-30 bg-white border border-gray-100 p-3 rounded-2xl shadow-xl flex gap-4"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <button onClick={(e) => handleShare(e, 'x', item)} className="hover:text-black text-gray-400 transition-colors">
-                        <XLogo />
-                      </button>
-                      <button onClick={(e) => handleShare(e, 'whatsapp', item)} className="hover:text-green-500 text-gray-400 transition-colors">
-                        <MessageCircle size={20}/>
-                      </button>
+                    <div ref={shareMenuRef} className="absolute top-12 right-0 z-30 bg-white border border-gray-100 p-3 rounded-2xl shadow-xl flex gap-4" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={(e) => handleShare(e, 'x', item)} className="hover:text-black text-gray-400 transition-colors"><XLogo /></button>
+                      <button onClick={(e) => handleShare(e, 'whatsapp', item)} className="hover:text-green-500 text-gray-400 transition-colors"><MessageCircle size={20}/></button>
                       <button onClick={(e) => handleShare(e, 'copy', item)} className="text-gray-400 transition-colors">
                         {copiedId === item.id ? <Check size={20} className="text-green-500" /> : <Copy size={20} />}
                       </button>
@@ -376,49 +406,51 @@ function Pedagogies() {
 
       {/* 6. Preview Modal */}
       {previewItem && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-md" onClick={() => setPreviewItem(null)}>
-          <div className="bg-white w-full max-w-5xl max-h-[90vh] rounded-[3.5rem] p-6 md:p-10 relative overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <button className="absolute top-6 right-6 p-3 hover:bg-gray-100 rounded-full transition-colors" onClick={() => setPreviewItem(null)}><X size={28} /></button>
-            <div className="flex items-center gap-2 text-[#45B1A8] font-bold mb-4 md:mb-6"><GraduationCap size={24} /> <span className="uppercase tracking-widest text-xs md:text-sm">Resource Preview</span></div>
-            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-6 md:mb-8 pr-12">{previewItem.title}</h2>
-            
-            <div className="rounded-[2rem] overflow-hidden bg-slate-100 border shadow-inner min-h-[40vh] flex items-center justify-center">
+        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-md" onClick={handleClosePopup}>
+          <div className="bg-white w-full max-w-6xl max-h-[95vh] rounded-[3.5rem] p-6 md:p-10 relative overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3 text-[#45B1A8] font-bold">
+                <GraduationCap size={24} />
+                <span className="uppercase tracking-widest text-xs md:text-sm">Resource Preview</span>
+              </div>
+              <div className="flex items-center gap-2">
+                {previewItem.allowDownload && (
+                  <button onClick={(e) => handleDownload(e, previewItem)} className="p-3 hover:bg-gray-100 rounded-full transition-colors text-[#45B1A8]">
+                    {downloadingId === previewItem.id ? <Loader2 className="animate-spin" size={24} /> : <Download size={24} />}
+                  </button>
+                )}
+                <button className="p-3 hover:bg-gray-100 rounded-full transition-colors" onClick={handleClosePopup}>
+                  <X size={28} />
+                </button>
+              </div>
+            </div>
+            <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-6 md:mb-8">{previewItem.title}</h2>
+            <div className="rounded-[2rem] overflow-hidden bg-slate-50 border shadow-inner">
               {getItemType(previewItem.url) === 'pdf' ? (
-                <iframe 
-                  src={`${previewItem.url}#toolbar=0`} 
-                  className="w-full h-[70vh] rounded-[2rem]" 
-                  title={`PDF preview of ${previewItem.title}`} 
-                />
+                <iframe src={previewItem.url} className="w-full h-[75vh] rounded-[2rem]" title={`PDF preview of ${previewItem.title}`} />
               ) : getItemType(previewItem.url) === 'video' ? (
-                <div className="w-full aspect-video bg-black">
+                <div className="w-full aspect-video bg-black rounded-[2rem] overflow-hidden">
                   {previewItem.url.includes('youtube.com') || previewItem.url.includes('youtu.be') ? (
-                    <iframe 
-                      className="w-full h-full" 
-                      src={`https://www.youtube.com/embed/${previewItem.url.split('v=')[1] || previewItem.url.split('/').pop()}`} 
-                      allowFullScreen 
-                      title={`Video: ${previewItem.title}`}
-                    />
+                    <iframe className="w-full h-full" src={getYouTubeEmbedUrl(previewItem.url)} allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title={`Video: ${previewItem.title}`} />
                   ) : (
-                    <video src={previewItem.url} controls className="w-full h-full" />
+                    <video src={previewItem.url} controls controlsList="nodownload" className="w-full h-full">Your browser does not support the video tag.</video>
                   )}
                 </div>
               ) : getItemType(previewItem.url) === 'audio' ? (
-                <div className="w-full py-20 flex flex-col items-center bg-white">
-                  <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-6">
-                    <Music size={40} className="text-[#45B1A8] animate-pulse" />
-                  </div>
-                  <audio src={previewItem.url} controls className="w-full max-w-md" />
+                <div className="w-full py-20 flex flex-col items-center bg-white rounded-[2rem]">
+                  <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mb-8"><Music size={48} className="text-[#45B1A8] animate-pulse" /></div>
+                  <h3 className="text-xl font-bold text-slate-800 mb-6 max-w-md text-center px-4">{previewItem.title}</h3>
+                  <audio src={previewItem.url} controls controlsList="nodownload" className="w-full max-w-2xl px-8">Your browser does not support the audio element.</audio>
                 </div>
               ) : (
                 <div className="py-24 text-center px-6">
                   <BookOpen size={80} className="mx-auto text-blue-100 mb-6" />
-                  <p className="text-slate-600 mb-8 max-w-md mx-auto">External resource.</p>
-                  <a href={previewItem.url} target="_blank" rel="noreferrer" className="px-10 py-5 bg-[#45B1A8] text-white rounded-[2rem] font-bold shadow-xl hover:bg-[#38918a] transition-all inline-flex items-center gap-3">
-                    Open Resource <ExternalLink size={20} />
-                  </a>
+                  <p className="text-slate-600 mb-8 max-w-md mx-auto text-lg">This resource opens in a new tab.</p>
+                  <a href={previewItem.url} target="_blank" rel="noopener noreferrer" className="px-10 py-5 bg-slate-900 text-white rounded-[2rem] font-bold shadow-xl hover:bg-gradient-to-r hover:from-blue-600 hover:to-red-600 transition-all inline-flex items-center gap-3">Open Resource <ExternalLink size={20} /></a>
                 </div>
               )}
             </div>
+            <p className="text-gray-600 mt-6 text-sm md:text-base leading-relaxed">{previewItem.description}</p>
           </div>
         </div>
       )}

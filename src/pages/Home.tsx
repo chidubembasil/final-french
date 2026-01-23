@@ -66,19 +66,19 @@ export default function Home() {
     /**
      * Maps the API subPurpose to internal routes and section IDs
      * fef -> #resource
-     * bac -> #bac
      * atoile -> #activities
+     * bac -> #bac
      */
     const getNavLinks = (subPurpose: string) => {
         const lowerSub = subPurpose?.toLowerCase().trim();
         if (lowerSub === 'fef') {
-            return { page: "/resource", anchor: "#resource" };
-        } else if (lowerSub === 'bac') {
-            return { page: "/bac", anchor: "#bac" };
+            return { page: "/resource", anchor: "/#resource" };
         } else if (lowerSub === 'atoile') {
-            return { page: "/activities", anchor: "#activities" };
+            return { page: "/activities", anchor: "/#activities" };
+        } else if (lowerSub === 'bac') {
+            return { page: "/bac", anchor: "/#bac" };
         }
-        return { page: "/", anchor: "#about" };
+        return { page: "/", anchor: "/#about" };
     };
 
     if (loading) {
@@ -153,13 +153,13 @@ export default function Home() {
 
                                                     <div className="flex flex-wrap gap-4 mt-8">
                                                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                                            {/* GET STARTED: Scrolls to section ID */}
-                                                            <a
-                                                                href={links.anchor}
+                                                            {/* GET STARTED: Scrolls to section ID on home page */}
+                                                            <Link
+                                                                to={links.anchor}
                                                                 className="inline-block bg-blue-700 hover:bg-blue-800 text-white px-10 py-4 rounded-xl shadow-xl font-bold transition-all uppercase text-sm tracking-widest"
                                                             >
                                                                 Get Started
-                                                            </a>
+                                                            </Link>
                                                         </motion.div>
                                                         
                                                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>

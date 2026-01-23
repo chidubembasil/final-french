@@ -12,18 +12,16 @@ export default function PodcastHero() {
     const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || "";
 
     useEffect(() => {
-        // Using a cleaner fetch pattern
         const fetchPodcasts = async () => {
             try {
                 const res = await fetch(`${CLIENT_KEY}api/podcasts?filters[mediaType][$eq]=audio&limit=4`);
                 if (!res.ok) throw new Error('Failed to fetch');
                 const data = await res.json();
                 
-                // FIX 1: Ensure we extract the data correctly regardless of Strapi version
                 const rawData = Array.isArray(data) ? data : (data?.data || []);
                 const formattedData = rawData.map((item: any) => ({
                     id: item.id,
-                    ...(item.attributes || item) // Flatten attributes if they exist
+                    ...(item.attributes || item)
                 }));
                 
                 setPodcasts(formattedData);
@@ -34,12 +32,10 @@ export default function PodcastHero() {
         fetchPodcasts();
     }, [CLIENT_KEY]);
 
-    // FIX 2: Helper to get the correct URL
     const getAudioUrl = (podcast: any) => {
         if (!podcast) return "";
         const url = podcast.audioUrl || podcast.file;
         if (!url) return "";
-        // If the URL is relative (starts with /), prefix it with the CLIENT_KEY
         return url.startsWith('http') ? url : `${CLIENT_KEY.replace(/\/$/, '')}${url}`;
     };
 
@@ -51,24 +47,30 @@ export default function PodcastHero() {
             return;
         }
 
+        // SAME PODCAST
         if (currentPlaying?.id === podcast.id) {
             if (isPlaying) {
                 audioRef.current?.pause();
             } else {
-                audioRef.current?.play().catch(e => console.error("Playback error:", e));
+                audioRef.current?.play()
+                    .then(() => setIsPlaying(true)) // ✅ FIX
+                    .catch(e => console.error("Playback error:", e));
             }
-        } else {
-            // New song selected
-            if (audioRef.current) {
-                setCurrentPlaying(podcast);
-                audioRef.current.src = audioSrc;
-                audioRef.current.load();
-                // We use a timeout or the onCanPlay event usually, 
-                // but play() returns a promise we can use:
-                audioRef.current.play()
-                    .then(() => setIsPlaying(true))
-                    .catch(err => console.error("Playback failed:", err));
-            }
+            return;
+        }
+
+        // NEW PODCAST
+        if (audioRef.current) {
+            audioRef.current.pause();           // ✅ FIX
+            audioRef.current.currentTime = 0;   // ✅ FIX
+
+            setCurrentPlaying(podcast);
+            audioRef.current.src = audioSrc;
+            audioRef.current.load();
+
+            audioRef.current.play()
+                .then(() => setIsPlaying(true))
+                .catch(err => console.error("Playback failed:", err));
         }
     };
 
@@ -78,10 +80,10 @@ export default function PodcastHero() {
         <main className="w-full py-16 flex flex-col items-center bg-white">
             <audio 
                 ref={audioRef} 
-                onEnded={() => setIsPlaying(false)} 
+                preload="auto"
+                onEnded={() => setIsPlaying(false)}
                 onPause={() => setIsPlaying(false)}
                 onPlay={() => setIsPlaying(true)}
-                preload="auto"
             />
 
             <div className="flex flex-col items-center gap-3 mb-10">
