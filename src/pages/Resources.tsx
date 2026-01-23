@@ -105,7 +105,7 @@ function Pedagogies() {
 
   const handleShare = (e: React.MouseEvent, platform: string, item: Pedagogy) => {
     e.stopPropagation(); 
-    const shareUrl = `${window.location.origin}${window.location.pathname}?resource=${item.id}`;
+    const shareUrl = `${window.location.origin}${window.location.pathname}/#/resource/${item.id}`;
     const text = `Check out this resource: ${item.title}`;
 
     if (platform === 'copy') {

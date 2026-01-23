@@ -21,7 +21,7 @@ export default function PodcastHero() {
       setIsLoading(true);
       try {
         const res = await fetch(
-          `${BASE_URL}/api/podcasts?` +
+          `${CLIENT_KEY}api/podcasts?` +
             `filters[mediaType][$eq]=audio&` +
             `sort[0]=createdAt:desc&` + // Ensures the most recent upload is first
             `pagination[pageSize]=1&` + // Only gets one item
@@ -50,7 +50,7 @@ export default function PodcastHero() {
     };
 
     fetchLatestPodcast();
-  }, [BASE_URL]);
+  }, [CLIENT_KEY]);
 
   const getAudioUrl = (podcast: any) => {
     if (!podcast) return '';
