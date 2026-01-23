@@ -138,7 +138,7 @@ function News() {
 
   const handlePostClick = (post: BlogPost) => {
     // Navigating to the same path used in sharing
-    navigate(`/news-details/${post.slug}`);
+    navigate(`/news/${post.slug}`);
   };
 
   return (

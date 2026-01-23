@@ -30,6 +30,7 @@ interface Pedagogy {
   theme?: string;
   allowDownload?: boolean; 
   slug?: string;
+  sourceType?: 'pedagogy' | 'resource'; // Added to distinguish source
 }
 
 interface GalleryHero {
@@ -89,7 +90,6 @@ function Pedagogies() {
     e.stopPropagation();
     setDownloadingId(item.id);
     try {
-      // Point 2: API route for PDF download
       const response = await fetch(`${CLIENT_KEY}api/pedagogies/${item.id}/download`);
       if (!response.ok) throw new Error("Download failed");
       
@@ -137,12 +137,15 @@ function Pedagogies() {
     const loadAllData = async () => {
       setLoading(true);
       try {
-        const [heroRes, pedRes] = await Promise.all([
+        const [heroRes, pedRes, resRes] = await Promise.all([
           fetch(`${CLIENT_KEY}api/galleries`),
-          fetch(`${CLIENT_KEY}api/pedagogies`)
+          fetch(`${CLIENT_KEY}api/pedagogies`),
+          fetch(`${CLIENT_KEY}api/resources`) // Fetching from resources API
         ]);
+
         const heroes = await heroRes.json();
         const peds = await pedRes.json();
+        const resources = await resRes.json();
         
         const heroArray = Array.isArray(heroes) ? heroes : (heroes.data || []);
         const hero = heroArray.find((item: any) => {
@@ -152,13 +155,28 @@ function Pedagogies() {
         });
         if (hero) setHeroData(hero.attributes || hero);
         
+        // Normalize Pedagogies
         const pedData = Array.isArray(peds) ? peds : (peds.data || []);
         const normalizedPeds = pedData.map((p: any) => ({
           id: p.id,
+          sourceType: 'pedagogy' as const,
           ...(p.attributes || p)
-        })).filter((p: any) => getItemType(p.url) === 'pdf' || getItemType(p.url) === 'link'); // Point 3: Remove Video/Audio
+        }));
 
-        setPedagogies(normalizedPeds);
+        // Normalize Resources
+        const resData = Array.isArray(resources) ? resources : (resources.data || []);
+        const normalizedRes = resData.map((r: any) => ({
+          id: r.id,
+          sourceType: 'resource' as const,
+          ...(r.attributes || r)
+        }));
+
+        // Combine and filter
+        const combined = [...normalizedPeds, ...normalizedRes].filter(
+          (p: any) => getItemType(p.url) === 'pdf' || getItemType(p.url) === 'link'
+        );
+
+        setPedagogies(combined);
       } catch (err) {
         console.error("Failed to fetch data:", err);
       } finally {
@@ -176,7 +194,6 @@ function Pedagogies() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [CLIENT_KEY]);
 
-  // Point 1: Get individual resource by ID
   useEffect(() => {
     const resourceId = searchParams.get('resource');
     if (resourceId) {
@@ -284,7 +301,17 @@ function Pedagogies() {
         {/* Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {currentItems.map((item) => (
-            <div key={item.id} onClick={() => setSearchParams({ resource: item.id.toString() })} className="group bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all cursor-pointer flex flex-col relative">
+            <div 
+              key={`${item.sourceType}-${item.id}`} 
+              onClick={() => {
+                if (item.sourceType === 'pedagogy') {
+                  setSearchParams({ resource: item.id.toString() });
+                } else {
+                  window.open(item.url, '_blank', 'noopener,noreferrer');
+                }
+              }} 
+              className="group bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all cursor-pointer flex flex-col relative"
+            >
               <div className="flex justify-between items-start mb-6">
                 <div className="w-14 h-14 bg-gray-50 rounded-2xl flex items-center justify-center text-[#45B1A8] group-hover:bg-[#45B1A8] group-hover:text-white transition-colors">
                   {getItemType(item.url) === 'pdf' ? <FileText size={24} /> : <BookOpen size={24} />}
@@ -293,9 +320,12 @@ function Pedagogies() {
                   <button onClick={(e) => { e.stopPropagation(); setSharingId(sharingId === item.id ? null : item.id); }} className="p-3 hover:bg-gray-100 rounded-full text-gray-400">
                     <Share2 size={18} />
                   </button>
-                  <button onClick={(e) => handleDownload(e, item)} className="p-3 hover:bg-gray-100 rounded-full text-[#45B1A8]">
-                    {downloadingId === item.id ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
-                  </button>
+                  
+                  {item.sourceType === 'pedagogy' && (
+                    <button onClick={(e) => handleDownload(e, item)} className="p-3 hover:bg-gray-100 rounded-full text-[#45B1A8]">
+                      {downloadingId === item.id ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
+                    </button>
+                  )}
 
                   {sharingId === item.id && (
                     <div ref={shareMenuRef} className="absolute top-12 right-0 z-30 bg-white border p-3 rounded-2xl shadow-xl flex gap-4" onClick={(e) => e.stopPropagation()}>
@@ -308,10 +338,20 @@ function Pedagogies() {
                   )}
                 </div>
               </div>
+              
               <h3 className="text-2xl font-bold text-slate-800 mb-3 group-hover:text-[#45B1A8]">{item.title}</h3>
               <p className="text-gray-500 text-sm line-clamp-3 mb-6">{item.description}</p>
-              <div className="mt-auto pt-6 border-t border-gray-50 text-[#45B1A8] font-bold text-xs uppercase flex items-center justify-between">
-                Preview Resource <ExternalLink size={14} />
+              
+              <div className="mt-auto pt-6 border-t border-gray-50 flex items-center justify-between">
+                {item.sourceType === 'pedagogy' ? (
+                  <button onClick={(e) => handleDownload(e, item)} className="flex items-center gap-2 text-[#45B1A8] font-bold text-xs uppercase">
+                    Download {downloadingId === item.id ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
+                  </button>
+                ) : (
+                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-600 font-bold text-xs uppercase" onClick={(e) => e.stopPropagation()}>
+                    Go to Resource <ExternalLink size={16} />
+                  </a>
+                )}
               </div>
             </div>
           ))}
@@ -327,7 +367,7 @@ function Pedagogies() {
         )}
       </div>
 
-      {/* Preview Modal */}
+      {/* Preview Modal for Pedagogies */}
       {(previewItem || previewLoading) && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-md" onClick={handleClosePopup}>
           <div className="bg-white w-full max-w-6xl max-h-[95vh] rounded-[3.5rem] p-6 md:p-10 relative overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
