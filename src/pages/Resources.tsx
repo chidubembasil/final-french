@@ -2,10 +2,8 @@ import {
   Search,
   Loader2,
   Library,
-  X,
   FileText,
   BookOpen,
-  GraduationCap,
   ChevronLeft,
   ChevronRight,
   ExternalLink,
@@ -16,7 +14,6 @@ import {
   Download
 } from "lucide-react";
 import { useState, useEffect, useMemo, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
 
 // --- Interfaces ---
 interface Pedagogy {
@@ -30,7 +27,7 @@ interface Pedagogy {
   theme?: string;
   allowDownload?: boolean; 
   slug?: string;
-  sourceType?: 'pedagogy' | 'resource'; // Added to distinguish source
+  sourceType?: 'pedagogy' | 'resource'; 
 }
 
 interface GalleryHero {
@@ -68,14 +65,11 @@ function Pedagogies() {
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 6;
-  const [previewItem, setPreviewItem] = useState<Pedagogy | null>(null);
-  const [previewLoading, setPreviewLoading] = useState(false);
   
   const [sharingId, setSharingId] = useState<number | null>(null);
   const [copiedId, setCopiedId] = useState<number | null>(null);
   const shareMenuRef = useRef<HTMLDivElement>(null);
 
-  const [searchParams, setSearchParams] = useSearchParams();
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
   // ─── HELPERS ────────────────────────────────
@@ -104,7 +98,6 @@ function Pedagogies() {
       URL.revokeObjectURL(downloadUrl);
     } catch (err) {
       console.error('Download failed:', err);
-      alert('Download failed. Please try again.');
     } finally {
       setDownloadingId(null);
     }
@@ -140,7 +133,7 @@ function Pedagogies() {
         const [heroRes, pedRes, resRes] = await Promise.all([
           fetch(`${CLIENT_KEY}api/galleries`),
           fetch(`${CLIENT_KEY}api/pedagogies`),
-          fetch(`${CLIENT_KEY}api/resources`) // Fetching from resources API
+          fetch(`${CLIENT_KEY}api/resources`)
         ]);
 
         const heroes = await heroRes.json();
@@ -155,7 +148,6 @@ function Pedagogies() {
         });
         if (hero) setHeroData(hero.attributes || hero);
         
-        // Normalize Pedagogies
         const pedData = Array.isArray(peds) ? peds : (peds.data || []);
         const normalizedPeds = pedData.map((p: any) => ({
           id: p.id,
@@ -163,7 +155,6 @@ function Pedagogies() {
           ...(p.attributes || p)
         }));
 
-        // Normalize Resources
         const resData = Array.isArray(resources) ? resources : (resources.data || []);
         const normalizedRes = resData.map((r: any) => ({
           id: r.id,
@@ -171,11 +162,7 @@ function Pedagogies() {
           ...(r.attributes || r)
         }));
 
-        // Combine and filter
-        const combined = [...normalizedPeds, ...normalizedRes].filter(
-          (p: any) => getItemType(p.url) === 'pdf' || getItemType(p.url) === 'link'
-        );
-
+        const combined = [...normalizedPeds, ...normalizedRes];
         setPedagogies(combined);
       } catch (err) {
         console.error("Failed to fetch data:", err);
@@ -193,31 +180,6 @@ function Pedagogies() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [CLIENT_KEY]);
-
-  useEffect(() => {
-    const resourceId = searchParams.get('resource');
-    if (resourceId) {
-      const fetchIndividual = async () => {
-        setPreviewLoading(true);
-        try {
-          const res = await fetch(`${CLIENT_KEY}api/pedagogies/${resourceId}`);
-          const data = await res.json();
-          const item = data.data || data;
-          setPreviewItem({ id: item.id, ...(item.attributes || item) });
-        } catch (err) {
-          console.error("Error fetching individual resource", err);
-        } finally {
-          setPreviewLoading(false);
-        }
-      };
-      fetchIndividual();
-    }
-  }, [searchParams, CLIENT_KEY]);
-
-  const handleClosePopup = () => {
-    setPreviewItem(null);
-    setSearchParams({});
-  };
 
   // ─── FILTERS & PAGINATION ───────────────────
   const levelOptions = useMemo(() => ["All", ...Array.from(new Set(pedagogies.map(p => p.level).filter(Boolean))).sort() as string[]], [pedagogies]);
@@ -261,7 +223,6 @@ function Pedagogies() {
         )}
       </div>
 
-      {/* Brand Section */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 -mt-10 relative z-40">
         <div className="bg-white rounded-[3rem] p-8 md:p-12 shadow-2xl border border-gray-100 flex flex-col md:flex-row items-center gap-8 text-slate-900 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-blue-600 to-red-600" />
@@ -303,11 +264,11 @@ function Pedagogies() {
           {currentItems.map((item) => (
             <div 
               key={`${item.sourceType}-${item.id}`} 
-              onClick={() => {
-                if (item.sourceType === 'pedagogy') {
-                  setSearchParams({ resource: item.id.toString() });
+              onClick={(e) => {
+                if (item.sourceType === 'resource') {
+                    window.open(item.url, '_blank', 'noopener,noreferrer');
                 } else {
-                  window.open(item.url, '_blank', 'noopener,noreferrer');
+                    handleDownload(e as any, item);
                 }
               }} 
               className="group bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all cursor-pointer flex flex-col relative"
@@ -366,42 +327,6 @@ function Pedagogies() {
           </div>
         )}
       </div>
-
-      {/* Preview Modal for Pedagogies */}
-      {(previewItem || previewLoading) && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-md" onClick={handleClosePopup}>
-          <div className="bg-white w-full max-w-6xl max-h-[95vh] rounded-[3.5rem] p-6 md:p-10 relative overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            {previewLoading ? (
-              <div className="flex justify-center items-center h-64"><Loader2 className="animate-spin" size={48} /></div>
-            ) : previewItem && (
-              <>
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center gap-3 text-[#45B1A8] font-bold uppercase text-sm"><GraduationCap size={24} /> Resource Preview</div>
-                  <div className="flex items-center gap-2">
-                    <button onClick={(e) => handleDownload(e, previewItem)} className="p-3 hover:bg-gray-100 rounded-full text-[#45B1A8]">
-                      {downloadingId === previewItem.id ? <Loader2 className="animate-spin" size={24} /> : <Download size={24} />}
-                    </button>
-                    <button className="p-3 hover:bg-gray-100 rounded-full" onClick={handleClosePopup}><X size={28} /></button>
-                  </div>
-                </div>
-                <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-8">{previewItem.title}</h2>
-                <div className="rounded-[2rem] overflow-hidden bg-slate-50 border relative min-h-[60vh]">
-                  {getItemType(previewItem.url) === 'pdf' ? (
-                    <iframe src={`https://docs.google.com/gview?url=${encodeURIComponent(previewItem.url)}&embedded=true`} className="w-full h-[70vh] rounded-[2rem]" title="PDF Preview" />
-                  ) : (
-                    <div className="py-24 text-center">
-                      <BookOpen size={80} className="mx-auto text-blue-100 mb-6" />
-                      <a href={previewItem.url} target="_blank" rel="noopener noreferrer" className="px-10 py-5 bg-slate-900 text-white rounded-full font-bold shadow-xl inline-flex items-center gap-3">Open Resource <ExternalLink size={20} /></a>
-                    </div>
-                  )}
-                  <div className="absolute bottom-4 right-4 opacity-30 pointer-events-none"><IfClasseLogo className="w-24 h-24" /></div>
-                </div>
-                <p className="text-gray-600 mt-6 leading-relaxed">{previewItem.description}</p>
-              </>
-            )}
-          </div>
-        </div>
-      )}
     </main>
   );
 }
