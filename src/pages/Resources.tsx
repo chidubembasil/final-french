@@ -20,6 +20,7 @@ import {
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 
+// --- Interfaces ---
 interface Pedagogy {
   id: number;
   title: string;
@@ -78,6 +79,7 @@ function Pedagogies() {
   const [searchParams, setSearchParams] = useSearchParams();
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
+  // ─── HELPERS ────────────────────────────────
   const getItemType = (url: string) => {
     if (!url) return 'link';
     const lower = url.toLowerCase();
@@ -107,18 +109,19 @@ function Pedagogies() {
       const downloadUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = downloadUrl;
-      let filename = item.title.replace(/\s+/g, '_');
-      const urlParts = item.url.split('/');
-      const urlFilename = urlParts[urlParts.length - 1];
-      if (urlFilename.includes('.')) {
-        const extension = urlFilename.split('.').pop();
-        filename = `${filename}.${extension}`;
-      } else {
-        const type = getItemType(item.url);
-        if (type === 'pdf') filename += '.pdf';
-        else if (type === 'video') filename += '.mp4';
-        else if (type === 'audio') filename += '.mp3';
-      }
+
+      // Use title as base filename (cleaned)
+      let filename = item.title
+        .replace(/[^a-z0-9]/gi, '_')
+        .replace(/_+/g, '_')
+        .replace(/^_+|_+$/g, '');
+      
+      const type = getItemType(item.url);
+      if (type === 'pdf') filename += '.pdf';
+      else if (type === 'video') filename += '.mp4';
+      else if (type === 'audio') filename += '.mp3';
+      else filename += '.file';
+
       link.download = filename;
       document.body.appendChild(link);
       link.click();
@@ -231,17 +234,20 @@ function Pedagogies() {
 
   const levelOptions = useMemo(() => {
     const levels = pedagogies.map(p => p.level).filter(Boolean) as string[];
-    return ["All", ...Array.from(new Set(levels)).sort()];
+    const unique = new Set(levels);
+    return ["All", ...Array.from(unique).sort()];
   }, [pedagogies]);
 
   const skillOptions = useMemo(() => {
     const skills = pedagogies.map(p => p.skillType).filter(Boolean) as string[];
-    return ["All", ...Array.from(new Set(skills)).sort()];
+    const unique = new Set(skills);
+    return ["All", ...Array.from(unique).sort()];
   }, [pedagogies]);
 
   const themeOptions = useMemo(() => {
     const themes = pedagogies.map(p => p.theme).filter(Boolean) as string[];
-    return ["All", ...Array.from(new Set(themes)).sort()];
+    const unique = new Set(themes);
+    return ["All", ...Array.from(unique).sort()];
   }, [pedagogies]);
 
   const filteredPedagogies = useMemo(() => {
@@ -419,7 +425,7 @@ function Pedagogies() {
         )}
       </div>
 
-      {/* Preview Modal – opens on card click or shared link */}
+      {/* Preview Modal */}
       {previewItem && (
         <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-md" onClick={handleClosePopup}>
           <div className="bg-white w-full max-w-6xl max-h-[95vh] rounded-[3.5rem] p-6 md:p-10 relative overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
@@ -439,30 +445,34 @@ function Pedagogies() {
                 </button>
               </div>
             </div>
+
             <h2 className="text-2xl md:text-4xl font-bold text-slate-900 mb-6 md:mb-8">{previewItem.title}</h2>
-            <div className="rounded-[2rem] overflow-hidden bg-slate-50 border shadow-inner">
+
+            <div className="rounded-[2rem] overflow-hidden bg-slate-50 border shadow-inner relative">
+              {/* Watermark Logo - positioned bottom-right */}
+              <div className="absolute bottom-4 right-4 opacity-30 z-10 pointer-events-none">
+                <IfClasseLogo className="w-24 h-24 md:w-32 md:h-32" />
+              </div>
+
               {getItemType(previewItem.url) === 'pdf' ? (
-                <iframe 
-                  src={previewItem.url} 
-                  className="w-full h-[75vh] rounded-[2rem]" 
-                  title={`PDF preview of ${previewItem.title}`} 
+                <iframe
+                  src={`https://docs.google.com/gview?url=${encodeURIComponent(previewItem.url)}&embedded=true`}
+                  className="w-full h-[70vh] md:h-[75vh] rounded-[2rem]"
+                  title={`PDF preview of ${previewItem.title}`}
+                  sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
                 />
               ) : getItemType(previewItem.url) === 'video' ? (
                 <div className="w-full aspect-video bg-black rounded-[2rem] overflow-hidden">
                   {previewItem.url.includes('youtube.com') || previewItem.url.includes('youtu.be') ? (
-                    <iframe 
-                      className="w-full h-full" 
-                      src={getYouTubeEmbedUrl(previewItem.url)} 
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
-                      allowFullScreen 
-                      title={`Video: ${previewItem.title}`} 
+                    <iframe
+                      className="w-full h-full"
+                      src={getYouTubeEmbedUrl(previewItem.url)}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                      title={`Video: ${previewItem.title}`}
                     />
                   ) : (
-                    <video 
-                      src={previewItem.url} 
-                      controls 
-                      className="w-full h-full"
-                    >
+                    <video src={previewItem.url} controls className="w-full h-full">
                       Your browser does not support the video tag.
                     </video>
                   )}
@@ -473,11 +483,7 @@ function Pedagogies() {
                     <Music size={48} className="text-[#45B1A8] animate-pulse" />
                   </div>
                   <h3 className="text-xl font-bold text-slate-800 mb-6 max-w-md text-center px-4">{previewItem.title}</h3>
-                  <audio 
-                    src={previewItem.url} 
-                    controls 
-                    className="w-full max-w-2xl px-8"
-                  >
+                  <audio src={previewItem.url} controls className="w-full max-w-2xl px-8">
                     Your browser does not support the audio element.
                   </audio>
                 </div>
@@ -496,6 +502,7 @@ function Pedagogies() {
                 </div>
               )}
             </div>
+
             <p className="text-gray-600 mt-6 text-sm md:text-base leading-relaxed">{previewItem.description}</p>
           </div>
         </div>
