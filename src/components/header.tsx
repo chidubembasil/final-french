@@ -3,7 +3,7 @@ import { Link, NavLink } from "react-router-dom";
 import { Globe, Menu, X, Volume2, VolumeX } from "lucide-react";
 import { useSpeech } from './SpeechContext';
 import logo from '../assets/img/logo.png';
-import logo2 from '../assets/img/img2026.jpg';
+import logo2 from '../assets/img/ambassade de france.png';
 
 function Header() {
     const { speak, isSpeaking, stop } = useSpeech();

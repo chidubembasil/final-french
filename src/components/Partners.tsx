@@ -62,7 +62,7 @@ export default function PartnersSection() {
             <div className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm shrink-0">
               Project Funders
             </div>
-            <img src={logo2} alt="" />
+            <img src={logo2} alt="" className='w-2 h-auto' />
             <p className="text-sm text-blue-900 leading-relaxed">
               This initiative is led by the <strong>Embassy of France in Nigeria</strong> and funded 
               through the <strong>French Embassy Fund (FEF)</strong> of the French Ministry for 
