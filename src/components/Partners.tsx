@@ -10,7 +10,7 @@ import UniCaen from "../assets/img/UNICAEN_logo.jpg";
 import TV5Monde from "../assets/img/tv5.jpeg";
 import FranceEducation from "../assets/img/fef.jpg";
 import FrenchBusiness from "../assets/img/image1.png";
-import logo2 from '../assets/img/ambassade de france.png'
+import logo2 from '../assets/img/img2026.jpg'
 
 const partners = [
 { name: "France Éducation International", logo: FranceEducation },

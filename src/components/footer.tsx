@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import logo from '../assets/img/logo.png';
-import logo2 from '../assets/img/ambassade de france.png'
+import logo2 from '../assets/img/img2026.jpg'
 import { Instagram, Facebook, Youtube, Mail, MapPin, Linkedin, ArrowUp } from "lucide-react";
 import { Link } from "react-router-dom";
 
