@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, NavLink } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom"; // Added useLocation
 import { Globe, Menu, X, Volume2, VolumeX } from "lucide-react";
 import { useSpeech } from './SpeechContext';
 import logo from '../assets/img/logo.png';
@@ -9,13 +9,17 @@ function Header() {
     const { speak, isSpeaking, stop } = useSpeech();
     const [isOpen, setIsOpen] = useState(false);
     const [isLoaded, setIsLoaded] = useState(false);
+    const location = useLocation(); // Initialize location hook
+
+    // Check if the current path is /activities
+    const isActivitiesPage = location.pathname === "/activities";
 
     const navLink = [
         { path: "/", name: "Home" },
         { path: "/bac", name: "Bilingual and Competitive" },
         { path: "/activities", name: "Learn French" },
         { path: "/podcast", name: "Podcasts" },
-        { path: "/resource", name: "If Classe" },
+        { path: "/resource", name: "Resources" },
         { path: "/news&blog", name: "News & Blog" },
         { path: "/gallery", name: "Gallery" }
     ];
@@ -24,7 +28,6 @@ function Header() {
         if (isSpeaking) {
             stop();
         } else {
-            // Calling speak() with no arguments tells the engine to skip the header
             speak(); 
         }
     };
@@ -82,13 +85,16 @@ function Header() {
                     {isSpeaking ? <VolumeX size={22} className="animate-pulse" /> : <Volume2 size={22} />}
                 </button>
 
-                <div className='flex flex-row items-center gap-1 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200'>
-                    <Globe size={16} className={isLoaded ? "text-blue-600" : "text-gray-400"} />
-                    <select onChange={handleLanguageChange} className='bg-transparent text-[10px] md:text-xs font-bold outline-none cursor-pointer uppercase'>
-                        <option value="en">English</option>
-                        <option value="fr">Français</option>
-                    </select>
-                </div>
+                {/* Conditional rendering: Hidden if on Activities page */}
+                {!isActivitiesPage && (
+                    <div className='flex flex-row items-center gap-1 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200'>
+                        <Globe size={16} className={isLoaded ? "text-blue-600" : "text-gray-400"} />
+                        <select onChange={handleLanguageChange} className='bg-transparent text-[10px] md:text-xs font-bold outline-none cursor-pointer uppercase'>
+                            <option value="en">English</option>
+                            <option value="fr">Français</option>
+                        </select>
+                    </div>
+                )}
 
                 <button className="lg:hidden p-2 text-gray-600" onClick={() => setIsOpen(!isOpen)}>
                     {isOpen ? <X size={28} /> : <Menu size={28} />}

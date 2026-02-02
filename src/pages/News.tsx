@@ -1,6 +1,6 @@
 import { 
   Newspaper, Search, Loader2, Calendar, MapPin, 
-  Share2, MessageCircle, Linkedin, 
+  Share2, MessageCircle, Linkedin, Facebook,
   Copy, Check, ChevronLeft, ChevronRight 
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
@@ -132,6 +132,7 @@ function News() {
       whatsapp: `https://wa.me/?text=${encodeURIComponent(text + " " + url)}`,
       linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
       x: `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
+      facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`,
     };
     window.open(links[platform], '_blank');
   };
@@ -207,6 +208,7 @@ function News() {
                     </button>
                     {sharingId === post.id && (
                       <div ref={shareMenuRef} className="absolute right-0 mt-2 flex items-center gap-3 bg-white p-2 rounded-2xl border shadow-xl" onClick={(e) => e.stopPropagation()}>
+                        <button onClick={() => handleShare('facebook', post)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"><Facebook size={18} /></button>
                         <button onClick={() => handleShare('whatsapp', post)} className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"><MessageCircle size={18} /></button>
                         <button onClick={() => handleShare('x', post)} className="p-2 text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"><XLogo /></button>
                         <button onClick={() => handleShare('linkedin', post)} className="p-2 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors"><Linkedin size={18} /></button>

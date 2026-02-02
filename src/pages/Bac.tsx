@@ -40,12 +40,17 @@ function BAC() {
         // Fetch Hero
         fetch(`${CLIENT_KEY}api/galleries`)
             .then((res) => res.json())
-            .then((data: GalleryHero[]) => {
-                const matchingHero = data.find(
-                    (item) => item.purpose === "Other Page" && item.subPurpose === "BAC"
+            .then((data: any) => {
+                const rawData = Array.isArray(data) ? data : (data.data || []);
+                const matchingHero = rawData.find(
+                    (item: any) => {
+                        const attr = item.attributes || item;
+                        return attr.purpose === "Other Page" && attr.subPurpose === "BAC";
+                    }
                 );
-                if (matchingHero) setHeroData(matchingHero);
+                if (matchingHero) setHeroData(matchingHero.attributes || matchingHero);
             })
+            .catch(err => console.error("Hero Error:", err))
             .finally(() => setLoadingHero(false));
 
         // Fetch Event Images
@@ -53,7 +58,12 @@ function BAC() {
             .then(res => res.json())
             .then((data: any) => {
                 const rawData = Array.isArray(data) ? data : (data.data || []);
-                const eventsOnly = rawData.filter((item: any) => item.category === "Event");
+                const eventsOnly = rawData
+                    .filter((item: any) => (item.attributes?.category || item.category) === "Event")
+                    .map((item: any) => ({
+                        id: item.id,
+                        ...(item.attributes || item)
+                    }));
                 setEventImages(eventsOnly);
             })
             .catch(err => console.error("Gallery Error:", err))
@@ -82,7 +92,7 @@ function BAC() {
         <main className="pt-20 bg-white">
             {/* LIGHTBOX MODAL */}
             {selectedImg && (
-                <div className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 md:p-10" onClick={() => setSelectedImg(null)}>
+                <div className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4 md:p-10" onClick={() => setSelectedImg(null)}>
                     <button className="absolute top-10 right-10 text-white hover:rotate-90 transition-transform">
                         <X size={40} />
                     </button>
@@ -110,16 +120,10 @@ function BAC() {
                             <p className="text-white/90 text-lg md:text-xl max-w-xl leading-relaxed">{heroData?.description}</p>
                             
                             <div className="flex flex-wrap gap-4">
-                                <button 
-                                    onClick={scrollToGallery}
-                                    className="px-8 py-4 bg-white text-blue-900 font-bold rounded-2xl hover:bg-blue-50 transition-all flex items-center gap-2 group shadow-xl active:scale-95"
-                                >
-                                    See Events<ChevronRight className="group-hover:translate-x-1 transition-transform" />
+                                <button onClick={scrollToGallery} className="px-8 py-4 bg-white text-blue-900 font-bold rounded-2xl hover:bg-blue-50 transition-all flex items-center gap-2 group shadow-xl active:scale-95">
+                                    See Events <ChevronRight className="group-hover:translate-x-1 transition-transform" />
                                 </button>
-                                <button 
-                                    onClick={scrollToProjectGoals}
-                                    className="px-8 py-4 bg-blue-600/20 text-white backdrop-blur-md border border-white/30 font-bold rounded-2xl hover:bg-blue-600 transition-all flex items-center gap-2 group active:scale-95"
-                                >
+                                <button onClick={scrollToProjectGoals} className="px-8 py-4 bg-blue-600/20 text-white backdrop-blur-md border border-white/30 font-bold rounded-2xl hover:bg-blue-600 transition-all flex items-center gap-2 group active:scale-95">
                                     About BAC <ChevronRight size={18} className="rotate-90 group-hover:translate-y-1 transition-transform" />
                                 </button>
                             </div>
@@ -148,8 +152,51 @@ function BAC() {
                         </div>
                     ))}
                 </div>
+                
+                {/* REDESIGNED LMS SECTION 2 - Portal Experience */}
+                <div className="w-[90%] max-w-6xl relative group overflow-hidden">
+                    <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-700"></div>
+                    
+                    <div className="relative bg-white border border-gray-100 rounded-[3rem] p-2 shadow-xl hover:shadow-2xl transition-all duration-500">
+                        <div className="flex flex-col lg:flex-row items-stretch gap-2">
+                            <div className="bg-slate-900 rounded-[2.5rem] p-8 lg:w-1/3 flex flex-col justify-between overflow-hidden relative">
+                                <div className="relative z-10">
+                                    <div className="flex items-center gap-2 mb-6">
+                                        <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
+                                        <span className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em]">Live Portal</span>
+                                    </div>
+                                    <h2 className="text-3xl font-serif font-bold text-white leading-tight">Interactive <br /><span className="text-blue-400">Resources</span></h2>
+                                </div>
+                                <div className="mt-8 relative z-10 flex items-center gap-4">
+                                    <div className="w-14 h-14 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+                                        <Laptop className="text-white" size={28} />
+                                    </div>
+                                    <div className="text-white/40 italic text-sm font-serif">"Empowering <br/> digital fluency"</div>
+                                </div>
+                                <div className="absolute bottom-[-20%] right-[-10%] w-40 h-40 bg-blue-600/20 rounded-full blur-2xl"></div>
+                            </div>
 
-                {/* LMS SECTION */}
+                            <div className="flex-1 p-8 md:p-10 flex flex-col md:flex-row justify-between items-center gap-8">
+                                <div className="space-y-4 text-center md:text-left">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full">
+                                        <Users size={14} />
+                                        <span className="text-[10px] font-bold uppercase">Staff & Student Access</span>
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-slate-800">Learning Management System</h3>
+                                    <p className="text-gray-500 text-base max-w-sm leading-relaxed">Access your personalized dashboard, course materials, and collaborative research tools in one secure environment.</p>
+                                </div>
+                                <div className="flex flex-col items-center gap-4">
+                                    <a href="https://login.microsoftonline.com" target="_blank" rel="noopener noreferrer" className="py-5 px-12 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.15em] transition-all hover:bg-blue-700 hover:shadow-lg active:scale-95 shadow-md flex items-center gap-3">
+                                        Launch LMS <ExternalLink size={16} />
+                                    </a>
+                                    <p className="text-[10px] text-gray-400 font-medium">Powered by Microsoft 365 Education</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* LMS SECTION 1 - Standard Portal */}
                 <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-10 rounded-[3rem] shadow-xl border border-white/5 flex flex-col md:flex-row gap-8 w-[90%] max-w-6xl justify-between items-center">
                     <div className="flex items-center gap-6">
                         <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden shrink-0">
@@ -160,7 +207,7 @@ function BAC() {
                             <p className="text-gray-400 text-sm mt-1">Microsoft 365 Resources for Lecturers & Students</p>
                         </div>
                     </div>
-                    <a href="https://login.microsoftonline.com" target="_blank" className="py-4 px-10 bg-white text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-100 transition-all shadow-lg active:scale-95">
+                    <a href="https://login.microsoftonline.com" target="_blank" rel="noopener" className="py-4 px-10 bg-white text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-100 transition-all shadow-lg active:scale-95">
                         Access Resources
                     </a>
                 </div>
@@ -172,7 +219,6 @@ function BAC() {
                         <p className="text-gray-500">Explore the network of institutions participating in the French Embassy Fund project across Nigeria.</p>
                     </div>
                     <div className="rounded-[3rem] overflow-hidden border border-gray-100 shadow-xl bg-white p-2">
-                        {/* The component we just built */}
                         <NigeriaMap />
                     </div>
                 </div>
@@ -221,11 +267,7 @@ function BAC() {
                                     className="group relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-slate-100 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-700"
                                     onClick={() => setSelectedImg(img.coverImage)}
                                 >
-                                    <img 
-                                        src={img.coverImage} 
-                                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" 
-                                        alt={img.title} 
-                                    />
+                                    <img src={img.coverImage} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={img.title} />
                                     <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-8">
                                         <div className="translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                                             <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2">{img.category}</p>

@@ -11,7 +11,9 @@ import {
   MessageCircle,
   Copy,
   Check,
-  Download
+  Download,
+  CalendarDays, // Added for Events
+  Trophy // Added for Ranking
 } from "lucide-react";
 import { useState, useEffect, useMemo, useRef } from 'react';
 
@@ -188,16 +190,22 @@ function Pedagogies() {
 
   const filteredPedagogies = useMemo(() => {
     return pedagogies.filter(item => {
+      // Exclude Special Events and Rankings from the general filterable grid
+      const isGeneralResource = item.category !== "Special Event" && item.category !== "Ranking";
       const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesLevel = pedLevel === 'All' || item.level === pedLevel;
       const matchesSkill = pedSkill === 'All' || item.skillType === pedSkill;
       const matchesTheme = pedTheme === 'All' || item.theme === pedTheme;
-      return matchesSearch && matchesLevel && matchesSkill && matchesTheme;
+      return isGeneralResource && matchesSearch && matchesLevel && matchesSkill && matchesTheme;
     });
   }, [pedagogies, searchQuery, pedLevel, pedSkill, pedTheme]);
 
   const totalPages = Math.ceil(filteredPedagogies.length / itemsPerPage);
   const currentItems = filteredPedagogies.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  // ─── SPECIAL DATA SELECTORS ──────────────────
+  const specialEvents = useMemo(() => pedagogies.filter(p => p.category === "Special Event"), [pedagogies]);
+  const studentRankings = useMemo(() => pedagogies.filter(p => p.category === "Ranking"), [pedagogies]);
 
   return (
     <main className="pt-20 bg-gray-50/30 min-h-screen">
@@ -236,6 +244,80 @@ function Pedagogies() {
           <a href="http://ifclasse.institutfrancais.com/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-2xl font-bold shadow-lg hover:bg-slate-800 transition-all">
             Visit Portal <ExternalLink size={18} />
           </a>
+        </div>
+      </div>
+
+      {/* --- NEW SECTIONS: SPECIAL EVENTS & RANKINGS --- */}
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
+        
+        {/* SECTION 1: Special Events (Dynamic & Updatable) */}
+        <div className="bg-white rounded-[3rem] p-8 border border-gray-100 shadow-sm flex flex-col">
+          <div className="flex items-center gap-4 mb-6">
+            <div className="bg-red-50 p-3 rounded-2xl text-red-600">
+              <CalendarDays size={28} />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold">Upcoming & Special Events</h3>
+              <p className="text-sm text-gray-500">International and National celebrations</p>
+            </div>
+          </div>
+          
+          <div className="space-y-4">
+            {specialEvents.length > 0 ? (
+              specialEvents.map((event) => (
+                <div key={event.id} className="p-5 bg-gray-50 rounded-2xl border border-transparent hover:border-red-200 transition-all group flex items-center justify-between">
+                  <div className="flex-1">
+                    <span className="text-[10px] font-bold text-red-600 uppercase tracking-widest">{event.theme || "Event"}</span>
+                    <h4 className="font-bold text-lg text-slate-800">{event.title}</h4>
+                    <p className="text-sm text-gray-500 line-clamp-1">{event.description}</p>
+                  </div>
+                  <button onClick={(e) => handleDownload(e as any, event)} className="p-3 bg-white rounded-xl shadow-sm group-hover:bg-red-600 group-hover:text-white transition-all">
+                    <Download size={18} />
+                  </button>
+                </div>
+              ))
+            ) : (
+              <div className="py-10 text-center text-gray-400 italic">No events currently listed.</div>
+            )}
+          </div>
+        </div>
+
+        {/* SECTION 2: Student Rankings (Flexible List) */}
+        <div className="bg-slate-900 rounded-[3rem] p-8 text-white shadow-xl relative overflow-hidden flex flex-col">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-full blur-3xl" />
+          
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
+              <div className="bg-yellow-500/20 p-3 rounded-2xl text-yellow-500">
+                <Trophy size={28} />
+              </div>
+              <h3 className="text-xl font-bold">Student Hall of Fame</h3>
+            </div>
+            <div className="px-3 py-1 bg-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest">Global Rank</div>
+          </div>
+
+          <div className="space-y-3">
+            {studentRankings.length > 0 ? (
+              studentRankings.map((rank, index) => (
+                <div key={rank.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
+                    index === 0 ? 'bg-yellow-500 text-slate-900' : 
+                    index === 1 ? 'bg-slate-300 text-slate-900' : 
+                    index === 2 ? 'bg-orange-400 text-slate-900' : 'bg-white/10 text-white'
+                  }`}>
+                    #{index + 1}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-sm">{rank.title}</h4>
+                    <p className="text-xs text-white/50">{rank.description || "Student"}</p>
+                  </div>
+                  <div className="text-xs font-bold text-yellow-500 uppercase">{rank.level || "Elite"}</div>
+                </div>
+              ))
+            ) : (
+              <div className="py-10 text-center text-white/20 italic">No rankings available.</div>
+            )}
+          </div>
         </div>
       </div>
 
