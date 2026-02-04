@@ -5,36 +5,54 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
+// --- Types & Interfaces ---
+interface BlogPost {
+  id: number;
+  title: string;
+  excerpt: string;
+  content: string;
+  coverImage: string;
+  category: string;
+  updatedAt: string;
+  language: string;
+  state: string;
+  slug: string;
+}
+
+// Fixed: Declared outside of render to prevent state reset and linting errors
+const XLogo = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
+    <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+  </svg>
+);
+
 function NewsDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  const [post, setPost] = useState<any>(null);
+  // Fixed: Replaced any with BlogPost | null
+  const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
-
-  const XLogo = ({ className = "w-4 h-4" }: { className?: string }) => (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
-      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
-    </svg>
-  );
 
   useEffect(() => {
     window.scrollTo(0, 0);
     fetch(`${CLIENT_KEY}api/news`)
       .then(res => res.json())
       .then(data => {
-        const rawData = Array.isArray(data) ? data : (data.data || []);
-        const found = rawData.find((b: any) => b.slug === slug);
-        setPost(found);
+        // Fixed: Replaced any in find loop
+        const rawData: BlogPost[] = Array.isArray(data) ? data : (data.data || []);
+        const found = rawData.find((b: BlogPost) => b.slug === slug);
+        setPost(found || null);
       })
       .catch(err => console.error("Detail Fetch Error:", err))
       .finally(() => setLoading(false));
   }, [slug, CLIENT_KEY]);
 
   const handleShare = (platform: string) => {
+    if (!post) return;
     const url = window.location.href;
-    const text = `Read this: ${post?.title}`;
+    const text = `Read this: ${post.title}`;
     
     if (platform === 'copy') {
       navigator.clipboard.writeText(url);
@@ -43,7 +61,8 @@ function NewsDetail() {
       return;
     }
     
-    const links: any = {
+    // Fixed: Replaced any with Record type
+    const links: Record<string, string> = {
       whatsapp: `https://wa.me/?text=${encodeURIComponent(text + " " + url)}`,
       linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
       x: `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
@@ -68,7 +87,7 @@ function NewsDetail() {
   return (
     <main className="pt-32 pb-20 bg-white min-h-screen">
       <div className="max-w-4xl mx-auto px-6">
-        <button onClick={() => navigate('/news&blog')} className="flex items-center gap-2 text-gray-500 hover:text-blue-600 mb-8 transition-all">
+        <button onClick={() => navigate('/news')} className="flex items-center gap-2 text-gray-500 hover:text-blue-600 mb-8 transition-all">
           <ArrowLeft size={20} />
           <span className="font-black uppercase tracking-widest text-[10px]">Back to News</span>
         </button>
@@ -85,18 +104,18 @@ function NewsDetail() {
               <span className="flex items-center gap-2"><MapPin size={14}/> {post.state}</span>
             </div>
             <div className="flex items-center gap-3 bg-gray-50 p-2 rounded-2xl border">
-              <button onClick={() => handleShare('facebook')} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"><Facebook size={18} /></button>
-              <button onClick={() => handleShare('whatsapp')} className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"><MessageCircle size={18} /></button>
-              <button onClick={() => handleShare('x')} className="p-2 text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"><XLogo /></button>
-              <button onClick={() => handleShare('linkedin')} className="p-2 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors"><Linkedin size={18} /></button>
-              <button onClick={() => handleShare('copy')} className="flex items-center gap-2 p-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors">
+              <button aria-label="Share on Facebook" onClick={() => handleShare('facebook')} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"><Facebook size={18} /></button>
+              <button aria-label="Share on WhatsApp" onClick={() => handleShare('whatsapp')} className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"><MessageCircle size={18} /></button>
+              <button aria-label="Share on X" onClick={() => handleShare('x')} className="p-2 text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"><XLogo /></button>
+              <button aria-label="Share on LinkedIn" onClick={() => handleShare('linkedin')} className="p-2 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors"><Linkedin size={18} /></button>
+              <button aria-label="Copy link" onClick={() => handleShare('copy')} className="flex items-center gap-2 p-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors">
                 {copied ? <Check size={18} className="text-green-500" /> : <Copy size={18} />}
               </button>
             </div>
           </div>
         </div>
 
-        <div className="aspect-[16/9] w-full rounded-[2.5rem] overflow-hidden shadow-2xl border mb-12">
+        <div className="aspect-video w-full rounded-[2.5rem] overflow-hidden shadow-2xl border mb-12">
           <img src={post.coverImage} className="w-full h-full object-cover" alt={post.title} />
         </div>
 

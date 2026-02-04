@@ -23,6 +23,21 @@ interface EventImage {
     category: string;
 }
 
+// ✅ New interfaces to replace 'any'
+interface StrapiAttributes extends GalleryHero {
+    category?: string;
+    coverImage?: string;
+}
+
+interface StrapiDataItem {
+    id: number;
+    attributes: StrapiAttributes;
+}
+
+interface StrapiResponse {
+    data: StrapiDataItem[];
+}
+
 function BAC() {
     const navigate = useNavigate();
     const projectGoalsRef = useRef<HTMLDivElement>(null);
@@ -40,10 +55,10 @@ function BAC() {
         // Fetch Hero
         fetch(`${CLIENT_KEY}api/galleries`)
             .then((res) => res.json())
-            .then((data: any) => {
+            .then((data: StrapiResponse | StrapiDataItem[]) => {
                 const rawData = Array.isArray(data) ? data : (data.data || []);
                 const matchingHero = rawData.find(
-                    (item: any) => {
+                    (item: StrapiDataItem) => {
                         const attr = item.attributes || item;
                         return attr.purpose === "Other Page" && attr.subPurpose === "BAC";
                     }
@@ -56,14 +71,22 @@ function BAC() {
         // Fetch Event Images
         fetch(`${CLIENT_KEY}api/news`)
             .then(res => res.json())
-            .then((data: any) => {
+            .then((data: StrapiResponse | StrapiDataItem[]) => {
                 const rawData = Array.isArray(data) ? data : (data.data || []);
                 const eventsOnly = rawData
-                    .filter((item: any) => (item.attributes?.category || item.category) === "Event")
-                    .map((item: any) => ({
-                        id: item.id,
-                        ...(item.attributes || item)
-                    }));
+                    .filter((item: StrapiDataItem) => {
+                        const attr = item.attributes || (item as unknown as StrapiAttributes);
+                        return attr.category === "Event";
+                    })
+                    .map((item: StrapiDataItem) => {
+                        const attr = item.attributes || (item as unknown as StrapiAttributes);
+                        return {
+                            id: item.id,
+                            title: attr.title || "",
+                            coverImage: attr.coverImage || "",
+                            category: attr.category || ""
+                        };
+                    });
                 setEventImages(eventsOnly);
             })
             .catch(err => console.error("Gallery Error:", err))
@@ -93,7 +116,8 @@ function BAC() {
             {/* LIGHTBOX MODAL */}
             {selectedImg && (
                 <div className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4 md:p-10" onClick={() => setSelectedImg(null)}>
-                    <button className="absolute top-10 right-10 text-white hover:rotate-90 transition-transform">
+                    <button className="absolute top-10 right-10 text-white hover:rotate-90 transition-transform"  aria-label="cancel"
+              title="cancel">
                         <X size={40} />
                     </button>
                     <img src={selectedImg} className="max-w-full max-h-full rounded-lg shadow-2xl animate-in zoom-in duration-300" alt="Full view" />

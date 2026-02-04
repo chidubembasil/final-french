@@ -31,12 +31,32 @@ interface Exercise {
   content: RawQuestion[];
 }
 
-interface DetailedExercise extends Exercise {}
+// ✅ Fix: Changed from empty interface to a type alias to satisfy @typescript-eslint/no-empty-object-type
+type DetailedExercise = Exercise;
 
 interface GalleryHero {
   title: string;
   description: string;
   mediaUrl: string;
+}
+
+// ✅ FIXED: Replaced 'any' with specific types for Strapi attributes
+interface StrapiAttributes {
+  title?: string;
+  description?: string;
+  mediaUrl?: string;
+  purpose?: string;
+  subPurpose?: string;
+  exerciseType?: string;
+  content?: string | RawQuestion[];
+  publishedAt?: string | null;
+}
+
+interface StrapiItem {
+  id: number;
+  attributes?: StrapiAttributes;
+  purpose?: string;
+  subPurpose?: string;
 }
 
 function Activities() {
@@ -47,7 +67,7 @@ function Activities() {
   const [modalStage, setModalStage] = useState<'info' | 'test' | 'result'>('info');
   const [loading, setLoading] = useState(true);
   const [activeType, setActiveType] = useState<string>("All");
- /*  const [activeDifficulty, setActiveDifficulty] = useState<string>("All"); */
+  /* const [activeDifficulty, setActiveDifficulty] = useState<string>("All"); */
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
@@ -71,33 +91,51 @@ function Activities() {
         const heroJson = await heroRes.json();
         const exJson = await exRes.json();
 
-        const matchingHero = (heroJson.data || heroJson).find((item: any) => 
+        // ✅ FIXED: Specified StrapiItem type and avoided any
+        const heroArray: StrapiItem[] = heroJson.data || heroJson;
+        const matchingHero = heroArray.find((item: StrapiItem) => 
           (item.attributes?.purpose || item.purpose) === "Other Page" && 
           (item.attributes?.subPurpose || item.subPurpose) === "Activities"
         );
-        if (matchingHero) setHeroData(matchingHero.attributes || matchingHero);
+        
+        if (matchingHero) {
+          setHeroData((matchingHero.attributes as GalleryHero) || (matchingHero as unknown as GalleryHero));
+        }
 
-        const rawExercises = Array.isArray(exJson) ? exJson : (exJson.data || []);
+        const rawExercises: StrapiItem[] = Array.isArray(exJson) ? exJson : (exJson.data || []);
         const tempMap: Record<number, DetailedExercise> = {};
         
-        rawExercises.forEach((item: any) => {
-          const data = item.attributes ? { id: item.id, ...item.attributes } : item;
+        rawExercises.forEach((item: StrapiItem) => {
+          // ✅ FIXED: Explicitly cast to include StrapiAttributes to fix "Property does not exist" error
+          const data = (item.attributes ? { id: item.id, ...item.attributes } : item) as StrapiAttributes & { id: number };
+          
           let parsedContent: RawQuestion[] = [];
+          
           if (data.content) {
             const rawContent = typeof data.content === 'string' ? JSON.parse(data.content) : data.content;
             
-            // CORRECTED INDEXING: Subtract 1 because 1=A (index 0), 2=B (index 1), etc.
-            parsedContent = rawContent.map((q: RawQuestion) => ({
-              ...q,
-              correctAnswer: Number(q.correctAnswer) - 1
-            }));
+            if (Array.isArray(rawContent)) {
+              parsedContent = rawContent.map((q: RawQuestion) => ({
+                ...q,
+                correctAnswer: Number(q.correctAnswer) - 1
+              }));
+            }
           }
-          tempMap[data.id] = { ...data, content: parsedContent };
+
+          tempMap[data.id] = { 
+            id: data.id,
+            title: data.title || "",
+            description: data.description || "",
+            exerciseType: data.exerciseType || "",
+            publishedAt: data.publishedAt || null,
+            content: parsedContent 
+          };
         });
 
         setExercisesMap(tempMap);
         setExercisesList(Object.values(tempMap));
       } catch (err) {
+        console.error("Fetch Error:", err);
         setFetchError("Failed to load activities from server.");
       } finally {
         setLoading(false);
@@ -110,11 +148,6 @@ function Activities() {
     const types = new Set(exercisesList.map(ex => ex.exerciseType).filter(Boolean));
     return ["All", ...Array.from(types)];
   }, [exercisesList]);
-
-  /* const difficultyOptions = useMemo(() => {
-    const diffs = new Set(exercisesList.map(ex => ex.difficulty).filter(Boolean));
-    return ["All", ...Array.from(diffs)];
-  }, [exercisesList]); */
 
   const handleOpenExercise = (id: number) => {
     const activity = exercisesMap[id];
@@ -129,7 +162,6 @@ function Activities() {
     return exercisesList.filter((ex) => {
       const matchesSearch = ex.title?.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesType = activeType === "All" || ex.exerciseType === activeType;
-      /* const matchesDiff = activeDifficulty === "All" || ex.difficulty === activeDifficulty; */
       return matchesSearch && matchesType 
     });
   }, [exercisesList, searchQuery, activeType]);
@@ -144,7 +176,6 @@ function Activities() {
     }, 0);
   }, [selectedEx, modalStage, userAnswers]);
 
-  // REDUCED ICON SIZES
   const getIcon = (type: string, size: number = 20) => {
     const t = type?.toLowerCase() || '';
     if (t.includes('mcq')) return <PlayCircle size={size} />;
@@ -172,7 +203,6 @@ function Activities() {
       </div>
 
       <section className="py-12 px-6 md:px-20 max-w-7xl mx-auto">
-        {/* FILTER BAR */}
         <div className="bg-white p-6 rounded-[2rem] shadow-sm border border-gray-100 mb-12 flex flex-col items-center justify-center lg:flex-row lg:gap-6 lg:items-end">
           <div className="flex-1 w-full">
             <p className="text-[10px] font-black uppercase text-blue-600 mb-2 ml-1">Search Activity</p>
@@ -186,14 +216,8 @@ function Activities() {
               <button key={t} onClick={() => {setActiveType(t); setCurrentPage(1);}} className={`px-4 py-2.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeType === t ? "bg-blue-600 text-white shadow-md" : "bg-gray-100 text-gray-400"}`}>{t}</button>
             ))}
           </div>
-          {/* <div className="flex flex-wrap gap-2">
-            {difficultyOptions.map((d) => (
-              <button key={d} onClick={() => {setActiveDifficulty(d); setCurrentPage(1);}} className={`px-4 py-2.5 rounded-lg text-[10px] font-black uppercase transition-all ${activeDifficulty === d ? "bg-red-600 text-white shadow-md" : "bg-gray-100 text-gray-400"}`}>{d}</button>
-            ))}
-          </div> */}
         </div>
 
-        {/* GRID */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {loading ? (
             <div className="col-span-full flex justify-center py-20"><Loader2 className="animate-spin text-blue-600" size={32} /></div>
@@ -211,25 +235,45 @@ function Activities() {
           ))}
         </div>
 
-        {/* PAGINATION */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-4 py-8">
-            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-3 bg-white rounded-xl border disabled:opacity-20"><ChevronLeft size={20} /></button>
-            <span className="font-bold text-gray-500 bg-white px-5 py-2.5 rounded-xl border text-sm">Page {currentPage} of {totalPages}</span>
-            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="p-3 bg-white rounded-xl border disabled:opacity-20"><ChevronRight size={20} /></button>
+            <button 
+              disabled={currentPage === 1} 
+              onClick={() => setCurrentPage(p => p - 1)} 
+              className="p-3 bg-white rounded-xl border disabled:opacity-20"
+              aria-label="Previous page"
+              title="Previous page"
+            >
+              <ChevronLeft size={20} />
+            </button>
+
+            <span className="font-bold text-gray-500 bg-white px-5 py-2.5 rounded-xl border text-sm">
+              Page {currentPage} of {totalPages}
+            </span>
+
+            <button 
+              disabled={currentPage === totalPages} 
+              onClick={() => setCurrentPage(p => p + 1)} 
+              className="p-3 bg-white rounded-xl border disabled:opacity-20"
+              aria-label="Next page"
+              title="Next page"
+            >
+              <ChevronRight size={20} />
+            </button>
           </div>
         )}
       </section>
 
-      {/* EXERCISE MODAL */}
       {(selectedEx || fetchError) && (
-        <div className="fixed inset-0 z-[999] bg-slate-900/60 backdrop-blur-xl flex justify-center items-center p-4">
+        <div className="fixed inset-0 z-999 bg-slate-900/60 backdrop-blur-xl flex justify-center items-center p-4">
           <div className="fixed inset-0" onClick={() => {setSelectedEx(null); setFetchError(null);}} />
           
           <div className="relative bg-white w-full max-w-2xl rounded-[2.5rem] shadow-2xl animate-in fade-in zoom-in duration-300 flex flex-col max-h-[90vh]">
             <button 
               onClick={() => {setSelectedEx(null); setFetchError(null);}} 
               className="absolute top-5 right-5 p-2 bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-900 rounded-full transition-all z-50"
+              aria-label="Close modal"
+              title="Close"
             >
               <X size={20} strokeWidth={3} />
             </button>
@@ -326,7 +370,6 @@ function Activities() {
         </div>
       )}
 
-      {/* STYLES FOR SCROLLER */}
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 6px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }

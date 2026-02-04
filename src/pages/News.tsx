@@ -26,6 +26,23 @@ interface GalleryHero {
   mediaUrl: string;
 }
 
+// Refined interface to include all possible properties from the API
+interface ApiResponseItem {
+  id: number;
+  attributes?: {
+    title?: string;
+    description?: string;
+    mediaUrl?: string;
+    purpose?: string;
+    subPurpose?: string;
+  } & Partial<BlogPost>;
+  title?: string;
+  description?: string;
+  mediaUrl?: string;
+  purpose?: string;
+  subPurpose?: string;
+}
+
 function News() {
   const XLogo = ({ className = "w-4 h-4" }: { className?: string }) => (
     <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
@@ -65,13 +82,20 @@ function News() {
   useEffect(() => {
     fetch(`${CLIENT_KEY}api/galleries`)
       .then(res => res.json())
-      .then((res: any) => {
+      .then((res: ApiResponseItem[] | { data: ApiResponseItem[] }) => {
         const data = Array.isArray(res) ? res : (res.data || []);
-        const hero = data.find((item: any) => {
+        const hero = data.find((item: ApiResponseItem) => {
           const attr = item.attributes || item;
           return attr.purpose === "Other Page" && attr.subPurpose === "News";
         });
-        if (hero) setHeroData(hero.attributes || hero);
+        if (hero) {
+          const heroAttr = hero.attributes || hero;
+          setHeroData({
+            title: heroAttr.title || "",
+            description: heroAttr.description || "",
+            mediaUrl: heroAttr.mediaUrl || ""
+          });
+        }
       })
       .catch(err => console.error("Hero Fetch Error:", err))
       .finally(() => setLoadingHero(false));
@@ -114,10 +138,7 @@ function News() {
   const totalPages = Math.ceil(filteredBlogs.length / itemsPerPage);
   const currentBlogs = filteredBlogs.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  // FIXED: URL logic to point exactly to your Details page route
   const handleShare = (platform: string, post: BlogPost) => {
-    // Check if your route is '/news-details/' or '/news/'. 
-    // I am using '/news-details/' to match standard details page naming.
     const url = `${window.location.origin}/#/news/${post.slug}`;
     const text = `Check out this news: ${post.title}`;
     
@@ -128,7 +149,7 @@ function News() {
       return;
     }
     
-    const links: any = {
+    const links: Record<string, string> = {
       whatsapp: `https://wa.me/?text=${encodeURIComponent(text + " " + url)}`,
       linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
       x: `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(url)}`,
@@ -138,7 +159,6 @@ function News() {
   };
 
   const handlePostClick = (post: BlogPost) => {
-    // Navigating to the same path used in sharing
     navigate(`/news/${post.slug}`);
   };
 
@@ -176,11 +196,21 @@ function News() {
                 onChange={(e) => setSearchQuery(e.target.value)} 
               />
             </div>
-            <select className="px-4 py-3 bg-gray-100/50 rounded-2xl font-bold text-[10px] uppercase outline-none" value={activeCategory} onChange={(e) => {setActiveCategory(e.target.value); setCurrentPage(1);}}>
+            <select 
+              aria-label="Filter by Category"
+              className="px-4 py-3 bg-gray-100/50 rounded-2xl font-bold text-[10px] uppercase outline-none" 
+              value={activeCategory} 
+              onChange={(e) => {setActiveCategory(e.target.value); setCurrentPage(1);}}
+            >
               <option value="All">All Categories</option>
               {FILTER_OPTIONS.categories.map(c => <option key={c} value={c}>{c}</option>)}
             </select>
-            <select className="px-4 py-3 bg-gray-100/50 rounded-2xl font-bold text-[10px] uppercase outline-none" value={activeState} onChange={(e) => {setActiveState(e.target.value); setCurrentPage(1);}}>
+            <select 
+              aria-label="Filter by Location"
+              className="px-4 py-3 bg-gray-100/50 rounded-2xl font-bold text-[10px] uppercase outline-none" 
+              value={activeState} 
+              onChange={(e) => {setActiveState(e.target.value); setCurrentPage(1);}}
+            >
               <option value="All">All Locations</option>
               {FILTER_OPTIONS.states.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
@@ -201,6 +231,7 @@ function News() {
                 <article key={post.id} className="group bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden cursor-pointer hover:shadow-2xl transition-all duration-500 relative" onClick={() => handlePostClick(post)}>
                   <div className="absolute top-4 right-4 z-40">
                     <button 
+                      aria-label="Share post"
                       onClick={(e) => { e.stopPropagation(); setSharingId(sharingId === post.id ? null : post.id); }}
                       className="p-3 bg-white/20 backdrop-blur-md border border-white/30 text-white rounded-full hover:bg-white hover:text-blue-600 transition-all"
                     >
@@ -208,11 +239,11 @@ function News() {
                     </button>
                     {sharingId === post.id && (
                       <div ref={shareMenuRef} className="absolute right-0 mt-2 flex items-center gap-3 bg-white p-2 rounded-2xl border shadow-xl" onClick={(e) => e.stopPropagation()}>
-                        <button onClick={() => handleShare('facebook', post)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"><Facebook size={18} /></button>
-                        <button onClick={() => handleShare('whatsapp', post)} className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"><MessageCircle size={18} /></button>
-                        <button onClick={() => handleShare('x', post)} className="p-2 text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"><XLogo /></button>
-                        <button onClick={() => handleShare('linkedin', post)} className="p-2 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors"><Linkedin size={18} /></button>
-                        <button onClick={() => handleShare('copy', post)} className="flex items-center gap-2 p-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors">
+                        <button aria-label="Share on Facebook" onClick={() => handleShare('facebook', post)} className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"><Facebook size={18} /></button>
+                        <button aria-label="Share on WhatsApp" onClick={() => handleShare('whatsapp', post)} className="p-2 text-green-600 hover:bg-green-100 rounded-lg transition-colors"><MessageCircle size={18} /></button>
+                        <button aria-label="Share on X" onClick={() => handleShare('x', post)} className="p-2 text-gray-900 hover:bg-gray-200 rounded-lg transition-colors"><XLogo /></button>
+                        <button aria-label="Share on LinkedIn" onClick={() => handleShare('linkedin', post)} className="p-2 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors"><Linkedin size={18} /></button>
+                        <button aria-label="Copy link" onClick={() => handleShare('copy', post)} className="flex items-center gap-2 p-2 text-gray-600 hover:bg-gray-200 rounded-lg transition-colors">
                           {copiedId === post.id ? <Check size={18} className="text-green-500" /> : <Copy size={18} />}
                         </button>
                       </div>
@@ -237,6 +268,7 @@ function News() {
             {totalPages > 1 && (
               <div className="flex justify-center items-center gap-4 mt-16">
                 <button 
+                  aria-label="Previous page"
                   disabled={currentPage === 1} 
                   onClick={() => setCurrentPage(p => p - 1)} 
                   className="p-4 bg-white rounded-2xl border disabled:opacity-30 shadow-sm hover:bg-gray-50 transition-colors"
@@ -247,6 +279,7 @@ function News() {
                   Page {currentPage} of {totalPages}
                 </span>
                 <button 
+                  aria-label="Next page"
                   disabled={currentPage === totalPages} 
                   onClick={() => setCurrentPage(p => p + 1)} 
                   className="p-4 bg-white rounded-2xl border disabled:opacity-30 shadow-sm hover:bg-gray-50 transition-colors"

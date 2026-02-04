@@ -4,17 +4,19 @@ import logo2 from '../assets/img/img2026.jpg'
 import { Instagram, Facebook, Youtube, Mail, MapPin, Linkedin, ArrowUp } from "lucide-react";
 import { Link } from "react-router-dom";
 
+// ✅ Fix: Move XLogo outside of the Footer function to prevent re-creation during render
+const XLogo = ({ className = "w-6 h-6" }: { className?: string }) => (
+    <svg 
+        viewBox="0 0 24 24" 
+        aria-hidden="true" 
+        className={className} 
+        fill="currentColor"
+    >
+        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
+    </svg>
+);
+
 function Footer() {
-    const XLogo = ({ className = "w-6 h-6" }: { className?: string }) => (
-        <svg 
-            viewBox="0 0 24 24" 
-            aria-hidden="true" 
-            className={className} 
-            fill="currentColor"
-        >
-            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
-        </svg>
-    );
     // --- Scroll to Top Logic ---
     const [isVisible, setIsVisible] = useState(false);
 
@@ -132,9 +134,16 @@ function Footer() {
             </div>
 
             {/* Bottom bar */}
-            <div className="max-w-7xl mx-auto border-t border-white/5 pt-8 flex flex-col md:flex-row justify-center items-center gap-4 text-[11px] uppercase tracking-tighter opacity-60">
-                <p>© 2026 À TOI LE MICRO NAIJA. ALL RIGHTS RESERVED.</p>
+            <div className='w-full flex flex-col justify-center items-center h-fit py-1.5 gap-1.5'>
+                <div className='w-full flex flex-row justify-center items-center h-fit gap-1.5'>
+                    <Link to="/privacy" className="hover:text-blue-400 transition-colors">Privacy</Link>
+                    <Link to="/cookies" className="hover:text-blue-400 transition-colors">Cookie</Link>
+                </div>
+                <div className="max-w-7xl mx-auto border-t border-white/5 pt-8 flex flex-col md:flex-row justify-center items-center gap-4 text-[11px] uppercase tracking-tighter opacity-60">
+                    <p>© 2026 À TOI LE MICRO NAIJA. ALL RIGHTS RESERVED.</p>
+                </div>
             </div>
+            
 
             {/* Scroll to Top Button with Smooth Entrance */}
             <button

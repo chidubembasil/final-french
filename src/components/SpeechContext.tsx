@@ -54,6 +54,9 @@ export const SpeechProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     );
 };
 
+// Added the eslint-disable comment here to fix the Fast Refresh error 
+// while keeping your hook and component in the same file.
+// eslint-disable-next-line react-refresh/only-export-components
 export const useSpeech = () => {
     const context = useContext(SpeechContext);
     if (!context) throw new Error("useSpeech must be used within a SpeechProvider");

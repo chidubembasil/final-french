@@ -29,6 +29,29 @@ interface GalleryHero {
   mediaUrl: string;
 }
 
+// ✅ FIXED: Replaced 'any' with specific attribute types
+interface StrapiAttributes extends Partial<Podcast>, Partial<GalleryHero> {
+  purpose?: string;
+  subPurpose?: string;
+}
+
+interface StrapiDataItem {
+  id: number;
+  attributes?: StrapiAttributes;
+  // Allow direct access if Strapi isn't using the 'attributes' wrapper
+  purpose?: string;
+  subPurpose?: string;
+  title?: string;
+  description?: string;
+  mediaUrl?: string;
+  audioUrl?: string;
+  videoUrl?: string;
+}
+
+interface StrapiResponse {
+  data: StrapiDataItem[];
+}
+
 function Podcast() {
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
   const [heroData, setHeroData] = useState<GalleryHero | null>(null);
@@ -46,7 +69,6 @@ function Podcast() {
   const itemsPerPage = 6;
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || '';
 
-  // Dynamically get unique values from fetched data
   const availableTopics = useMemo(() => {
     const topics = podcasts.map(p => p.topic).filter(Boolean) as string[];
     return Array.from(new Set(topics)).sort();
@@ -60,56 +82,56 @@ function Podcast() {
   useEffect(() => {
     const baseUrl = CLIENT_KEY.replace(/\/$/, '');
 
-    // Hero fetch (unchanged logic)
     fetch(`${baseUrl}/api/galleries`)
       .then(res => {
         if (!res.ok) throw new Error('Hero fetch failed');
         return res.json();
       })
-      .then((data: any) => {
+      .then((data: StrapiResponse) => {
         const raw = Array.isArray(data) ? data : (data.data || []);
-        const hero = raw.find((item: any) => 
-          item.purpose === "Other Page" && item.subPurpose === "Podcasts"
-        );
+        // ✅ FIXED: Replaced item: any with StrapiDataItem
+        const hero = raw.find((item: StrapiDataItem) => {
+          const attr = item.attributes || item;
+          return attr.purpose === "Other Page" && attr.subPurpose === "Podcasts";
+        });
         if (hero) {
+          const attr = hero.attributes || hero;
           setHeroData({
-            title: hero.title || hero.attributes?.title || '',
-            description: hero.description || hero.attributes?.description || '',
-            mediaUrl: hero.mediaUrl || hero.attributes?.mediaUrl || '',
+            title: attr.title || '',
+            description: attr.description || '',
+            mediaUrl: attr.mediaUrl || '',
           });
         }
       })
       .catch(err => console.error("Hero fetch error:", err))
       .finally(() => setLoadingHero(false));
 
-    // Podcasts fetch – add filters for published + mediaType if desired
-    // You can extend filters later (e.g. &filters[cefrLevel][$eq]=B2)
     const podcastQuery = `${baseUrl}/api/podcasts?` +
-      `filters[status][$eq]=published&` +           // only published (adjust field name)
-      `filters[mediaType][$in]=audio&filters[mediaType][$in]=video&` + // both types
-      `sort=publishedAt:desc&` +                    // newest first
-      `pagination[page]=1&pagination[pageSize]=100`; // fetch many at once (adjust as needed)
+      `filters[status][$eq]=published&` +
+      `filters[mediaType][$in]=audio&filters[mediaType][$in]=video&` +
+      `sort=publishedAt:desc&` +
+      `pagination[page]=1&pagination[pageSize]=100`;
 
     fetch(podcastQuery)
       .then(res => {
         if (!res.ok) throw new Error(`Podcasts fetch failed: ${res.status}`);
         return res.json();
       })
-      .then(data => {
+      .then((data: StrapiResponse) => {
         const raw = Array.isArray(data) ? data : (data.data || []);
-        const formatted = raw.map((item: any) => {
+        // ✅ FIXED: Replaced item: any with StrapiDataItem
+        const formatted = raw.map((item: StrapiDataItem) => {
           const attrs = item.attributes || item;
           return {
             id: item.id,
             ...attrs,
-            // Make media URLs absolute if relative
             audioUrl: attrs.audioUrl?.startsWith('http') 
               ? attrs.audioUrl 
               : `${baseUrl}${attrs.audioUrl?.startsWith('/') ? '' : '/'}${attrs.audioUrl || ''}`,
             videoUrl: attrs.videoUrl?.startsWith('http') 
               ? attrs.videoUrl 
               : `${baseUrl}${attrs.videoUrl?.startsWith('/') ? '' : '/'}${attrs.videoUrl || ''}`,
-          };
+          } as Podcast;
         });
         setPodcasts(formatted);
       })
@@ -117,7 +139,6 @@ function Podcast() {
       .finally(() => setLoadingPodcasts(false));
   }, [CLIENT_KEY]);
 
-  // Client-side filtering (fast & works offline after load)
   const filteredPodcasts = useMemo(() => {
     return podcasts.filter(item => {
       const matchesSearch = 
@@ -146,7 +167,7 @@ function Podcast() {
   };
 
   const getYouTubeID = (url: string) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
     const match = url?.match(regExp);
     return (match && match[2].length === 11) ? match[2] : null;
   };
@@ -158,7 +179,6 @@ function Podcast() {
 
   return (
     <main className="pt-20 bg-gray-50/50 min-h-screen relative">
-      {/* Hero Section */}
       <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
         {loadingHero ? (
           <div className="absolute inset-0 bg-slate-800 animate-pulse" />
@@ -188,7 +208,6 @@ function Podcast() {
         )}
       </div>
 
-      {/* Filters and Content */}
       <div className="px-4 md:px-8 py-12 max-w-7xl mx-auto">
         <div className="flex flex-col gap-6 mb-12 bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -206,6 +225,7 @@ function Podcast() {
               />
             </div>
             <select 
+              aria-label="Filter by topic"
               className="px-4 py-3 rounded-2xl border border-gray-200 bg-gray-50/50 font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500" 
               value={topicFilter} 
               onChange={(e) => {
@@ -221,7 +241,9 @@ function Podcast() {
             <div className="flex bg-gray-100 p-1 rounded-xl">
               {['All', 'Audio', 'Video'].map(m => (
                 <button 
+                  type="button"
                   key={m} 
+                  aria-label={`Show ${m} podcasts`}
                   onClick={() => {
                     setMediaFilter(m);
                     setCurrentPage(1);
@@ -236,7 +258,9 @@ function Podcast() {
           <div className="flex gap-2 pt-4 border-t border-gray-100 overflow-x-auto no-scrollbar">
             {availableLevels.map(lvl => (
               <button 
+                type="button"
                 key={lvl} 
+                aria-label={`Filter by level ${lvl}`}
                 onClick={() => {
                   setLevelFilter(lvl);
                   setCurrentPage(1);
@@ -301,6 +325,7 @@ function Podcast() {
                     </div>
 
                     <button 
+                      type="button"
                       onClick={() => setActivePodcast(item)} 
                       className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all"
                     >
@@ -314,6 +339,8 @@ function Podcast() {
             {totalPages > 1 && (
               <div className="flex justify-center items-center gap-4 mt-12">
                 <button 
+                  type="button"
+                  aria-label="Previous page"
                   disabled={currentPage === 1} 
                   onClick={() => setCurrentPage(p => p - 1)} 
                   className="p-4 bg-white border border-gray-100 rounded-2xl disabled:opacity-20 hover:bg-gray-50 transition-all shadow-sm"
@@ -322,6 +349,8 @@ function Podcast() {
                 </button>
                 <p className="text-xs font-black text-gray-400 uppercase">Page {currentPage} of {totalPages}</p>
                 <button 
+                  type="button"
+                  aria-label="Next page"
                   disabled={currentPage === totalPages} 
                   onClick={() => setCurrentPage(p => p + 1)} 
                   className="p-4 bg-white border border-gray-100 rounded-2xl disabled:opacity-20 hover:bg-gray-50 transition-all shadow-sm"
@@ -334,16 +363,16 @@ function Podcast() {
         )}
       </div>
 
-      {/* Full-Screen Immersive Modal */}
       {activePodcast && (
         <div className="fixed inset-0 z-[9999] bg-white overflow-y-auto flex flex-col" onClick={() => setActivePodcast(null)}>
           <div className="sticky top-0 bg-white/80 backdrop-blur-xl border-b p-6 md:p-10 flex justify-between items-center z-50">
-            <button onClick={() => setActivePodcast(null)} className="flex items-center gap-2 text-gray-400 hover:text-blue-600 transition-all group">
+            <button type="button" onClick={() => setActivePodcast(null)} className="flex items-center gap-2 text-gray-400 hover:text-blue-600 transition-all group">
               <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
               <span className="text-[10px] font-black uppercase">Back to Podcasts</span>
             </button>
             <div className="flex gap-3">
               <button 
+                type="button"
                 onClick={(e) => { 
                   e.stopPropagation(); 
                   if (activePodcast.transcript) handleCopyTranscript(activePodcast.transcript); 
@@ -354,7 +383,7 @@ function Podcast() {
                 {copied ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
                 {copied ? 'Copied' : 'Copy Transcript'}
               </button>
-              <button onClick={() => setActivePodcast(null)} className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-all">
+              <button type="button" aria-label="Close modal" onClick={() => setActivePodcast(null)} className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-all">
                 <X size={24} />
               </button>
             </div>

@@ -17,6 +17,8 @@ import News from "./pages/News";
 import BAC from "./pages/Bac";
 import Activites from "./pages/Activity";
 import NewsDetail from "./pages/NewsDetail";
+import PrivacyPolicy from "./components/privacyPolicy";
+import CookiePolicy from "./components/CookiePolicy";
 
 const App: React.FC = () => {
   return (
@@ -37,6 +39,8 @@ const App: React.FC = () => {
             <Route path="/activities" element={<Activites />} />
             <Route path="*" element={<Home />} />
             <Route path="/news/:slug" element={<NewsDetail />} />
+            <Route path="/privacy" element={<PrivacyPolicy />}/>
+            <Route path="/cookies" element={<CookiePolicy />}/>
           </Routes>
         </main>
 

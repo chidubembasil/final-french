@@ -5,6 +5,26 @@ import { useSpeech } from './SpeechContext';
 import logo from '../assets/img/logo.png';
 import logo2 from '../assets/img/ambassade de france.png';
 
+// ✅ Fix: Extended the Window interface with specific types instead of 'any'
+declare global {
+    interface Window {
+        google: {
+            translate: {
+                TranslateElement: new (
+                    options: {
+                        pageLanguage: string;
+                        includedLanguages?: string;
+                        autoDisplay?: boolean;
+                        layout?: number;
+                    },
+                    elementId: string
+                ) => void;
+            };
+        };
+        googleTranslateElementInit: () => void;
+    }
+}
+
 function Header() {
     const { speak, isSpeaking, stop } = useSpeech();
     const [isOpen, setIsOpen] = useState(false);
@@ -43,8 +63,10 @@ function Header() {
 
     useEffect(() => {
         if (window.document.getElementById('google-translate-script')) return;
-        (window as any).googleTranslateElementInit = () => {
-            new (window as any).google.translate.TranslateElement({
+        
+        window.googleTranslateElementInit = () => {
+            // This now references the typed interface instead of 'any'
+            new window.google.translate.TranslateElement({
                 pageLanguage: 'en',
                 includedLanguages: 'en,fr',
                 autoDisplay: false,
@@ -59,9 +81,9 @@ function Header() {
     }, []);
 
     return (
-        <header className="h-20 w-full px-6 fixed top-0 left-0 z-[1000] bg-white border-b border-gray-100 flex justify-between items-center shadow-sm">
+        <header className="h-20 w-full px-6 fixed top-0 left-0 z-1000 bg-white border-b border-gray-100 flex justify-between items-center shadow-sm">
             <style>{`.goog-te-banner-frame.skiptranslate, .goog-te-gadget-simple, .goog-te-balloon-frame, #goog-gt-tt, .skiptranslate { display: none !important; } body { top: 0px !important; }`}</style>
-            <div id="google_translate_element" style={{ display: 'none' }}></div>
+            <div id="google_translate_element" className="hidden"></div>
 
             <Link to="/" className="shrink-0 flex flex-row gap-0.5">
                 <img src={logo2} alt="Ambassade" className="w-12 h-12 md:w-14 object-contain" />
@@ -78,6 +100,7 @@ function Header() {
 
             <div className="flex items-center gap-4">
                 <button 
+                    type="button"
                     onClick={handleSpeak}
                     className={`p-2 rounded-full transition-all duration-300 ${isSpeaking ? 'bg-red-100 text-red-600' : 'bg-gray-50 text-blue-600 hover:bg-blue-100'}`}
                     aria-label="Listen to content"
@@ -89,19 +112,24 @@ function Header() {
                 {!isActivitiesPage && (
                     <div className='flex flex-row items-center gap-1 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200'>
                         <Globe size={16} className={isLoaded ? "text-blue-600" : "text-gray-400"} />
-                        <select onChange={handleLanguageChange} className='bg-transparent text-[10px] md:text-xs font-bold outline-none cursor-pointer uppercase'>
+                        <select 
+                            onChange={handleLanguageChange} 
+                            className='bg-transparent text-[10px] md:text-xs font-bold outline-none cursor-pointer uppercase'
+                            aria-label="Select Language" 
+                            title="Select Language"
+                        >
                             <option value="en">English</option>
                             <option value="fr">Français</option>
                         </select>
                     </div>
                 )}
 
-                <button className="lg:hidden p-2 text-gray-600" onClick={() => setIsOpen(!isOpen)}>
+                <button type="button" className="lg:hidden p-2 text-gray-600" onClick={() => setIsOpen(!isOpen)}>
                     {isOpen ? <X size={28} /> : <Menu size={28} />}
                 </button>
             </div>
 
-            <div className={`fixed inset-0 top-20 bg-white z-[900] transition-transform duration-300 lg:hidden ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+            <div className={`fixed inset-0 top-20 bg-white z-900 transition-transform duration-300 lg:hidden ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
                 <nav className="flex flex-col p-6 gap-2">
                     {navLink.map((item, index) => (
                         <NavLink to={item.path} key={index} onClick={() => setIsOpen(false)} className={({ isActive }) => `text-lg p-4 rounded-xl ${isActive ? "bg-blue-600 text-white" : "text-gray-800"}`}>

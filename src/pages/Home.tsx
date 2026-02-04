@@ -5,9 +5,8 @@ import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 
 // Swiper Styles
-// @ts-ignore
 import "swiper/css";
-// @ts-ignore
+// @ts-expect-error - CSS bundle may not have type declarations in some environments
 import "swiper/css/bundle";
 
 // Component Imports
@@ -29,6 +28,16 @@ interface GalleryItem {
     subPurpose: string;
 }
 
+interface RawGalleryResponse {
+    id: number;
+    attributes?: Omit<GalleryItem, 'id'>;
+    title?: string;
+    description?: string;
+    mediaUrl?: string;
+    purpose?: string;
+    subPurpose?: string;
+}
+
 export default function Home() {
     const [sliderItems, setSliderItems] = useState<GalleryItem[]>([]);
     const [loading, setLoading] = useState(true);
@@ -44,13 +53,14 @@ export default function Home() {
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 
                 const data = await response.json();
-                const rawData = Array.isArray(data) ? data : (data.data || []);
+                const rawData: RawGalleryResponse[] = Array.isArray(data) ? data : (data.data || []);
                 
-                // Map and Filter items for the homepage
-                const filtered = rawData.map((item: any) => ({
+                const filtered = rawData.map((item: RawGalleryResponse) => ({
                     id: item.id,
                     ...(item.attributes || item)
-                })).filter((item: any) => item.purpose?.toLowerCase().trim() === "homepage image");
+                } as GalleryItem)).filter((item: GalleryItem) => 
+                    item.purpose?.toLowerCase().trim() === "homepage image"
+                );
                 
                 setSliderItems(filtered);
             } catch (err) {
@@ -63,12 +73,6 @@ export default function Home() {
         fetchSliderData();
     }, [CLIENT_KEY]);
 
-    /**
-     * Maps the API subPurpose to internal routes and section IDs
-     * fef -> #resource
-     * atoile -> #activities
-     * bac -> #bac
-     */
     const getNavLinks = (subPurpose: string) => {
         const lowerSub = subPurpose?.toLowerCase().trim();
         if (lowerSub === 'fef') {
@@ -81,10 +85,9 @@ export default function Home() {
         return { page: "/", anchor: "#about" };
     };
 
-    // ─── Added helper for smooth scrolling ───────────────────────────────
     const scrollToSection = (subPurpose: string) => {
         const lower = subPurpose?.toLowerCase().trim();
-        let targetId = "about"; // fallback
+        let targetId = "about"; 
 
         if (lower === "fef")      targetId = "resource";
         else if (lower === "atoile") targetId = "activities";
@@ -122,7 +125,6 @@ export default function Home() {
 
     return (
         <main className='w-full h-fit pt-12 bg-white scroll-smooth'>
-            {/* Hero Slider Section */}
             <div id="slider" className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
                 <AnimatePresence mode="wait">
                     {sliderItems.length > 0 ? (
@@ -200,7 +202,6 @@ export default function Home() {
                 </AnimatePresence>
             </div>
 
-            {/* Scrollable Content Sections */}
             <div className="flex flex-col gap-0 overflow-hidden">
                 <section id="about" className="scroll-mt-20">
                     <AboutUs />

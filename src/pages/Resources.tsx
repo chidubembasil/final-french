@@ -12,8 +12,8 @@ import {
   Copy,
   Check,
   Download,
-  CalendarDays, // Added for Events
-  Trophy // Added for Ranking
+  CalendarDays,
+  Trophy
 } from "lucide-react";
 import { useState, useEffect, useMemo, useRef } from 'react';
 
@@ -36,6 +36,32 @@ interface GalleryHero {
   title: string;
   description: string;
   mediaUrl: string;
+}
+
+// ✅ Fixed: Added specific attribute types to replace 'any'
+interface StrapiAttributes extends Partial<Pedagogy>, Partial<GalleryHero> {
+  purpose?: string;
+  subPurpose?: string;
+}
+
+interface StrapiItem {
+  id: number;
+  attributes?: StrapiAttributes;
+  // Fallback for direct properties if not using Strapi's data/attributes wrapper
+  title?: string;
+  description?: string;
+  mediaUrl?: string;
+  purpose?: string;
+  subPurpose?: string;
+  category?: string;
+  url?: string;
+  level?: string;
+  skillType?: string;
+  theme?: string;
+}
+
+interface StrapiResponse {
+  data: StrapiItem[];
 }
 
 function Pedagogies() {
@@ -82,7 +108,7 @@ function Pedagogies() {
     return 'link';
   };
 
-  const handleDownload = async (e: React.MouseEvent, item: Pedagogy) => {
+  const handleDownload = async (e: React.MouseEvent | React.KeyboardEvent, item: Pedagogy) => {
     e.stopPropagation();
     setDownloadingId(item.id);
     try {
@@ -138,31 +164,34 @@ function Pedagogies() {
           fetch(`${CLIENT_KEY}api/resources`)
         ]);
 
-        const heroes = await heroRes.json();
-        const peds = await pedRes.json();
-        const resources = await resRes.json();
+        const heroes: StrapiResponse = await heroRes.json();
+        const peds: StrapiResponse = await pedRes.json();
+        const resources: StrapiResponse = await resRes.json();
         
-        const heroArray = Array.isArray(heroes) ? heroes : (heroes.data || []);
-        const hero = heroArray.find((item: any) => {
+        const heroArray = Array.isArray(heroes) ? (heroes as unknown as StrapiItem[]) : (heroes.data || []);
+        // ✅ Fixed: Replaced item: any with StrapiItem
+        const hero = heroArray.find((item: StrapiItem) => {
           const attr = item.attributes || item;
           return attr.purpose?.toLowerCase().trim() === "other page" && 
                  attr.subPurpose?.toLowerCase().trim() === "resources";
         });
-        if (hero) setHeroData(hero.attributes || hero);
+        if (hero) setHeroData((hero.attributes || hero) as GalleryHero);
         
-        const pedData = Array.isArray(peds) ? peds : (peds.data || []);
-        const normalizedPeds = pedData.map((p: any) => ({
+        const pedData = Array.isArray(peds) ? (peds as unknown as StrapiItem[]) : (peds.data || []);
+        // ✅ Fixed: Replaced p: any with StrapiItem
+        const normalizedPeds = pedData.map((p: StrapiItem) => ({
           id: p.id,
           sourceType: 'pedagogy' as const,
           ...(p.attributes || p)
-        }));
+        })) as Pedagogy[];
 
-        const resData = Array.isArray(resources) ? resources : (resources.data || []);
-        const normalizedRes = resData.map((r: any) => ({
+        const resData = Array.isArray(resources) ? (resources as unknown as StrapiItem[]) : (resources.data || []);
+        // ✅ Fixed: Replaced r: any with StrapiItem
+        const normalizedRes = resData.map((r: StrapiItem) => ({
           id: r.id,
           sourceType: 'resource' as const,
           ...(r.attributes || r)
-        }));
+        })) as Pedagogy[];
 
         const combined = [...normalizedPeds, ...normalizedRes];
         setPedagogies(combined);
@@ -190,7 +219,6 @@ function Pedagogies() {
 
   const filteredPedagogies = useMemo(() => {
     return pedagogies.filter(item => {
-      // Exclude Special Events and Rankings from the general filterable grid
       const isGeneralResource = item.category !== "Special Event" && item.category !== "Ranking";
       const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase());
       const matchesLevel = pedLevel === 'All' || item.level === pedLevel;
@@ -247,10 +275,7 @@ function Pedagogies() {
         </div>
       </div>
 
-      {/* --- NEW SECTIONS: SPECIAL EVENTS & RANKINGS --- */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
-        {/* SECTION 1: Special Events (Dynamic & Updatable) */}
         <div className="bg-white rounded-[3rem] p-8 border border-gray-100 shadow-sm flex flex-col">
           <div className="flex items-center gap-4 mb-6">
             <div className="bg-red-50 p-3 rounded-2xl text-red-600">
@@ -271,7 +296,8 @@ function Pedagogies() {
                     <h4 className="font-bold text-lg text-slate-800">{event.title}</h4>
                     <p className="text-sm text-gray-500 line-clamp-1">{event.description}</p>
                   </div>
-                  <button onClick={(e) => handleDownload(e as any, event)} className="p-3 bg-white rounded-xl shadow-sm group-hover:bg-red-600 group-hover:text-white transition-all">
+                  {/* ✅ Fixed: Replaced e as any with React.MouseEvent */}
+                  <button type="button" aria-label={`Download ${event.title}`} onClick={(e: React.MouseEvent) => handleDownload(e, event)} className="p-3 bg-white rounded-xl shadow-sm group-hover:bg-red-600 group-hover:text-white transition-all">
                     <Download size={18} />
                   </button>
                 </div>
@@ -282,7 +308,6 @@ function Pedagogies() {
           </div>
         </div>
 
-        {/* SECTION 2: Student Rankings (Flexible List) */}
         <div className="bg-slate-900 rounded-[3rem] p-8 text-white shadow-xl relative overflow-hidden flex flex-col">
           <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-full blur-3xl" />
           
@@ -291,7 +316,7 @@ function Pedagogies() {
               <div className="bg-yellow-500/20 p-3 rounded-2xl text-yellow-500">
                 <Trophy size={28} />
               </div>
-              <h3 className="text-xl font-bold">Student Hall of Fame</h3>
+              <h3 className="text-xl font-bold">Teachers Hall of Fame</h3>
             </div>
             <div className="px-3 py-1 bg-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest">Global Rank</div>
           </div>
@@ -322,35 +347,33 @@ function Pedagogies() {
       </div>
 
       <div className="px-4 md:px-8 py-12 max-w-7xl mx-auto">
-        {/* Filters */}
         <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-gray-100 mb-12 space-y-8">
           <div className="relative flex-1">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
             <input type="text" placeholder="Search resources..." className="w-full pl-14 pr-6 py-4 rounded-2xl bg-gray-50 outline-none focus:ring-2 focus:ring-[#45B1A8]" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <select value={pedLevel} onChange={(e) => setPedLevel(e.target.value)} className="px-4 py-3.5 rounded-2xl bg-gray-50 text-xs font-bold text-gray-600">
+            <select aria-label="Filter by level" value={pedLevel} onChange={(e) => setPedLevel(e.target.value)} className="px-4 py-3.5 rounded-2xl bg-gray-50 text-xs font-bold text-gray-600">
               {levelOptions.map(l => <option key={l} value={l}>{l === 'All' ? 'All Levels' : l}</option>)}
             </select>
-            <select value={pedSkill} onChange={(e) => setPedSkill(e.target.value)} className="px-4 py-3.5 rounded-2xl bg-gray-50 text-xs font-bold text-gray-600">
+            <select aria-label="Filter by skill type" value={pedSkill} onChange={(e) => setPedSkill(e.target.value)} className="px-4 py-3.5 rounded-2xl bg-gray-50 text-xs font-bold text-gray-600">
               {skillOptions.map(s => <option key={s} value={s}>{s === 'All' ? 'All Skills' : s}</option>)}
             </select>
-            <select value={pedTheme} onChange={(e) => setPedTheme(e.target.value)} className="px-4 py-3.5 rounded-2xl bg-gray-50 text-xs font-bold text-gray-600">
+            <select aria-label="Filter by theme" value={pedTheme} onChange={(e) => setPedTheme(e.target.value)} className="px-4 py-3.5 rounded-2xl bg-gray-50 text-xs font-bold text-gray-600">
               {themeOptions.map(t => <option key={t} value={t}>{t === 'All' ? 'All Themes' : t}</option>)}
             </select>
           </div>
         </div>
 
-        {/* Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {currentItems.map((item) => (
             <div 
               key={`${item.sourceType}-${item.id}`} 
-              onClick={(e) => {
+              onClick={(e: React.MouseEvent) => {
                 if (item.sourceType === 'resource') {
                     window.open(item.url, '_blank', 'noopener,noreferrer');
                 } else {
-                    handleDownload(e as any, item);
+                    handleDownload(e, item);
                 }
               }} 
               className="group bg-white p-8 rounded-[3rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all cursor-pointer flex flex-col relative"
@@ -360,21 +383,21 @@ function Pedagogies() {
                   {getItemType(item.url) === 'pdf' ? <FileText size={24} /> : <BookOpen size={24} />}
                 </div>
                 <div className="flex gap-2 relative">
-                  <button onClick={(e) => { e.stopPropagation(); setSharingId(sharingId === item.id ? null : item.id); }} className="p-3 hover:bg-gray-100 rounded-full text-gray-400">
+                  <button type="button" aria-label="Share resource" onClick={(e: React.MouseEvent) => { e.stopPropagation(); setSharingId(sharingId === item.id ? null : item.id); }} className="p-3 hover:bg-gray-100 rounded-full text-gray-400">
                     <Share2 size={18} />
                   </button>
                   
                   {item.sourceType === 'pedagogy' && (
-                    <button onClick={(e) => handleDownload(e, item)} className="p-3 hover:bg-gray-100 rounded-full text-[#45B1A8]">
+                    <button type="button" aria-label="Download pedagogy" onClick={(e: React.MouseEvent) => handleDownload(e, item)} className="p-3 hover:bg-gray-100 rounded-full text-[#45B1A8]">
                       {downloadingId === item.id ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
                     </button>
                   )}
 
                   {sharingId === item.id && (
-                    <div ref={shareMenuRef} className="absolute top-12 right-0 z-30 bg-white border p-3 rounded-2xl shadow-xl flex gap-4" onClick={(e) => e.stopPropagation()}>
-                      <button onClick={(e) => handleShare(e, 'x', item)} className="text-gray-400 hover:text-black"><XLogo /></button>
-                      <button onClick={(e) => handleShare(e, 'whatsapp', item)} className="text-gray-400 hover:text-green-500"><MessageCircle size={20}/></button>
-                      <button onClick={(e) => handleShare(e, 'copy', item)} className="text-gray-400">
+                    <div ref={shareMenuRef} className="absolute top-12 right-0 z-30 bg-white border p-3 rounded-2xl shadow-xl flex gap-4" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
+                      <button type="button" aria-label="Share on X" onClick={(e: React.MouseEvent) => handleShare(e, 'x', item)} className="text-gray-400 hover:text-black"><XLogo /></button>
+                      <button type="button" aria-label="Share on WhatsApp" onClick={(e: React.MouseEvent) => handleShare(e, 'whatsapp', item)} className="text-gray-400 hover:text-green-500"><MessageCircle size={20}/></button>
+                      <button type="button" aria-label="Copy link" onClick={(e: React.MouseEvent) => handleShare(e, 'copy', item)} className="text-gray-400">
                         {copiedId === item.id ? <Check size={20} className="text-green-500" /> : <Copy size={20} />}
                       </button>
                     </div>
@@ -387,11 +410,11 @@ function Pedagogies() {
               
               <div className="mt-auto pt-6 border-t border-gray-50 flex items-center justify-between">
                 {item.sourceType === 'pedagogy' ? (
-                  <button onClick={(e) => handleDownload(e, item)} className="flex items-center gap-2 text-[#45B1A8] font-bold text-xs uppercase">
+                  <button type="button" onClick={(e: React.MouseEvent) => handleDownload(e, item)} className="flex items-center gap-2 text-[#45B1A8] font-bold text-xs uppercase">
                     Download {downloadingId === item.id ? <Loader2 className="animate-spin" size={16} /> : <Download size={16} />}
                   </button>
                 ) : (
-                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-600 font-bold text-xs uppercase" onClick={(e) => e.stopPropagation()}>
+                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-blue-600 font-bold text-xs uppercase" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                     Go to Resource <ExternalLink size={16} />
                   </a>
                 )}
@@ -400,12 +423,11 @@ function Pedagogies() {
           ))}
         </div>
 
-        {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex justify-center items-center gap-4 py-12">
-            <button disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-4 bg-white rounded-2xl border disabled:opacity-20 shadow-sm"><ChevronLeft /></button>
+            <button type="button" aria-label="Previous page" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-4 bg-white rounded-2xl border disabled:opacity-20 shadow-sm"><ChevronLeft /></button>
             <span className="font-bold text-gray-500">Page {currentPage} of {totalPages}</span>
-            <button disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="p-4 bg-white rounded-2xl border disabled:opacity-20 shadow-sm"><ChevronRight /></button>
+            <button type="button" aria-label="Next page" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="p-4 bg-white rounded-2xl border disabled:opacity-20 shadow-sm"><ChevronRight /></button>
           </div>
         )}
       </div>

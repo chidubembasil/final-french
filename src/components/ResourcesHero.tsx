@@ -2,29 +2,38 @@ import { BookOpen, FileText, Video, Link as LinkIcon, Download, ArrowRight } fro
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+// Added interface to fix "any" error
+interface Resource {
+    id?: string | number;
+    _id?: string | number;
+    url: string;
+    type: string;
+    title?: string;
+    name?: string;
+    description?: string;
+    summary?: string;
+}
+
 export default function ResourceHero() {
-    // ✅ Keep as empty array to prevent .map() crashes
-    const [resources, setResources] = useState([]);
+    // ✅ Typed as Resource[] to fix ESLint any
+    const [resources, setResources] = useState<Resource[]>([]);
+    // Defaulting to true so we don't need to call setLoading(true) inside useEffect
     const [loading, setLoading] = useState(true);
     const navigate = useNavigate();
     
-    // Ensure the key exists or fallback to empty string
     const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || "";
 
     useEffect(() => {
-        setLoading(true);
+        // Removed redundant setLoading(true) call to fix cascading render error
         fetch(`${CLIENT_KEY}api/resources?limit=4`)
             .then((res) => {
-                // Check if response is okay before parsing JSON
                 if (!res.ok) throw new Error('Network response was not ok');
                 return res.json();
             })
             .then((data) => {
                 console.log("Resource Data:", data);
                 
-                // ✅ CRITICAL FIX: Robust check for Array
-                // This handles cases where data is { data: [...] }, an array [...], or null
-                let finalData = [];
+                let finalData: Resource[] = [];
                 if (Array.isArray(data)) {
                     finalData = data;
                 } else if (data && Array.isArray(data.data)) {
@@ -36,13 +45,12 @@ export default function ResourceHero() {
             })
             .catch((err) => {
                 console.error("Resource fetch error:", err);
-                setResources([]); // ✅ Reset to empty array on error to prevent .map crash
+                setResources([]); 
                 setLoading(false);
             });
-    }, [CLIENT_KEY]); // Added CLIENT_KEY as dependency
+    }, [CLIENT_KEY]);
 
     const getTypeStyles = (type: string) => {
-        // Safe check for type
         const t = typeof type === 'string' ? type.toUpperCase() : 'DEFAULT';
         if (t === 'PDF') return { bg: 'bg-blue-50', text: 'text-blue-600', icon: <FileText size={24} /> };
         if (t === 'VIDEO') return { bg: 'bg-red-50', text: 'text-red-600', icon: <Video size={24} /> };
@@ -66,8 +74,8 @@ export default function ResourceHero() {
                         <div key={n} className="h-32 w-full bg-gray-200 animate-pulse rounded-[2.5rem]" />
                     ))
                 ) : (Array.isArray(resources) && resources.length > 0) ? (
-                    resources.map((res: any, index: number) => {
-                        // Safe access to styles
+                    // Changed type to Resource
+                    resources.map((res: Resource, index: number) => {
                         const styles = getTypeStyles(res?.type);
                         return (
                             <a
@@ -92,8 +100,9 @@ export default function ResourceHero() {
                                     </p>
                                 </div>
                                 <div className="ml-4 opacity-20 group-hover:opacity-100 group-hover:translate-x-2 transition-all">
-                                    <a href={res.url} target="_blank" rel="noopener noreferrer" className='text-black bg-black text'><ArrowRight size={20}  /></a>
-                                    
+                                    <div className='text-black bg-black text'>
+                                        <ArrowRight size={20} />
+                                    </div>
                                 </div>
                             </a>
                         );

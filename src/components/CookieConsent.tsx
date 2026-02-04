@@ -4,10 +4,19 @@ import { X, Cookie, Shield, Settings } from 'lucide-react';
 const CookieConsent = () => {
   const [showBanner, setShowBanner] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [preferences, setPreferences] = useState({
-    necessary: true,
-    analytics: false,
-    marketing: false,
+
+  // FIXED: Using a lazy initializer function to read localStorage once on mount.
+  // This prevents the "cascading render" error by avoiding setState inside useEffect.
+  const [preferences, setPreferences] = useState(() => {
+    const consent = typeof window !== 'undefined' ? localStorage.getItem('cookieConsent') : null;
+    if (consent) {
+      try {
+        return JSON.parse(consent);
+      } catch {
+        return { necessary: true, analytics: false, marketing: false };
+      }
+    }
+    return { necessary: true, analytics: false, marketing: false };
   });
 
   useEffect(() => {
@@ -15,14 +24,8 @@ const CookieConsent = () => {
     if (!consent) {
       const timer = setTimeout(() => setShowBanner(true), 1000);
       return () => clearTimeout(timer);
-    } else {
-      try {
-        const savedPreferences = JSON.parse(consent);
-        setPreferences(savedPreferences);
-      } catch (e) {
-        setShowBanner(true);
-      }
     }
+    // No longer calling setPreferences here, preventing the cascading render error.
   }, []);
 
   const acceptAll = () => {
@@ -55,7 +58,6 @@ const CookieConsent = () => {
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t-4 border-blue-600 shadow-[0_-10px_50px_rgba(0,0,0,0.2)] z-[999] animate-slide-up">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col md:flex-row items-start gap-6">
-            {/* Blue Icon Section */}
             <div className="flex-shrink-0 bg-blue-50 p-4 rounded-2xl">
               <Cookie className="w-8 h-8 text-blue-600" />
             </div>
@@ -71,14 +73,14 @@ const CookieConsent = () => {
               </p>
               
               <div className="mt-4 flex gap-4 text-[10px] font-black uppercase tracking-widest">
-                <a href="/privacy-policy" className="text-blue-600 hover:text-red-600 transition-colors underline">Privacy Policy</a>
-                <a href="/cookie-policy" className="text-blue-600 hover:text-red-600 transition-colors underline">Cookie Policy</a>
+                <a href="/privacy" className="text-blue-600 hover:text-red-600 transition-colors underline">Privacy Policy</a>
+                <a href="/cookies" className="text-blue-600 hover:text-red-600 transition-colors underline">Cookie Policy</a>
               </div>
             </div>
 
-            {/* Buttons: Blue and Red Theme */}
             <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto shrink-0 pt-2">
               <button
+                type="button"
                 onClick={() => setShowSettings(true)}
                 className="flex items-center justify-center gap-2 px-6 py-3 border-2 border-slate-200 text-slate-600 rounded-xl hover:bg-slate-50 transition-all font-bold text-xs uppercase tracking-widest"
               >
@@ -86,12 +88,14 @@ const CookieConsent = () => {
                 Settings
               </button>
               <button
+                type="button"
                 onClick={acceptNecessary}
                 className="px-6 py-3 bg-red-50 text-red-600 border border-red-100 rounded-xl hover:bg-red-600 hover:text-white transition-all font-bold text-xs uppercase tracking-widest"
               >
                 Necessary Only
               </button>
               <button
+                type="button"
                 onClick={acceptAll}
                 className="px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all font-bold text-xs uppercase tracking-widest"
               >
@@ -99,7 +103,12 @@ const CookieConsent = () => {
               </button>
             </div>
 
-            <button onClick={acceptNecessary} className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors">
+            <button 
+              type="button"
+              aria-label="Close and accept necessary cookies"
+              onClick={acceptNecessary} 
+              className="absolute top-4 right-4 text-slate-300 hover:text-red-500 transition-colors"
+            >
               <X size={20} />
             </button>
           </div>
@@ -116,13 +125,17 @@ const CookieConsent = () => {
                   <Shield className="w-6 h-6 text-red-600" />
                   <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tighter">Cookie <span className="text-blue-600">Control</span></h2>
                 </div>
-                <button onClick={() => setShowSettings(false)} className="p-2 hover:bg-slate-100 rounded-full transition-colors">
+                <button 
+                  type="button"
+                  aria-label="Close settings"
+                  onClick={() => setShowSettings(false)} 
+                  className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+                >
                   <X className="w-6 h-6 text-slate-400" />
                 </button>
               </div>
 
               <div className="space-y-4">
-                {/* Necessary (Red Badge) */}
                 <div className="p-5 bg-slate-50 rounded-2xl border border-slate-100">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-bold text-slate-900">Essential Data</h3>
@@ -131,26 +144,36 @@ const CookieConsent = () => {
                   <p className="text-xs text-slate-500 leading-relaxed">Required for core site features and security.</p>
                 </div>
 
-                {/* Analytics (Blue Toggle) */}
                 <div className="p-5 border border-slate-100 rounded-2xl flex items-center justify-between hover:border-blue-200 transition-colors">
                   <div>
                     <h3 className="font-bold text-slate-900">Analytics</h3>
                     <p className="text-xs text-slate-500">Helps us understand how you use the platform.</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" checked={preferences.analytics} onChange={(e) => setPreferences({ ...preferences, analytics: e.target.checked })} className="sr-only peer"/>
+                    <input 
+                      type="checkbox" 
+                      aria-label="Toggle Analytics cookies"
+                      checked={preferences.analytics} 
+                      onChange={(e) => setPreferences({ ...preferences, analytics: e.target.checked })} 
+                      className="sr-only peer"
+                    />
                     <div className="w-12 h-6 bg-slate-200 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
                 </div>
 
-                {/* Marketing (Blue Toggle) */}
                 <div className="p-5 border border-slate-100 rounded-2xl flex items-center justify-between hover:border-blue-200 transition-colors">
                   <div>
                     <h3 className="font-bold text-slate-900">Marketing</h3>
                     <p className="text-xs text-slate-500">Enables personalized content and social media features.</p>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" checked={preferences.marketing} onChange={(e) => setPreferences({ ...preferences, marketing: e.target.checked })} className="sr-only peer"/>
+                    <input 
+                      type="checkbox" 
+                      aria-label="Toggle Marketing cookies"
+                      checked={preferences.marketing} 
+                      onChange={(e) => setPreferences({ ...preferences, marketing: e.target.checked })} 
+                      className="sr-only peer"
+                    />
                     <div className="w-12 h-6 bg-slate-200 peer-focus:ring-2 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                   </label>
                 </div>
@@ -158,12 +181,14 @@ const CookieConsent = () => {
 
               <div className="mt-10 grid grid-cols-2 gap-4">
                 <button
+                  type="button"
                   onClick={acceptAll}
                   className="w-full py-4 text-blue-600 font-black uppercase tracking-widest bg-blue-50 rounded-2xl hover:bg-blue-600 hover:text-white transition-all text-[10px]"
                 >
                   Accept All
                 </button>
                 <button
+                  type="button"
                   onClick={savePreferences}
                   className="w-full py-4 bg-red-600 text-white font-black uppercase tracking-widest rounded-2xl hover:bg-red-700 shadow-lg shadow-red-100 transition-all text-[10px]"
                 >
@@ -175,7 +200,7 @@ const CookieConsent = () => {
         </div>
       )}
     </>
-  );
+  ); 
 };
 
 export default CookieConsent;

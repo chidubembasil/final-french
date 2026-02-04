@@ -2,8 +2,19 @@ import { Newspaper, ArrowRight, Calendar } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+// Added this interface to fix the "any" errors
+interface NewsItem {
+    id?: string | number;
+    slug: string;
+    title: string;
+    imageUrl?: string;
+    coverImage?: string;
+    publishedAt?: string;
+}
+
 export default function NewsHero() {
-    const [news, setNews] = useState<any[]>([]);
+    // Replaced any[] with NewsItem[]
+    const [news, setNews] = useState<NewsItem[]>([]);
     const navigate = useNavigate();
     const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || "";
 
@@ -32,7 +43,8 @@ export default function NewsHero() {
             {/* --- News Grid --- */}
             <div className="w-[90%] max-w-7xl grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                 {news.length > 0 ? (
-                    news.map((item: any) => (
+                    // Replaced (item: any) with (item: NewsItem)
+                    news.map((item: NewsItem) => (
                         <div 
                             key={item?.id || item?.slug} 
                             // This navigates to your NewsDetail page using the slug

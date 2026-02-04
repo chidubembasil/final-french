@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Camera, Grid3X3, List, ZoomIn, ChevronRight, ChevronLeft, PlayCircle, Loader2, Image, X, ArrowLeft } from "lucide-react";
 
 interface GalleryImage {
@@ -54,22 +54,22 @@ function Gallery() {
     });
   }, [allImages, activeCategory, activeMediaType]);
 
-  // --- Handlers ---
-  const handleNext = (e?: React.MouseEvent) => {
+  // --- Handlers wrapped in useCallback to resolve dependency warnings ---
+  const handleNext = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
     const currentIndex = filteredImages.findIndex(img => img.id === selectedImage?.id);
     if (currentIndex === -1) return;
     const nextIndex = (currentIndex + 1) % filteredImages.length;
     setSelectedImage(filteredImages[nextIndex]);
-  };
+  }, [filteredImages, selectedImage]);
 
-  const handlePrev = (e?: React.MouseEvent) => {
+  const handlePrev = useCallback((e?: React.MouseEvent) => {
     e?.stopPropagation();
     const currentIndex = filteredImages.findIndex(img => img.id === selectedImage?.id);
     if (currentIndex === -1) return;
     const prevIndex = (currentIndex - 1 + filteredImages.length) % filteredImages.length;
     setSelectedImage(filteredImages[prevIndex]);
-  };
+  }, [filteredImages, selectedImage]);
 
   // Close modal on Escape key and prevent body scroll
   useEffect(() => {
@@ -88,7 +88,7 @@ function Gallery() {
       window.removeEventListener("keydown", handleKeyDown);
       document.body.style.overflow = "unset";
     };
-  }, [selectedImage, filteredImages]);
+  }, [selectedImage, handleNext, handlePrev]);
 
   // --- Data Fetching (Fetch once) ---
   useEffect(() => {
@@ -97,16 +97,14 @@ function Gallery() {
         const response = await fetch(`${CLIENT_KEY}api/galleries`);
         const data = await response.json();
         
+        const rawData = Array.isArray(data) ? data : (data.data || []);
+
         // Separate hero and gallery items
-        const hero = data.find((item: GalleryImage) => item.purpose === "Other Page" && item.subPurpose === "Gallery");
+        const hero = rawData.find((item: GalleryImage) => item.purpose === "Other Page" && item.subPurpose === "Gallery");
         if (hero) setHeroData(hero);
         
-        const displayItems = (Array.isArray(data) ? data : (data.data || []))
-          .filter((item: GalleryImage) => item.purpose !== "Other Page");
+        const displayItems = rawData.filter((item: GalleryImage) => item.purpose !== "Other Page");
           
-        console.log("Gallery items loaded:", displayItems);
-        console.log("Unique categories:", Array.from(new Set(displayItems.map((i: GalleryImage) => i.category))));
-        
         setAllImages(displayItems);
       } catch (err) {
         console.error("Gallery fetch error:", err);
@@ -185,8 +183,12 @@ function Gallery() {
             <div className="flex items-center gap-4 shrink-0">
               <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Layout</span>
               <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-xl border border-gray-200">
-                <button className={`p-2 rounded-lg transition-all ${view === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-gray-400 hover:text-gray-600"}`} onClick={() => setView("grid")}><Grid3X3 size={18}/></button>
-                <button className={`p-2 rounded-lg transition-all ${view === "list" ? "bg-white text-blue-600 shadow-sm" : "text-gray-400 hover:text-gray-600"}`} onClick={() => setView("list")}><List size={18}/></button>
+                <button className={`p-2 rounded-lg transition-all ${view === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-gray-400 hover:text-gray-600"}`} onClick={() => setView("grid")}
+                   aria-label="grid"
+              title="grid"><Grid3X3 size={18}/></button>
+                <button className={`p-2 rounded-lg transition-all ${view === "list" ? "bg-white text-blue-600 shadow-sm" : "text-gray-400 hover:text-gray-600"}`} onClick={() => setView("list")}
+                   aria-label="list"
+              title="list"><List size={18}/></button>
               </div>
             </div>
           </div>
@@ -267,9 +269,15 @@ function Gallery() {
             {/* Pagination */}
             {totalPages > 1 && (
               <div className="mt-16 flex justify-center items-center gap-2">
-                <button disabled={currentPage === 1} onClick={() => handlePaginate(currentPage - 1)} className="p-3 rounded-2xl border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-colors"><ChevronLeft size={20} /></button>
+                <button disabled={currentPage === 1} onClick={() => handlePaginate(currentPage - 1)} className="p-3 rounded-2xl border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-colors"
+                   aria-label="Previous page"
+              title="Previous page"
+                  ><ChevronLeft size={20} /></button>
                 <div className="px-4 text-xs font-bold text-gray-400">Page {currentPage} of {totalPages}</div>
-                <button disabled={currentPage === totalPages} onClick={() => handlePaginate(currentPage + 1)} className="p-3 rounded-2xl border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-colors"><ChevronRight size={20} /></button>
+                <button disabled={currentPage === totalPages} onClick={() => handlePaginate(currentPage + 1)} className="p-3 rounded-2xl border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-colors"
+                   aria-label="next page"
+              title="next page"
+                  ><ChevronRight size={20} /></button>
               </div>
             )}
           </>
@@ -310,6 +318,8 @@ function Gallery() {
             <button
               onClick={handlePrev}
               className="fixed left-6 top-1/2 -translate-y-1/2 z-[110] p-4 bg-white/5 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-all hidden lg:block border border-white/10"
+               aria-label="Previous page"
+              title="Previous page"
             >
               <ChevronLeft size={40} />
             </button>
@@ -317,6 +327,8 @@ function Gallery() {
             <button
               onClick={handleNext}
               className="fixed right-6 top-1/2 -translate-y-1/2 z-[110] p-4 bg-white/5 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-all hidden lg:block border border-white/10"
+               aria-label="next page"
+              title="next page"
             >
               <ChevronRight size={40} />
             </button>
@@ -344,12 +356,16 @@ function Gallery() {
                    <button 
                     onClick={handlePrev} 
                     className="p-3 bg-black/50 backdrop-blur-sm rounded-full text-white pointer-events-auto active:scale-95"
+                      aria-label="Previous page"
+                    title="Previous page"
                    >
                     <ChevronLeft size={24}/>
                    </button>
                    <button 
                     onClick={handleNext} 
                     className="p-3 bg-black/50 backdrop-blur-sm rounded-full text-white pointer-events-auto active:scale-95"
+                      aria-label="next page"
+              title="next page"
                    >
                     <ChevronRight size={24}/>
                    </button>
