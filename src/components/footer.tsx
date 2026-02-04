@@ -135,9 +135,9 @@ function Footer() {
 
             {/* Bottom bar */}
             <div className='w-full flex flex-col justify-center items-center h-fit py-1.5 gap-1.5'>
-                <div className='w-full flex flex-row justify-center items-center h-fit gap-1.5'>
-                    <Link to="/privacy" className="hover:text-blue-400 transition-colors">Privacy</Link>
-                    <Link to="/cookies" className="hover:text-blue-400 transition-colors">Cookie</Link>
+                <div className='w-full flex flex-row justify-center items-center h-fit gap-9'>
+                    <Link to="/privacy" className="hover:text-blue-400 transition-colors text-[11px]">Privacy Policy</Link>
+                    <Link to="/cookies" className="hover:text-blue-400 transition-colors text-[11px]">Cookie Policy</Link>
                 </div>
                 <div className="max-w-7xl mx-auto border-t border-white/5 pt-8 flex flex-col md:flex-row justify-center items-center gap-4 text-[11px] uppercase tracking-tighter opacity-60">
                     <p>© 2026 À TOI LE MICRO NAIJA. ALL RIGHTS RESERVED.</p>

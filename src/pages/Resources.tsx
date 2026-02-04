@@ -38,7 +38,6 @@ interface GalleryHero {
   mediaUrl: string;
 }
 
-// ✅ Fixed: Added specific attribute types to replace 'any'
 interface StrapiAttributes extends Partial<Pedagogy>, Partial<GalleryHero> {
   purpose?: string;
   subPurpose?: string;
@@ -47,7 +46,6 @@ interface StrapiAttributes extends Partial<Pedagogy>, Partial<GalleryHero> {
 interface StrapiItem {
   id: number;
   attributes?: StrapiAttributes;
-  // Fallback for direct properties if not using Strapi's data/attributes wrapper
   title?: string;
   description?: string;
   mediaUrl?: string;
@@ -169,7 +167,6 @@ function Pedagogies() {
         const resources: StrapiResponse = await resRes.json();
         
         const heroArray = Array.isArray(heroes) ? (heroes as unknown as StrapiItem[]) : (heroes.data || []);
-        // ✅ Fixed: Replaced item: any with StrapiItem
         const hero = heroArray.find((item: StrapiItem) => {
           const attr = item.attributes || item;
           return attr.purpose?.toLowerCase().trim() === "other page" && 
@@ -178,7 +175,6 @@ function Pedagogies() {
         if (hero) setHeroData((hero.attributes || hero) as GalleryHero);
         
         const pedData = Array.isArray(peds) ? (peds as unknown as StrapiItem[]) : (peds.data || []);
-        // ✅ Fixed: Replaced p: any with StrapiItem
         const normalizedPeds = pedData.map((p: StrapiItem) => ({
           id: p.id,
           sourceType: 'pedagogy' as const,
@@ -186,7 +182,6 @@ function Pedagogies() {
         })) as Pedagogy[];
 
         const resData = Array.isArray(resources) ? (resources as unknown as StrapiItem[]) : (resources.data || []);
-        // ✅ Fixed: Replaced r: any with StrapiItem
         const normalizedRes = resData.map((r: StrapiItem) => ({
           id: r.id,
           sourceType: 'resource' as const,
@@ -212,10 +207,21 @@ function Pedagogies() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [CLIENT_KEY]);
 
-  // ─── FILTERS & PAGINATION ───────────────────
-  const levelOptions = useMemo(() => ["All", ...Array.from(new Set(pedagogies.map(p => p.level).filter(Boolean))).sort() as string[]], [pedagogies]);
-  const skillOptions = useMemo(() => ["All", ...Array.from(new Set(pedagogies.map(p => p.skillType).filter(Boolean))).sort() as string[]], [pedagogies]);
-  const themeOptions = useMemo(() => ["All", ...Array.from(new Set(pedagogies.map(p => p.theme).filter(Boolean))).sort() as string[]], [pedagogies]);
+  // ─── DYNAMIC FILTERS ──────────────────────────
+  const levelOptions = useMemo(() => {
+    const unique = Array.from(new Set(pedagogies.map(p => p.level).filter(Boolean)));
+    return ["All", ...unique.sort()];
+  }, [pedagogies]);
+
+  const skillOptions = useMemo(() => {
+    const unique = Array.from(new Set(pedagogies.map(p => p.skillType).filter(Boolean)));
+    return ["All", ...unique.sort()];
+  }, [pedagogies]);
+
+  const themeOptions = useMemo(() => {
+    const unique = Array.from(new Set(pedagogies.map(p => p.theme).filter(Boolean)));
+    return ["All", ...unique.sort()];
+  }, [pedagogies]);
 
   const filteredPedagogies = useMemo(() => {
     return pedagogies.filter(item => {
@@ -231,13 +237,11 @@ function Pedagogies() {
   const totalPages = Math.ceil(filteredPedagogies.length / itemsPerPage);
   const currentItems = filteredPedagogies.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  // ─── SPECIAL DATA SELECTORS ──────────────────
   const specialEvents = useMemo(() => pedagogies.filter(p => p.category === "Special Event"), [pedagogies]);
   const studentRankings = useMemo(() => pedagogies.filter(p => p.category === "Ranking"), [pedagogies]);
 
   return (
     <main className="pt-20 bg-gray-50/30 min-h-screen">
-      {/* Hero Section */}
       <div className="relative w-full h-[80dvh] overflow-hidden bg-slate-900">
         {loading ? (
           <div className="w-full h-full flex items-center justify-center">
@@ -286,7 +290,6 @@ function Pedagogies() {
               <p className="text-sm text-gray-500">International and National celebrations</p>
             </div>
           </div>
-          
           <div className="space-y-4">
             {specialEvents.length > 0 ? (
               specialEvents.map((event) => (
@@ -296,7 +299,6 @@ function Pedagogies() {
                     <h4 className="font-bold text-lg text-slate-800">{event.title}</h4>
                     <p className="text-sm text-gray-500 line-clamp-1">{event.description}</p>
                   </div>
-                  {/* ✅ Fixed: Replaced e as any with React.MouseEvent */}
                   <button type="button" aria-label={`Download ${event.title}`} onClick={(e: React.MouseEvent) => handleDownload(e, event)} className="p-3 bg-white rounded-xl shadow-sm group-hover:bg-red-600 group-hover:text-white transition-all">
                     <Download size={18} />
                   </button>
@@ -310,7 +312,6 @@ function Pedagogies() {
 
         <div className="bg-slate-900 rounded-[3rem] p-8 text-white shadow-xl relative overflow-hidden flex flex-col">
           <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-full blur-3xl" />
-          
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
               <div className="bg-yellow-500/20 p-3 rounded-2xl text-yellow-500">
@@ -320,7 +321,6 @@ function Pedagogies() {
             </div>
             <div className="px-3 py-1 bg-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest">Global Rank</div>
           </div>
-
           <div className="space-y-3">
             {studentRankings.length > 0 ? (
               studentRankings.map((rank, index) => (
@@ -353,13 +353,13 @@ function Pedagogies() {
             <input type="text" placeholder="Search resources..." className="w-full pl-14 pr-6 py-4 rounded-2xl bg-gray-50 outline-none focus:ring-2 focus:ring-[#45B1A8]" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <select aria-label="Filter by level" value={pedLevel} onChange={(e) => setPedLevel(e.target.value)} className="px-4 py-3.5 rounded-2xl bg-gray-50 text-xs font-bold text-gray-600">
+            <select aria-label="Filter by level" value={pedLevel} onChange={(e) => { setPedLevel(e.target.value); setCurrentPage(1); }} className="px-4 py-3.5 rounded-2xl bg-gray-50 text-xs font-bold text-gray-600">
               {levelOptions.map(l => <option key={l} value={l}>{l === 'All' ? 'All Levels' : l}</option>)}
             </select>
-            <select aria-label="Filter by skill type" value={pedSkill} onChange={(e) => setPedSkill(e.target.value)} className="px-4 py-3.5 rounded-2xl bg-gray-50 text-xs font-bold text-gray-600">
+            <select aria-label="Filter by skill type" value={pedSkill} onChange={(e) => { setPedSkill(e.target.value); setCurrentPage(1); }} className="px-4 py-3.5 rounded-2xl bg-gray-50 text-xs font-bold text-gray-600">
               {skillOptions.map(s => <option key={s} value={s}>{s === 'All' ? 'All Skills' : s}</option>)}
             </select>
-            <select aria-label="Filter by theme" value={pedTheme} onChange={(e) => setPedTheme(e.target.value)} className="px-4 py-3.5 rounded-2xl bg-gray-50 text-xs font-bold text-gray-600">
+            <select aria-label="Filter by theme" value={pedTheme} onChange={(e) => { setPedTheme(e.target.value); setCurrentPage(1); }} className="px-4 py-3.5 rounded-2xl bg-gray-50 text-xs font-bold text-gray-600">
               {themeOptions.map(t => <option key={t} value={t}>{t === 'All' ? 'All Themes' : t}</option>)}
             </select>
           </div>
@@ -386,13 +386,11 @@ function Pedagogies() {
                   <button type="button" aria-label="Share resource" onClick={(e: React.MouseEvent) => { e.stopPropagation(); setSharingId(sharingId === item.id ? null : item.id); }} className="p-3 hover:bg-gray-100 rounded-full text-gray-400">
                     <Share2 size={18} />
                   </button>
-                  
                   {item.sourceType === 'pedagogy' && (
                     <button type="button" aria-label="Download pedagogy" onClick={(e: React.MouseEvent) => handleDownload(e, item)} className="p-3 hover:bg-gray-100 rounded-full text-[#45B1A8]">
                       {downloadingId === item.id ? <Loader2 className="animate-spin" size={18} /> : <Download size={18} />}
                     </button>
                   )}
-
                   {sharingId === item.id && (
                     <div ref={shareMenuRef} className="absolute top-12 right-0 z-30 bg-white border p-3 rounded-2xl shadow-xl flex gap-4" onClick={(e: React.MouseEvent) => e.stopPropagation()}>
                       <button type="button" aria-label="Share on X" onClick={(e: React.MouseEvent) => handleShare(e, 'x', item)} className="text-gray-400 hover:text-black"><XLogo /></button>
@@ -404,10 +402,8 @@ function Pedagogies() {
                   )}
                 </div>
               </div>
-              
               <h3 className="text-2xl font-bold text-slate-800 mb-3 group-hover:text-[#45B1A8]">{item.title}</h3>
               <p className="text-gray-500 text-sm line-clamp-3 mb-6">{item.description}</p>
-              
               <div className="mt-auto pt-6 border-t border-gray-50 flex items-center justify-between">
                 {item.sourceType === 'pedagogy' ? (
                   <button type="button" onClick={(e: React.MouseEvent) => handleDownload(e, item)} className="flex items-center gap-2 text-[#45B1A8] font-bold text-xs uppercase">

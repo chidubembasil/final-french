@@ -178,10 +178,6 @@ export default function LatestPodcasts() {
                   <span>
                     {new Date(podcast.createdAt).toDateString()}
                   </span>
-
-                  <span className="font-semibold text-blue-700">
-                    Listen now
-                  </span>
                 </div>
               </div>
             </article>

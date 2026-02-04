@@ -80,14 +80,14 @@ function NewsDetail() {
   if (!post) return (
     <div className="min-h-screen flex flex-col items-center justify-center gap-4">
       <h2 className="text-2xl font-bold">Article not found</h2>
-      <button onClick={() => navigate('/news')} className="text-blue-600 font-bold uppercase text-xs tracking-widest">Return to News</button>
+      <button onClick={() => navigate('/news&blog')} className="text-blue-600 font-bold uppercase text-xs tracking-widest">Return to News</button>
     </div>
   );
 
   return (
     <main className="pt-32 pb-20 bg-white min-h-screen">
       <div className="max-w-4xl mx-auto px-6">
-        <button onClick={() => navigate('/news')} className="flex items-center gap-2 text-gray-500 hover:text-blue-600 mb-8 transition-all">
+        <button onClick={() => navigate('/news&blog')} className="flex items-center gap-2 text-gray-500 hover:text-blue-600 mb-8 transition-all">
           <ArrowLeft size={20} />
           <span className="font-black uppercase tracking-widest text-[10px]">Back to News</span>
         </button>
