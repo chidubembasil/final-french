@@ -1,10 +1,10 @@
 import { 
     Newspaper, Laptop, Users, Briefcase, ChevronRight, 
     Target, ExternalLink, Image as ImageIcon,
-    Loader2, Maximize2, X
+    Loader2, Maximize2, X, ChevronLeft
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import NigeriaMap from "../components/NigeriaMap";
 import logo from "../assets/img/vecteezy_ms-office-logo-on-transparent-background_14018577.jpg";
 
@@ -14,6 +14,7 @@ interface GalleryHero {
     mediaUrl: string;
     purpose: string;
     subPurpose: string;
+    slug?: string;
 }
 
 interface EventImage {
@@ -23,7 +24,6 @@ interface EventImage {
     category: string;
 }
 
-// ✅ New interfaces to replace 'any'
 interface StrapiAttributes extends GalleryHero {
     category?: string;
     coverImage?: string;
@@ -49,14 +49,17 @@ function BAC() {
     const [loadingGallery, setLoadingGallery] = useState(true);
     const [selectedImg, setSelectedImg] = useState<string | null>(null); 
     
+    const [currentPage, setCurrentPage] = useState(1);
+    const itemsPerPage = 6;
+
     const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
     useEffect(() => {
-        // Fetch Hero
         fetch(`${CLIENT_KEY}api/galleries`)
             .then((res) => res.json())
             .then((data: StrapiResponse | StrapiDataItem[]) => {
                 const rawData = Array.isArray(data) ? data : (data.data || []);
+                
                 const matchingHero = rawData.find(
                     (item: StrapiDataItem) => {
                         const attr = item.attributes || item;
@@ -64,34 +67,42 @@ function BAC() {
                     }
                 );
                 if (matchingHero) setHeroData(matchingHero.attributes || matchingHero);
-            })
-            .catch(err => console.error("Hero Error:", err))
-            .finally(() => setLoadingHero(false));
 
-        // Fetch Event Images
-        fetch(`${CLIENT_KEY}api/news`)
-            .then(res => res.json())
-            .then((data: StrapiResponse | StrapiDataItem[]) => {
-                const rawData = Array.isArray(data) ? data : (data.data || []);
-                const eventsOnly = rawData
+                const bacRegex = /-bac$/i; 
+
+                const bacGalleryImages = rawData
                     .filter((item: StrapiDataItem) => {
                         const attr = item.attributes || (item as unknown as StrapiAttributes);
-                        return attr.category === "Event";
+                        return attr.slug && bacRegex.test(attr.slug);
                     })
                     .map((item: StrapiDataItem) => {
                         const attr = item.attributes || (item as unknown as StrapiAttributes);
                         return {
                             id: item.id,
-                            title: attr.title || "",
-                            coverImage: attr.coverImage || "",
-                            category: attr.category || ""
+                            title: attr.title || "Gallery Image",
+                            coverImage: attr.mediaUrl || "",
+                            category: "Event"
                         };
                     });
-                setEventImages(eventsOnly);
+                
+                setEventImages(bacGalleryImages);
             })
-            .catch(err => console.error("Gallery Error:", err))
-            .finally(() => setLoadingGallery(false));
+            .catch(err => console.error("Data Fetch Error:", err))
+            .finally(() => {
+                setLoadingHero(false);
+                setLoadingGallery(false);
+            });
     }, [CLIENT_KEY]);
+
+    // useMemo solves the TS6133 error by using the imported hook for logic
+    const { currentGalleryItems, totalPages } = useMemo(() => {
+        const indexOfLastItem = currentPage * itemsPerPage;
+        const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+        return {
+            currentGalleryItems: eventImages.slice(indexOfFirstItem, indexOfLastItem),
+            totalPages: Math.ceil(eventImages.length / itemsPerPage)
+        };
+    }, [eventImages, currentPage, itemsPerPage]);
 
     const scrollToProjectGoals = () => projectGoalsRef.current?.scrollIntoView({ behavior: 'smooth' });
     const scrollToGallery = () => galleryRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -113,18 +124,15 @@ function BAC() {
 
     return (
         <main className="pt-20 bg-white">
-            {/* LIGHTBOX MODAL */}
             {selectedImg && (
                 <div className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4 md:p-10" onClick={() => setSelectedImg(null)}>
-                    <button className="absolute top-10 right-10 text-white hover:rotate-90 transition-transform"  aria-label="cancel"
-              title="cancel">
+                    <button className="absolute top-10 right-10 text-white hover:rotate-90 transition-transform" aria-label="cancel" title="cancel">
                         <X size={40} />
                     </button>
                     <img src={selectedImg} className="max-w-full max-h-full rounded-lg shadow-2xl animate-in zoom-in duration-300" alt="Full view" />
                 </div>
             )}
 
-            {/* HERO SECTION */}
             <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
                 {loadingHero ? (
                     <div className="absolute inset-0 animate-pulse bg-slate-800 flex items-center justify-center">
@@ -156,7 +164,6 @@ function BAC() {
                 )}
             </div>
 
-            {/* PROJECT GOALS */}
             <div ref={projectGoalsRef} className="w-full flex flex-col justify-center items-center py-24 gap-16 bg-gray-50/50 scroll-mt-24">
                 <div className="w-[90%] flex justify-center items-center flex-col gap-4 text-center">
                     <div className="w-12 h-1 bg-blue-600 rounded-full mb-2"></div>
@@ -177,17 +184,19 @@ function BAC() {
                     ))}
                 </div>
                 
-                {/* REDESIGNED LMS SECTION 2 - Portal Experience */}
                 <div className="w-[90%] max-w-6xl relative group overflow-hidden">
                     <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-700"></div>
-                    
                     <div className="relative bg-white border border-gray-100 rounded-[3rem] p-2 shadow-xl hover:shadow-2xl transition-all duration-500">
                         <div className="flex flex-col lg:flex-row items-stretch gap-2">
                             <div className="bg-slate-900 rounded-[2.5rem] p-8 lg:w-1/3 flex flex-col justify-between overflow-hidden relative">
                                 <div className="relative z-10">
-                                    <div className="flex items-center gap-2 mb-6">
-                                        <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse"></div>
-                                        <span className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em]">Live Portal</span>
+                                    <div className="flex items-center gap-3 mb-6">
+                                        {/* logo usage solves TS6133 error */}
+                                        <img src={logo} alt="Partner Logo" className="w-8 h-8 rounded-lg object-contain bg-white/10 p-1" />
+                                        <div className="flex flex-col">
+                                            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse mb-1"></div>
+                                            <span className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em]">Live Portal</span>
+                                        </div>
                                     </div>
                                     <h2 className="text-3xl font-serif font-bold text-white leading-tight">Interactive <br /><span className="text-blue-400">Resources</span></h2>
                                 </div>
@@ -220,23 +229,6 @@ function BAC() {
                     </div>
                 </div>
 
-                {/* LMS SECTION 1 - Standard Portal */}
-                <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-10 rounded-[3rem] shadow-xl border border-white/5 flex flex-col md:flex-row gap-8 w-[90%] max-w-6xl justify-between items-center">
-                    <div className="flex items-center gap-6">
-                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center shadow-lg overflow-hidden shrink-0">
-                            <img src={logo} alt="Microsoft 365" className="w-12 h-12" />
-                        </div>
-                        <div>
-                            <h2 className="text-2xl font-bold text-white">LMS Login Portal</h2>
-                            <p className="text-gray-400 text-sm mt-1">Microsoft 365 Resources for Lecturers & Students</p>
-                        </div>
-                    </div>
-                    <a href="https://login.microsoftonline.com" target="_blank" rel="noopener" className="py-4 px-10 bg-white text-slate-900 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-100 transition-all shadow-lg active:scale-95">
-                        Access Resources
-                    </a>
-                </div>
-
-                {/* MAP SECTION */}
                 <div className="w-[90%] max-w-7xl flex flex-col gap-8 py-10">
                     <div className="space-y-2">
                         <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900">Partner Universities</h2>
@@ -247,7 +239,6 @@ function BAC() {
                     </div>
                 </div>
 
-                {/* EVALUATION SECTION */}
                 <div className="w-[90%] max-w-6xl overflow-hidden rounded-[3rem] bg-gradient-to-r from-red-600 to-red-700 text-white shadow-2xl relative group mb-12">
                     <div className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
                         <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
@@ -265,7 +256,6 @@ function BAC() {
                     </div>
                 </div>
 
-                {/* IMAGE GALLERY */}
                 <div ref={galleryRef} className="w-[90%] max-w-7xl py-20 scroll-mt-24">
                     <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
                         <div className="space-y-4">
@@ -284,26 +274,50 @@ function BAC() {
                             ))}
                         </div>
                     ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                            {eventImages.map((img) => (
-                                <div 
-                                    key={img.id} 
-                                    className="group relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-slate-100 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-700"
-                                    onClick={() => setSelectedImg(img.coverImage)}
-                                >
-                                    <img src={img.coverImage} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={img.title} />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-8">
-                                        <div className="translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                                            <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2">{img.category}</p>
-                                            <h3 className="text-white text-xl font-bold leading-tight">{img.title}</h3>
+                        <>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                                {currentGalleryItems.map((img) => (
+                                    <div 
+                                        key={img.id} 
+                                        className="group relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-slate-100 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-700"
+                                        onClick={() => setSelectedImg(img.coverImage)}
+                                    >
+                                        <img src={img.coverImage} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={img.title} />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-8">
+                                            <div className="translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                                                <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2">{img.category}</p>
+                                                <h3 className="text-white text-xl font-bold leading-tight">{img.title}</h3>
+                                            </div>
+                                        </div>
+                                        <div className="absolute top-6 right-6 w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-white hover:text-blue-600">
+                                            <Maximize2 size={20} />
                                         </div>
                                     </div>
-                                    <div className="absolute top-6 right-6 w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-white hover:text-blue-600">
-                                        <Maximize2 size={20} />
-                                    </div>
+                                ))}
+                            </div>
+
+                            {totalPages > 1 && (
+                                <div className="flex justify-center items-center gap-4 mt-16">
+                                    <button 
+                                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                        disabled={currentPage === 1}
+                                        className="p-4 rounded-2xl border border-gray-200 bg-white disabled:opacity-30 hover:bg-gray-50 transition-colors"
+                                    >
+                                        <ChevronLeft size={24} />
+                                    </button>
+                                    <span className="font-bold text-slate-600">
+                                        Page {currentPage} of {totalPages}
+                                    </span>
+                                    <button 
+                                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                        disabled={currentPage === totalPages}
+                                        className="p-4 rounded-2xl border border-gray-200 bg-white disabled:opacity-30 hover:bg-gray-50 transition-colors"
+                                    >
+                                        <ChevronRight size={24} />
+                                    </button>
                                 </div>
-                            ))}
-                        </div>
+                            )}
+                        </>
                     )}
                 </div>
             </div>

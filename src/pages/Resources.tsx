@@ -30,6 +30,7 @@ interface Pedagogy {
   allowDownload?: boolean; 
   slug?: string;
   sourceType?: 'pedagogy' | 'resource'; 
+  mediaUrl?: string; // Ensure mediaUrl is expected in the type
 }
 
 interface GalleryHero {
@@ -280,68 +281,97 @@ function Pedagogies() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <div className="bg-white rounded-[3rem] p-8 border border-gray-100 shadow-sm flex flex-col">
-          <div className="flex items-center gap-4 mb-6">
-            <div className="bg-red-50 p-3 rounded-2xl text-red-600">
-              <CalendarDays size={28} />
-            </div>
-            <div>
-              <h3 className="text-xl font-bold">Upcoming & Special Events</h3>
-              <p className="text-sm text-gray-500">International and National celebrations</p>
-            </div>
-          </div>
-          <div className="space-y-4">
-            {specialEvents.length > 0 ? (
-              specialEvents.map((event) => (
-                <div key={event.id} className="p-5 bg-gray-50 rounded-2xl border border-transparent hover:border-red-200 transition-all group flex items-center justify-between">
-                  <div className="flex-1">
-                    <span className="text-[10px] font-bold text-red-600 uppercase tracking-widest">{event.theme || "Event"}</span>
-                    <h4 className="font-bold text-lg text-slate-800">{event.title}</h4>
-                    <p className="text-sm text-gray-500 line-clamp-1">{event.description}</p>
-                  </div>
-                  <button type="button" aria-label={`Download ${event.title}`} onClick={(e: React.MouseEvent) => handleDownload(e, event)} className="p-3 bg-white rounded-xl shadow-sm group-hover:bg-red-600 group-hover:text-white transition-all">
-                    <Download size={18} />
-                  </button>
-                </div>
-              ))
+        {/* --- Upcoming & Special Events --- */}
+        <div className="bg-white rounded-[3rem] p-8 border border-gray-100 shadow-sm flex flex-col md:flex-row gap-8 items-stretch">
+          {/* Picture Section */}
+          <div className="w-full md:w-1/3 min-h-[150px] rounded-2xl overflow-hidden bg-gray-50 flex items-center justify-center relative">
+            {specialEvents[0]?.mediaUrl ? (
+              <img src={specialEvents[0].mediaUrl} alt="Events" className="absolute inset-0 w-full h-full object-cover" />
             ) : (
-              <div className="py-10 text-center text-gray-400 italic">No events currently listed.</div>
+              <div className="flex flex-col items-center gap-2 text-red-100">
+                <CalendarDays size={64} />
+              </div>
             )}
+          </div>
+
+          {/* List Section */}
+          <div className="flex-1 flex flex-col">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="bg-red-50 p-3 rounded-2xl text-red-600">
+                <CalendarDays size={28} />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold">Upcoming & Special Events</h3>
+                <p className="text-sm text-gray-500">Celebrations</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {specialEvents.length > 0 ? (
+                specialEvents.slice(0, 3).map((event) => (
+                  <div key={event.id} className="p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-red-200 transition-all group flex items-center justify-between">
+                    <div className="flex-1 min-w-0 pr-2">
+                      <h4 className="font-bold text-sm text-slate-800 truncate">{event.title}</h4>
+                      <p className="text-[10px] font-bold text-red-600 uppercase truncate">{event.theme || "Event"}</p>
+                    </div>
+                    <button type="button" aria-label={`Download ${event.title}`} onClick={(e: React.MouseEvent) => handleDownload(e, event)} className="p-2.5 bg-white rounded-xl shadow-sm group-hover:bg-red-600 group-hover:text-white transition-all">
+                      <Download size={16} />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="py-10 text-center text-gray-400 italic">No events currently listed.</div>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="bg-slate-900 rounded-[3rem] p-8 text-white shadow-xl relative overflow-hidden flex flex-col">
+        {/* --- Teachers Hall of Fame --- */}
+        <div className="bg-slate-900 rounded-[3rem] p-8 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row gap-8 items-stretch">
           <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-full blur-3xl" />
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-4">
-              <div className="bg-yellow-500/20 p-3 rounded-2xl text-yellow-500">
-                <Trophy size={28} />
-              </div>
-              <h3 className="text-xl font-bold">Teachers Hall of Fame</h3>
-            </div>
-            <div className="px-3 py-1 bg-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest">Global Rank</div>
-          </div>
-          <div className="space-y-3">
-            {studentRankings.length > 0 ? (
-              studentRankings.map((rank, index) => (
-                <div key={rank.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-sm ${
-                    index === 0 ? 'bg-yellow-500 text-slate-900' : 
-                    index === 1 ? 'bg-slate-300 text-slate-900' : 
-                    index === 2 ? 'bg-orange-400 text-slate-900' : 'bg-white/10 text-white'
-                  }`}>
-                    #{index + 1}
-                  </div>
-                  <div className="flex-1">
-                    <h4 className="font-bold text-sm">{rank.title}</h4>
-                    <p className="text-xs text-white/50">{rank.description || "Student"}</p>
-                  </div>
-                  <div className="text-xs font-bold text-yellow-500 uppercase">{rank.level || "Elite"}</div>
-                </div>
-              ))
+          
+          {/* Picture Section */}
+          <div className="w-full md:w-1/3 min-h-[150px] rounded-2xl overflow-hidden bg-white/5 flex items-center justify-center relative border border-white/10">
+            {studentRankings[0]?.mediaUrl ? (
+              <img src={studentRankings[0].mediaUrl} alt="Rankings" className="absolute inset-0 w-full h-full object-cover" />
             ) : (
-              <div className="py-10 text-center text-white/20 italic">No rankings available.</div>
+              <div className="flex flex-col items-center gap-2 text-yellow-500/20">
+                <Trophy size={64} />
+              </div>
             )}
+          </div>
+
+          {/* List Section */}
+          <div className="flex-1 flex flex-col">
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                <div className="bg-yellow-500/20 p-3 rounded-2xl text-yellow-500">
+                  <Trophy size={28} />
+                </div>
+                <h3 className="text-xl font-bold">Hall of Fame</h3>
+              </div>
+              <div className="px-3 py-1 bg-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest">Rank</div>
+            </div>
+            <div className="space-y-3">
+              {studentRankings.length > 0 ? (
+                studentRankings.slice(0, 3).map((rank, index) => (
+                  <div key={rank.id} className="flex items-center gap-4 p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
+                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
+                      index === 0 ? 'bg-yellow-500 text-slate-900' : 
+                      index === 1 ? 'bg-slate-300 text-slate-900' : 
+                      index === 2 ? 'bg-orange-400 text-slate-900' : 'bg-white/10 text-white'
+                    }`}>
+                      #{index + 1}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-xs truncate">{rank.title}</h4>
+                      <p className="text-[10px] text-white/50 truncate">{rank.description || "Teacher"}</p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="py-10 text-center text-white/20 italic">No rankings available.</div>
+              )}
+            </div>
           </div>
         </div>
       </div>
