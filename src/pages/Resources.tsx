@@ -279,7 +279,7 @@ function Pedagogies() {
           </a>
         </div>
       </div>
-      <p className="font-bold text-2xl">Other Resources & Events</p>
+      <p className="font-bold text-5xl w-full text-center mt-8 underline ">Other Resources & Events</p>
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* --- Upcoming & Special Events --- */}
         <div className="bg-white rounded-[3rem] p-8 border border-gray-100 shadow-sm flex flex-col md:flex-row gap-8 items-stretch">
