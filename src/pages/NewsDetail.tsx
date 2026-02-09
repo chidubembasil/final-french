@@ -120,7 +120,7 @@ function NewsDetail() {
         </div>
 
         <div className="prose prose-lg prose-slate max-w-none">
-          <div className="text-gray-600 leading-[1.8] space-y-8 text-lg">
+          <div className="text-gray-600 leading-[1.8] space-y-8 text-lg text-justify">
             {post.content.split('\n').filter((p: string) => p.trim() !== '').map((para: string, i: number) => (
               <p key={i}>{para}</p>
             ))}

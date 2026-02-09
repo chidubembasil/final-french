@@ -298,7 +298,7 @@ function BAC() {
 
                             {totalPages > 1 && (
                                 <div className="flex justify-center items-center gap-4 mt-16">
-                                    <button 
+                                    <button  aria-label="prev page"
                                         onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                         disabled={currentPage === 1}
                                         className="p-4 rounded-2xl border border-gray-200 bg-white disabled:opacity-30 hover:bg-gray-50 transition-colors"
@@ -308,7 +308,7 @@ function BAC() {
                                     <span className="font-bold text-slate-600">
                                         Page {currentPage} of {totalPages}
                                     </span>
-                                    <button 
+                                    <button aria-label="Next page"
                                         onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
                                         disabled={currentPage === totalPages}
                                         className="p-4 rounded-2xl border border-gray-200 bg-white disabled:opacity-30 hover:bg-gray-50 transition-colors"

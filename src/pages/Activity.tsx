@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import {
   SplitSquareHorizontal,
   ArrowRight,
@@ -73,12 +73,22 @@ function Activities() {
   const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
   const [fetchError, setFetchError] = useState<string | null>(null);
 
+  // NEW: Ref for the scrollable modal content
+  const modalScrollRef = useRef<HTMLDivElement>(null);
+
   const exercisesPerPage = 8;
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
   useEffect(() => {
     document.body.style.overflow = (selectedEx || fetchError) ? 'hidden' : 'unset';
   }, [selectedEx, fetchError]);
+
+  // NEW: Effect to scroll up when results are shown
+  useEffect(() => {
+    if (modalStage === 'result' && modalScrollRef.current) {
+      modalScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [modalStage]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -268,7 +278,6 @@ function Activities() {
         <div className="fixed inset-0 z-999 bg-slate-900/60 backdrop-blur-xl flex justify-center items-center p-4 ">
           <div className="fixed inset-0" onClick={() => {setSelectedEx(null); setFetchError(null);}} />
           
-          {/* Increased width to max-w-4xl */}
           <div className="relative bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl animate-in fade-in zoom-in duration-300 flex flex-col max-h-[90vh]">
             <button 
               onClick={() => {setSelectedEx(null); setFetchError(null);}} 
@@ -279,7 +288,8 @@ function Activities() {
               <X size={20} strokeWidth={3} />
             </button>
 
-            <div className="overflow-y-auto p-6 md:p-10 custom-scrollbar">
+            {/* Added modalScrollRef here */}
+            <div ref={modalScrollRef} className="overflow-y-auto p-6 md:p-10 custom-scrollbar">
               {fetchError ? (
                 <div className="text-center py-10">
                   <AlertCircle size={48} className="mx-auto text-red-500 mb-4" />

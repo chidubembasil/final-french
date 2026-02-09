@@ -31,7 +31,7 @@ export default function AboutUs() {
             <div className="w-20 h-1.5 bg-red-600 rounded-full"></div>
             
             <p className="text-lg text-slate-600 leading-relaxed">
-              Part of the broader **French Education Fund (FEF)** cooperation framework, this initiative 
+              Part of the broader French Education Fund (FEF) cooperation framework, this initiative 
               strengthens the learning and use of French among young Nigerians. We aim to improve the 
               professional relevance of language training and support teachers through innovative 
               pedagogical resources.
