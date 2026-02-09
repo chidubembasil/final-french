@@ -279,52 +279,8 @@ function Pedagogies() {
           </a>
         </div>
       </div>
-      <p className="font-bold text-5xl w-full text-center mt-8 underline ">Other Resources & Events</p>
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* --- Upcoming & Special Events --- */}
-        <div className="bg-white rounded-[3rem] p-8 border border-gray-100 shadow-sm flex flex-col md:flex-row gap-8 items-stretch">
-          {/* Picture Section */}
-          <div className="w-full md:w-1/3 min-h-[150px] rounded-2xl overflow-hidden bg-gray-50 flex items-center justify-center relative">
-            {specialEvents[0]?.mediaUrl ? (
-              <img src={specialEvents[0].mediaUrl} alt="Events" className="absolute inset-0 w-full h-full object-cover" />
-            ) : (
-              <div className="flex flex-col items-center gap-2 text-red-100">
-                <CalendarDays size={64} />
-              </div>
-            )}
-          </div>
-
-          {/* List Section */}
-          <div className="flex-1 flex flex-col">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="bg-red-50 p-3 rounded-2xl text-red-600">
-                <CalendarDays size={28} />
-              </div>
-              <div>
-                <h3 className="text-xl font-bold">Upcoming & Special Events</h3>
-                <p className="text-sm text-gray-500">Celebrations</p>
-              </div>
-            </div>
-            <div className="space-y-3">
-              {specialEvents.length > 0 ? (
-                specialEvents.slice(0, 3).map((event) => (
-                  <div key={event.id} className="p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-red-200 transition-all group flex items-center justify-between">
-                    <div className="flex-1 min-w-0 pr-2">
-                      <h4 className="font-bold text-sm text-slate-800 truncate">{event.title}</h4>
-                      <p className="text-[10px] font-bold text-red-600 uppercase truncate">{event.theme || "Event"}</p>
-                    </div>
-                    <button type="button" aria-label={`Download ${event.title}`} onClick={(e: React.MouseEvent) => handleDownload(e, event)} className="p-2.5 bg-white rounded-xl shadow-sm group-hover:bg-red-600 group-hover:text-white transition-all">
-                      <Download size={16} />
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <div className="py-10 text-center text-gray-400 italic">No events currently listed.</div>
-              )}
-            </div>
-          </div>
-        </div>
-
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 grid grid-cols-1 gap-8">
+        <p className="font-bold text-5xl w-full text-center mt-8 underline ">Teachers Hall of fame</p>
         {/* --- Teachers Hall of Fame --- */}
         <div className="bg-slate-900 rounded-[3rem] p-8 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row gap-8 items-stretch">
           <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-full blur-3xl" />
@@ -347,7 +303,7 @@ function Pedagogies() {
                 <div className="bg-yellow-500/20 p-3 rounded-2xl text-yellow-500">
                   <Trophy size={28} />
                 </div>
-                <h3 className="text-xl font-bold">Teachers Hall of Fame</h3>
+                <h3 className="text-3xl font-bold">Teachers Hall of Fame</h3>
               </div>
               <div className="px-3 py-1 bg-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest">Rank</div>
             </div>
@@ -374,6 +330,56 @@ function Pedagogies() {
             </div>
           </div>
         </div>
+      </div>
+
+      
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 grid grid-cols-1 gap-8">
+        <p className="font-bold text-5xl w-full text-center mt-8 underline ">Other Resources & Events</p>
+        {/* --- Upcoming & Special Events --- */}
+        <div className="bg-white rounded-[3rem] p-8 border border-gray-100 shadow-sm flex flex-col md:flex-row gap-8 items-stretch">
+          {/* Picture Section */}
+          <div className="w-full md:w-1/3 min-h-[150px] rounded-2xl overflow-hidden bg-gray-50 flex items-center justify-center relative">
+            {specialEvents[0]?.mediaUrl ? (
+              <img src={specialEvents[0].mediaUrl} alt="Events" className="absolute inset-0 w-full h-full object-cover" />
+            ) : (
+              <div className="flex flex-col items-center gap-2 text-red-100">
+                <CalendarDays size={64} />
+              </div>
+            )}
+          </div>
+
+          {/* List Section */}
+          <div className="flex-1 flex flex-col">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="bg-red-50 p-3 rounded-2xl text-red-600">
+                <CalendarDays size={28} />
+              </div>
+              <div>
+                <h3 className="text-3xl font-bold">Upcoming & Special Events</h3>
+                <p className="text-md text-gray-500">Celebrations</p>
+              </div>
+            </div>
+            <div className="space-y-3">
+              {specialEvents.length > 0 ? (
+                specialEvents.slice(0, 3).map((event) => (
+                  <div key={event.id} className="p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-red-200 transition-all group flex items-center justify-between">
+                    <div className="flex-1 min-w-0 pr-2">
+                      <h4 className="font-bold text-sm text-slate-800 truncate">{event.title}</h4>
+                      <p className="text-[10px] font-bold text-red-600 uppercase truncate">{event.theme || "Event"}</p>
+                    </div>
+                    <button type="button" aria-label={`Download ${event.title}`} onClick={(e: React.MouseEvent) => handleDownload(e, event)} className="p-2.5 bg-white rounded-xl shadow-sm group-hover:bg-red-600 group-hover:text-white transition-all">
+                      <Download size={16} />
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <div className="py-10 text-center text-gray-400 italic">No events currently listed.</div>
+              )}
+            </div>
+          </div>
+        </div>
+
+       
       </div>
 
       <div className="px-4 md:px-8 py-12 max-w-7xl mx-auto">

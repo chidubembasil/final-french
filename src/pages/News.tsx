@@ -183,7 +183,7 @@ function News() {
         )}
       </div>
 
-      <div className="sticky top-20 z-30 w-full bg-white/95 backdrop-blur-xl border-b border-gray-100 shadow-sm">
+      <div className="top-20 z-30 w-full bg-white/95 backdrop-blur-xl border-b border-gray-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative">
@@ -258,7 +258,7 @@ function News() {
                       <span className="flex items-center gap-1"><Calendar size={12}/> {new Date(post.updatedAt).toLocaleDateString()}</span>
                       <span className="flex items-center gap-1"><MapPin size={12}/> {post.state}</span>
                     </div>
-                    <h3 className="text-xl font-bold mb-4 line-clamp-2 group-hover:text-blue-600 transition-colors leading-tight text-justify">{post.title}</h3>
+                    <h3 className="text-xl font-bold mb-4 line-clamp-2 group-hover:text-blue-600 transition-colors leading-tight">{post.title}</h3>
                     <p className="text-gray-500 text-sm line-clamp-3 leading-relaxed text-justify">{post.excerpt}</p>
                   </div>
                 </article>

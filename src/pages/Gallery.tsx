@@ -37,19 +37,34 @@ function Gallery() {
 
   const MEDIA_TYPES = ["All", "Image", "Video"];
 
-  // --- Dynamically generate categories from data ---
+  // --- Dynamically generate categories from data (Formatted) ---
   const categories = useMemo(() => {
-    const uniqueCategories = Array.from(new Set(allImages.map(img => img.category).filter(Boolean)));
-    return ["All", ...uniqueCategories.sort()];
+    const rawCategories = Array.from(new Set(allImages.map(img => img.category).filter(Boolean)));
+    
+    const formatted = rawCategories.map(cat => 
+      cat
+        .replace(/-/g, " ") // Remove hyphens
+        .split(" ")
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()) // Title Case
+        .join(" ")
+    );
+
+    return ["All", ...formatted.sort()];
   }, [allImages]);
 
   // --- Client-Side Filtering with useMemo ---
   const filteredImages = useMemo(() => {
     return allImages.filter((img) => {
+      // We normalize both sides to lowercase and replace hyphens for a flexible match
+      const normalizedImgCat = img.category?.replace(/-/g, " ").toLowerCase();
+      const normalizedActiveCat = activeCategory.toLowerCase();
+
       const matchesCategory = activeCategory === "All" || 
-        img.category?.toLowerCase() === activeCategory.toLowerCase();
+        normalizedImgCat === normalizedActiveCat;
+        
       const matchesMediaType = activeMediaType === "All" || 
         img.mediaType?.toLowerCase() === activeMediaType.toLowerCase();
+        
       return matchesCategory && matchesMediaType;
     });
   }, [allImages, activeCategory, activeMediaType]);
@@ -158,7 +173,7 @@ function Gallery() {
       </div>
 
       {/* Filter Bar */}
-      <div className="sticky top-20 z-30 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
+      <div className="top-20 z-30 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
           <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
             <div className="flex flex-col md:flex-row items-start md:items-center gap-6 w-full lg:w-auto">
@@ -277,7 +292,7 @@ function Gallery() {
                 <button disabled={currentPage === totalPages} onClick={() => handlePaginate(currentPage + 1)} className="p-3 rounded-2xl border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-colors"
                    aria-label="next page"
               title="next page"
-                  ><ChevronRight size={20} /></button>
+                  ><ChevronRight size={20}/></button>
               </div>
             )}
           </>
@@ -375,7 +390,7 @@ function Gallery() {
               {/* Information Section */}
               <div className="mt-10 mb-20 text-center max-w-3xl">
                 <div className="inline-block px-4 py-1 bg-blue-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest mb-4">
-                  {selectedImage.category || 'Uncategorized'}
+                  {selectedImage.category?.replace(/-/g, " ").toUpperCase() || 'UNCATEGORIZED'}
                 </div>
                 <h2 className="text-3xl md:text-5xl font-bold text-white font-serif mb-6 leading-tight">
                   {selectedImage.title}

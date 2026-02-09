@@ -329,7 +329,7 @@ function Podcast() {
                       onClick={() => setActivePodcast(item)} 
                       className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all"
                     >
-                      Listen & View Transcript
+                      Play & View Transcript
                     </button>
                   </div>
                 </div>

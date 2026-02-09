@@ -202,7 +202,7 @@ export default function Home() {
                 </AnimatePresence>
             </div>
 
-            <div className="flex flex-col gap-0 overflow-hidden">
+            <div className="flex flex-col gap-0 overflow-hidden w-full">
                 <section id="about" className="scroll-mt-20">
                     <AboutUs />
                 </section>

@@ -177,8 +177,8 @@ function BAC() {
                                 <item.icon color="white" size={32} />
                             </span>
                             <div className="space-y-3">
-                                <h2 className="font-bold text-xl font-serif text-slate-800 leading-tight text-justify">{item.title}</h2>
-                                <p className="text-gray-500 text-justify text-sm md:text-base">{item.sub}</p>
+                                <h2 className="font-bold text-xl font-serif text-slate-800 leading-tight">{item.title}</h2>
+                                <p className="text-gray-500 text-sm md:text-base">{item.sub}</p>
                             </div>
                         </div>
                     ))}

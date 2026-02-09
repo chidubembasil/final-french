@@ -18,7 +18,7 @@ export default function InteractiveActivities() {
       </div>
 
       {/* Explore Exercises Section */}
-      <div className="max-w-4xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <div className="bg-white rounded-[3rem] p-10 md:p-16 border border-gray-100 shadow-sm text-center flex flex-col items-center">
           <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center mb-8">
             <LayoutGrid size={40} />

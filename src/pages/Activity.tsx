@@ -275,7 +275,7 @@ function Activities() {
       </section>
 
       {(selectedEx || fetchError) && (
-        <div className="fixed inset-0 z-999 bg-slate-900/60 backdrop-blur-xl flex justify-center items-center p-4 ">
+        <div className="fixed inset-0 z-999 bg-slate-900/60 backdrop-blur-xl flex justify-center items-center p-4 mt-10">
           <div className="fixed inset-0" onClick={() => {setSelectedEx(null); setFetchError(null);}} />
           
           <div className="relative bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl animate-in fade-in zoom-in duration-300 flex flex-col max-h-[90vh]">
