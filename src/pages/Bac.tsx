@@ -177,8 +177,8 @@ function BAC() {
                                 <item.icon color="white" size={32} />
                             </span>
                             <div className="space-y-3">
-                                <h2 className="font-bold text-xl font-serif text-slate-800 leading-tight">{item.title}</h2>
-                                <p className="text-gray-500 text-sm md:text-base">{item.sub}</p>
+                                <h2 className="font-bold text-xl font-serif text-slate-800 leading-tight text-justify">{item.title}</h2>
+                                <p className="text-gray-500 text-justify text-sm md:text-base">{item.sub}</p>
                             </div>
                         </div>
                     ))}
@@ -216,7 +216,7 @@ function BAC() {
                                         <span className="text-[10px] font-bold uppercase">Staff & Student Access</span>
                                     </div>
                                     <h3 className="text-2xl font-bold text-slate-800">Learning Management System</h3>
-                                    <p className="text-gray-500 text-base max-w-sm leading-relaxed">Access your personalized dashboard, course materials, and collaborative research tools in one secure environment.</p>
+                                    <p className="text-gray-500 text-base max-w-sm leading-relaxed text-justify">Access your personalized dashboard, course materials, and collaborative research tools in one secure environment.</p>
                                 </div>
                                 <div className="flex flex-col items-center gap-4">
                                     <a href="https://login.microsoftonline.com" target="_blank" rel="noopener noreferrer" className="py-5 px-12 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.15em] transition-all hover:bg-blue-700 hover:shadow-lg active:scale-95 shadow-md flex items-center gap-3">
@@ -232,7 +232,7 @@ function BAC() {
                 <div className="w-[90%] max-w-7xl flex flex-col gap-8 py-10">
                     <div className="space-y-2">
                         <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900">Partner Universities</h2>
-                        <p className="text-gray-500">Explore the network of institutions participating in the French Embassy Fund project across Nigeria.</p>
+                        <p className="text-gray-500 ">Explore the network of institutions participating in the French Embassy Fund project across Nigeria.</p>
                     </div>
                     <div className="rounded-[3rem] overflow-hidden border border-gray-100 shadow-xl bg-white p-2">
                         <NigeriaMap />

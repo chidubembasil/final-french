@@ -306,7 +306,7 @@ function Activities() {
                       </div>
                       <h2 className="text-3xl font-bold text-slate-900 mb-4">{selectedEx.title}</h2>
                       <div className="bg-gray-50 rounded-2xl p-6 mb-10">
-                        <p className="text-gray-700 text-base leading-relaxed">{selectedEx.description}</p>
+                        <p className="text-gray-700 text-base leading-relaxed text-justify">{selectedEx.description}</p>
                       </div>
                       <button onClick={() => setModalStage('test')} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-bold shadow-xl flex items-center justify-center gap-3 hover:bg-blue-700 transition-colors">
                         Start Test <ArrowRight size={20} />

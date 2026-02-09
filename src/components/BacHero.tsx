@@ -47,7 +47,7 @@ export default function BACSection() {
             <h2 className="text-4xl md:text-6xl font-serif font-bold text-slate-900 mb-6 leading-tight">
               Bilingual & <span className="text-red-600">Competitive</span>
             </h2>
-            <p className="text-gray-600 text-lg leading-relaxed">
+            <p className="text-gray-600 text-lg leading-relaxed text-justify">
               Making Nigerian graduates bilingual in English and French to boost employability 
               and global competitiveness. Positioning French as a professional asset for the 21st century.
             </p>
@@ -62,7 +62,7 @@ export default function BACSection() {
                 {pillar.icon}
               </div>
               <h3 className="text-2xl font-bold text-slate-800 mb-4">{pillar.title}</h3>
-              <p className="text-gray-500 leading-relaxed">
+              <p className="text-gray-500 leading-relaxed text-justify">
                 {pillar.desc}
               </p>
             </div>
@@ -74,7 +74,7 @@ export default function BACSection() {
           <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
               <h3 className="text-3xl font-bold mb-6">Participating Universities</h3>
-              <p className="text-blue-100 mb-8">
+              <p className="text-blue-100 mb-8 text-justify">
                 The Bilingual and Competitive project provides multi-level support to strengthen French departments 
                 and establish Resource and Employability Centres across Nigeria.
               </p>

@@ -258,8 +258,8 @@ function News() {
                       <span className="flex items-center gap-1"><Calendar size={12}/> {new Date(post.updatedAt).toLocaleDateString()}</span>
                       <span className="flex items-center gap-1"><MapPin size={12}/> {post.state}</span>
                     </div>
-                    <h3 className="text-xl font-bold mb-4 line-clamp-2 group-hover:text-blue-600 transition-colors leading-tight">{post.title}</h3>
-                    <p className="text-gray-500 text-sm line-clamp-3 leading-relaxed">{post.excerpt}</p>
+                    <h3 className="text-xl font-bold mb-4 line-clamp-2 group-hover:text-blue-600 transition-colors leading-tight text-justify">{post.title}</h3>
+                    <p className="text-gray-500 text-sm line-clamp-3 leading-relaxed text-justify">{post.excerpt}</p>
                   </div>
                 </article>
               ))}
