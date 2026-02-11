@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Camera, Grid3X3, List, ZoomIn, ChevronRight, ChevronLeft, PlayCircle, Loader2, Image, X, ArrowLeft } from "lucide-react";
-
+import img1 from "../assets/img/_A1A4699.jpg"
 interface GalleryImage {
   id: number;
   title: string;
@@ -19,6 +19,13 @@ interface GalleryHero {
   description: string;
   mediaUrl: string;
 }
+
+// --- MOCK DATA FOR FALLBACK ---
+const MOCK_HERO_DATA: GalleryHero = {
+  title: "Our Gallery",
+  description: "GET a peak into our events, projects, and activities in and around Nigeria",
+  mediaUrl: img1 // Representative background
+};
 
 function Gallery() {
   const [allImages, setAllImages] = useState<GalleryImage[]>([]);
@@ -55,7 +62,6 @@ function Gallery() {
   // --- Client-Side Filtering with useMemo ---
   const filteredImages = useMemo(() => {
     return allImages.filter((img) => {
-      // We normalize both sides to lowercase and replace hyphens for a flexible match
       const normalizedImgCat = img.category?.replace(/-/g, " ").toLowerCase();
       const normalizedActiveCat = activeCategory.toLowerCase();
 
@@ -110,19 +116,28 @@ function Gallery() {
     const fetchData = async () => {
       try {
         const response = await fetch(`${CLIENT_KEY}api/galleries`);
+        if (!response.ok) throw new Error("API Network Response error");
         const data = await response.json();
         
         const rawData = Array.isArray(data) ? data : (data.data || []);
 
         // Separate hero and gallery items
         const hero = rawData.find((item: GalleryImage) => item.purpose === "Other Page" && item.subPurpose === "Gallery");
-        if (hero) setHeroData(hero);
+        
+        // --- LOGIC: If hero found, set it, else use mock data ---
+        if (hero) {
+            setHeroData(hero);
+        } else {
+            setHeroData(MOCK_HERO_DATA);
+        }
         
         const displayItems = rawData.filter((item: GalleryImage) => item.purpose !== "Other Page");
-          
         setAllImages(displayItems);
+
       } catch (err) {
         console.error("Gallery fetch error:", err);
+        // --- LOGIC: Fallback to mock data on fetch failure ---
+        setHeroData(MOCK_HERO_DATA);
       } finally {
         setLoading(false);
         setLoadingHero(false);
@@ -200,10 +215,10 @@ function Gallery() {
               <div className="flex items-center gap-2 bg-gray-100 p-1 rounded-xl border border-gray-200">
                 <button className={`p-2 rounded-lg transition-all ${view === "grid" ? "bg-white text-blue-600 shadow-sm" : "text-gray-400 hover:text-gray-600"}`} onClick={() => setView("grid")}
                    aria-label="grid"
-              title="grid"><Grid3X3 size={18}/></button>
+               title="grid"><Grid3X3 size={18}/></button>
                 <button className={`p-2 rounded-lg transition-all ${view === "list" ? "bg-white text-blue-600 shadow-sm" : "text-gray-400 hover:text-gray-600"}`} onClick={() => setView("list")}
                    aria-label="list"
-              title="list"><List size={18}/></button>
+               title="list"><List size={18}/></button>
               </div>
             </div>
           </div>
@@ -286,12 +301,12 @@ function Gallery() {
               <div className="mt-16 flex justify-center items-center gap-2">
                 <button disabled={currentPage === 1} onClick={() => handlePaginate(currentPage - 1)} className="p-3 rounded-2xl border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-colors"
                    aria-label="Previous page"
-              title="Previous page"
+               title="Previous page"
                   ><ChevronLeft size={20} /></button>
                 <div className="px-4 text-xs font-bold text-gray-400">Page {currentPage} of {totalPages}</div>
                 <button disabled={currentPage === totalPages} onClick={() => handlePaginate(currentPage + 1)} className="p-3 rounded-2xl border border-gray-200 disabled:opacity-30 hover:bg-gray-50 transition-colors"
                    aria-label="next page"
-              title="next page"
+               title="next page"
                   ><ChevronRight size={20}/></button>
               </div>
             )}
@@ -334,7 +349,7 @@ function Gallery() {
               onClick={handlePrev}
               className="fixed left-6 top-1/2 -translate-y-1/2 z-[110] p-4 bg-white/5 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-all hidden lg:block border border-white/10"
                aria-label="Previous page"
-              title="Previous page"
+               title="Previous page"
             >
               <ChevronLeft size={40} />
             </button>
@@ -343,7 +358,7 @@ function Gallery() {
               onClick={handleNext}
               className="fixed right-6 top-1/2 -translate-y-1/2 z-[110] p-4 bg-white/5 hover:bg-white/10 rounded-full text-white/50 hover:text-white transition-all hidden lg:block border border-white/10"
                aria-label="next page"
-              title="next page"
+               title="next page"
             >
               <ChevronRight size={40} />
             </button>
@@ -380,7 +395,7 @@ function Gallery() {
                     onClick={handleNext} 
                     className="p-3 bg-black/50 backdrop-blur-sm rounded-full text-white pointer-events-auto active:scale-95"
                       aria-label="next page"
-              title="next page"
+               title="next page"
                    >
                     <ChevronRight size={24}/>
                    </button>

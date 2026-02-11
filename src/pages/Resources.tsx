@@ -16,6 +16,7 @@ import {
   Trophy
 } from "lucide-react";
 import { useState, useEffect, useMemo, useRef } from 'react';
+import img1 from "../assets/img/_A1A4786.jpg"
 
 // --- Interfaces ---
 interface Pedagogy {
@@ -30,7 +31,23 @@ interface Pedagogy {
   allowDownload?: boolean; 
   slug?: string;
   sourceType?: 'pedagogy' | 'resource'; 
-  mediaUrl?: string; // Ensure mediaUrl is expected in the type
+  mediaUrl?: string;
+}
+
+// Added Celebration Interface based on your schema
+interface Celebration {
+  id: number;
+  title: string;
+  slug: string;
+  content: string;
+  celebrationImage?: string;
+  eventDate?: string;
+  externalUrl?: string;
+  status: 'draft' | 'published';
+  celebrationType: 'Celebration' | 'Achievement';
+  publishedAt: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface GalleryHero {
@@ -80,7 +97,15 @@ function Pedagogies() {
     </svg>
   );
 
+  // --- MOCK DATA ---
+  const MOCK_HERO: GalleryHero = {
+    title: "Education Resources",
+    description: "Learn more about the French language, and other resources for teachers and students' development.",
+    mediaUrl: img1
+  };
+
   const [pedagogies, setPedagogies] = useState<Pedagogy[]>([]);
+  const [celebrations, setCelebrations] = useState<Celebration[]>([]); // New state for celebrations
   const [heroData, setHeroData] = useState<GalleryHero | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
@@ -157,23 +182,36 @@ function Pedagogies() {
     const loadAllData = async () => {
       setLoading(true);
       try {
-        const [heroRes, pedRes, resRes] = await Promise.all([
+        const [heroRes, pedRes, resRes, celebRes] = await Promise.all([
           fetch(`${CLIENT_KEY}api/galleries`),
           fetch(`${CLIENT_KEY}api/pedagogies`),
-          fetch(`${CLIENT_KEY}api/resources`)
+          fetch(`${CLIENT_KEY}api/resources`),
+          fetch(`${CLIENT_KEY}api/celebrations`) // Fetching celebrations
         ]);
 
         const heroes: StrapiResponse = await heroRes.json();
         const peds: StrapiResponse = await pedRes.json();
         const resources: StrapiResponse = await resRes.json();
+        const celebData = await celebRes.json();
         
+        // Handle Celebrations/Achievements (sorting by publishedAt latest)
+        const sortedCelebs = (celebData.data || celebData).sort((a: Celebration, b: Celebration) => 
+          new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+        );
+        setCelebrations(sortedCelebs);
+
         const heroArray = Array.isArray(heroes) ? (heroes as unknown as StrapiItem[]) : (heroes.data || []);
         const hero = heroArray.find((item: StrapiItem) => {
           const attr = item.attributes || item;
           return attr.purpose?.toLowerCase().trim() === "other page" && 
                  attr.subPurpose?.toLowerCase().trim() === "resources";
         });
-        if (hero) setHeroData((hero.attributes || hero) as GalleryHero);
+
+        if (hero) {
+            setHeroData((hero.attributes || hero) as GalleryHero);
+        } else {
+            setHeroData(MOCK_HERO);
+        }
         
         const pedData = Array.isArray(peds) ? (peds as unknown as StrapiItem[]) : (peds.data || []);
         const normalizedPeds = pedData.map((p: StrapiItem) => ({
@@ -192,7 +230,8 @@ function Pedagogies() {
         const combined = [...normalizedPeds, ...normalizedRes];
         setPedagogies(combined);
       } catch (err) {
-        console.error("Failed to fetch data:", err);
+        console.error("Failed to fetch data, showing mock hero:", err);
+        setHeroData(MOCK_HERO);
       } finally {
         setLoading(false);
       }
@@ -238,27 +277,33 @@ function Pedagogies() {
   const totalPages = Math.ceil(filteredPedagogies.length / itemsPerPage);
   const currentItems = filteredPedagogies.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const specialEvents = useMemo(() => pedagogies.filter(p => p.category === "Special Event"), [pedagogies]);
-  const studentRankings = useMemo(() => pedagogies.filter(p => p.category === "Ranking"), [pedagogies]);
+  // Updated to use the new Celebrations API data
+  const achievements = useMemo(() => celebrations.filter(c => c.celebrationType === "Achievement"), [celebrations]);
+  const upcomingEvents = useMemo(() => celebrations.filter(c => c.celebrationType === "Celebration"), [celebrations]);
 
   return (
     <main className="pt-20 bg-gray-50/30 min-h-screen">
+      {/* --- HERO SECTION --- */}
       <div className="relative w-full h-[80dvh] overflow-hidden bg-slate-900">
-        {loading ? (
+        {loading && !heroData ? (
           <div className="w-full h-full flex items-center justify-center">
             <Loader2 className="animate-spin text-white/40" size={48} />
           </div>
-        ) : heroData && (
+        ) : (
           <>
-            <img src={heroData.mediaUrl} alt={heroData.title} className="absolute inset-0 w-full h-full object-cover z-0" />
+            <img src={heroData?.mediaUrl || MOCK_HERO.mediaUrl} alt={heroData?.title || MOCK_HERO.title} className="absolute inset-0 w-full h-full object-cover z-0" />
             <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/90 via-blue-800/60 to-red-700/60" />
             <div className="relative z-30 w-full h-full flex flex-col items-start justify-center px-6 md:px-20 gap-5">
               <div className="flex items-center gap-2 text-white px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full">
                 <Library size={18} />
                 <p className="text-sm font-bold uppercase tracking-widest">Resources Library</p>
               </div>
-              <h1 className="text-white text-4xl md:text-7xl font-bold font-serif max-w-3xl leading-tight">{heroData.title}</h1>
-              <p className="text-white/90 text-xl max-w-xl">{heroData.description}</p>
+              <h1 className="text-white text-4xl md:text-7xl font-bold font-serif max-w-3xl leading-tight">
+                  {heroData?.title || MOCK_HERO.title}
+              </h1>
+              <p className="text-white/90 text-xl max-w-xl">
+                  {heroData?.description || MOCK_HERO.description}
+              </p>
             </div>
           </>
         )}
@@ -279,16 +324,16 @@ function Pedagogies() {
           </a>
         </div>
       </div>
+
+      {/* --- TEACHERS HALL OF FAME (ACHIEVEMENTS) --- */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 grid grid-cols-1 gap-8">
         <p className="font-bold text-5xl w-full text-center mt-8 underline ">Teachers Hall of fame</p>
-        {/* --- Teachers Hall of Fame --- */}
         <div className="bg-slate-900 rounded-[3rem] p-8 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row gap-8 items-stretch">
           <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-full blur-3xl" />
           
-          {/* Picture Section */}
           <div className="w-full md:w-1/3 min-h-[150px] rounded-2xl overflow-hidden bg-white/5 flex items-center justify-center relative border border-white/10">
-            {studentRankings[0]?.mediaUrl ? (
-              <img src={studentRankings[0].mediaUrl} alt="Rankings" className="absolute inset-0 w-full h-full object-cover" />
+            {achievements[0]?.celebrationImage ? (
+              <img src={achievements[0].celebrationImage} alt="Achievements" className="absolute inset-0 w-full h-full object-cover" />
             ) : (
               <div className="flex flex-col items-center gap-2 text-yellow-500/20">
                 <Trophy size={64} />
@@ -296,7 +341,6 @@ function Pedagogies() {
             )}
           </div>
 
-          {/* List Section */}
           <div className="flex-1 flex flex-col">
             <div className="flex items-center justify-between mb-8">
               <div className="flex items-center gap-4">
@@ -308,8 +352,8 @@ function Pedagogies() {
               <div className="px-3 py-1 bg-white/10 rounded-full text-[10px] font-bold uppercase tracking-widest">Rank</div>
             </div>
             <div className="space-y-3">
-              {studentRankings.length > 0 ? (
-                studentRankings.slice(0, 3).map((rank, index) => (
+              {achievements.length > 0 ? (
+                achievements.slice(0, 3).map((rank, index) => (
                   <div key={rank.id} className="flex items-center gap-4 p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
                       index === 0 ? 'bg-yellow-500 text-slate-900' : 
@@ -320,7 +364,7 @@ function Pedagogies() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-bold text-xs truncate">{rank.title}</h4>
-                      <p className="text-[10px] text-white/50 truncate">{rank.description || "Teacher"}</p>
+                      <p className="text-[10px] text-white/50 truncate line-clamp-1">{rank.content}</p>
                     </div>
                   </div>
                 ))
@@ -332,15 +376,13 @@ function Pedagogies() {
         </div>
       </div>
 
-      
+      {/* --- OTHER RESOURCES & EVENTS (CELEBRATIONS) --- */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 grid grid-cols-1 gap-8">
         <p className="font-bold text-5xl w-full text-center mt-8 underline ">Other Resources & Events</p>
-        {/* --- Upcoming & Special Events --- */}
         <div className="bg-white rounded-[3rem] p-8 border border-gray-100 shadow-sm flex flex-col md:flex-row gap-8 items-stretch">
-          {/* Picture Section */}
           <div className="w-full md:w-1/3 min-h-[150px] rounded-2xl overflow-hidden bg-gray-50 flex items-center justify-center relative">
-            {specialEvents[0]?.mediaUrl ? (
-              <img src={specialEvents[0].mediaUrl} alt="Events" className="absolute inset-0 w-full h-full object-cover" />
+            {upcomingEvents[0]?.celebrationImage ? (
+              <img src={upcomingEvents[0].celebrationImage} alt="Events" className="absolute inset-0 w-full h-full object-cover" />
             ) : (
               <div className="flex flex-col items-center gap-2 text-red-100">
                 <CalendarDays size={64} />
@@ -348,7 +390,6 @@ function Pedagogies() {
             )}
           </div>
 
-          {/* List Section */}
           <div className="flex-1 flex flex-col">
             <div className="flex items-center gap-4 mb-6">
               <div className="bg-red-50 p-3 rounded-2xl text-red-600">
@@ -356,20 +397,24 @@ function Pedagogies() {
               </div>
               <div>
                 <h3 className="text-3xl font-bold">Upcoming & Special Events</h3>
-                <p className="text-md text-gray-500">Celebrations</p>
+                <p className="text-md text-gray-500">Celebrations Calendar</p>
               </div>
             </div>
             <div className="space-y-3">
-              {specialEvents.length > 0 ? (
-                specialEvents.slice(0, 3).map((event) => (
+              {upcomingEvents.length > 0 ? (
+                upcomingEvents.slice(0, 3).map((event) => (
                   <div key={event.id} className="p-4 bg-gray-50 rounded-2xl border border-transparent hover:border-red-200 transition-all group flex items-center justify-between">
                     <div className="flex-1 min-w-0 pr-2">
                       <h4 className="font-bold text-sm text-slate-800 truncate">{event.title}</h4>
-                      <p className="text-[10px] font-bold text-red-600 uppercase truncate">{event.theme || "Event"}</p>
+                      <p className="text-[10px] font-bold text-red-600 uppercase truncate">
+                        {event.eventDate ? new Date(event.eventDate).toLocaleDateString() : "Special Event"}
+                      </p>
                     </div>
-                    <button type="button" aria-label={`Download ${event.title}`} onClick={(e: React.MouseEvent) => handleDownload(e, event)} className="p-2.5 bg-white rounded-xl shadow-sm group-hover:bg-red-600 group-hover:text-white transition-all">
-                      <Download size={16} />
-                    </button>
+                    {event.externalUrl && (
+                      <a href={event.externalUrl} target="_blank" rel="noopener noreferrer" className="p-2.5 bg-white rounded-xl shadow-sm group-hover:bg-red-600 group-hover:text-white transition-all">
+                        <ExternalLink size={16} />
+                      </a>
+                    )}
                   </div>
                 ))
               ) : (
@@ -378,10 +423,9 @@ function Pedagogies() {
             </div>
           </div>
         </div>
-
-       
       </div>
 
+      {/* --- MAIN RESOURCES GRID --- */}
       <div className="px-4 md:px-8 py-12 max-w-7xl mx-auto">
         <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-gray-100 mb-12 space-y-8">
           <div className="relative flex-1">

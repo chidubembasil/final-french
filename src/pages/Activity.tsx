@@ -13,6 +13,7 @@ import {
   Trophy,
   AlertCircle,
 } from "lucide-react";
+import img1 from "../assets/img/_A1A4707.jpg"
 
 // --- Interfaces ---
 interface RawQuestion {
@@ -26,12 +27,10 @@ interface Exercise {
   title: string;
   description: string;
   exerciseType: string;
-  /* difficulty: string; */
   publishedAt: string | null;
   content: RawQuestion[];
 }
 
-// ✅ Fix: Changed from empty interface to a type alias to satisfy @typescript-eslint/no-empty-object-type
 type DetailedExercise = Exercise;
 
 interface GalleryHero {
@@ -40,7 +39,6 @@ interface GalleryHero {
   mediaUrl: string;
 }
 
-// ✅ FIXED: Replaced 'any' with specific types for Strapi attributes
 interface StrapiAttributes {
   title?: string;
   description?: string;
@@ -59,6 +57,13 @@ interface StrapiItem {
   subPurpose?: string;
 }
 
+// --- Mock Data ---
+const MOCK_HERO: GalleryHero = {
+  title: "Master Your Skills",
+  description: "Engage with our interactive French language exercises designed to improve your professional employability and linguistic precision.",
+  mediaUrl: img1
+};
+
 function Activities() {
   const [exercisesMap, setExercisesMap] = useState<Record<number, DetailedExercise>>({});
   const [exercisesList, setExercisesList] = useState<Exercise[]>([]);
@@ -67,15 +72,12 @@ function Activities() {
   const [modalStage, setModalStage] = useState<'info' | 'test' | 'result'>('info');
   const [loading, setLoading] = useState(true);
   const [activeType, setActiveType] = useState<string>("All");
-  /* const [activeDifficulty, setActiveDifficulty] = useState<string>("All"); */
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [userAnswers, setUserAnswers] = useState<Record<number, number>>({});
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  // NEW: Ref for the scrollable modal content
   const modalScrollRef = useRef<HTMLDivElement>(null);
-
   const exercisesPerPage = 8;
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
@@ -83,7 +85,6 @@ function Activities() {
     document.body.style.overflow = (selectedEx || fetchError) ? 'hidden' : 'unset';
   }, [selectedEx, fetchError]);
 
-  // NEW: Effect to scroll up when results are shown
   useEffect(() => {
     if (modalStage === 'result' && modalScrollRef.current) {
       modalScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
@@ -101,7 +102,6 @@ function Activities() {
         const heroJson = await heroRes.json();
         const exJson = await exRes.json();
 
-        // ✅ FIXED: Specified StrapiItem type and avoided any
         const heroArray: StrapiItem[] = heroJson.data || heroJson;
         const matchingHero = heroArray.find((item: StrapiItem) => 
           (item.attributes?.purpose || item.purpose) === "Other Page" && 
@@ -116,14 +116,11 @@ function Activities() {
         const tempMap: Record<number, DetailedExercise> = {};
         
         rawExercises.forEach((item: StrapiItem) => {
-          // ✅ FIXED: Explicitly cast to include StrapiAttributes to fix "Property does not exist" error
           const data = (item.attributes ? { id: item.id, ...item.attributes } : item) as StrapiAttributes & { id: number };
           
           let parsedContent: RawQuestion[] = [];
-          
           if (data.content) {
             const rawContent = typeof data.content === 'string' ? JSON.parse(data.content) : data.content;
-            
             if (Array.isArray(rawContent)) {
               parsedContent = rawContent.map((q: RawQuestion) => ({
                 ...q,
@@ -146,7 +143,7 @@ function Activities() {
         setExercisesList(Object.values(tempMap));
       } catch (err) {
         console.error("Fetch Error:", err);
-        setFetchError("Failed to load activities from server.");
+        // Note: heroData remains null here, which triggers the Mock UI below
       } finally {
         setLoading(false);
       }
@@ -193,20 +190,30 @@ function Activities() {
     return <Book size={size} />;
   };
 
+  // ✅ Determine which hero data to use
+  const activeHero = heroData || MOCK_HERO;
+
   return (
     <main className="pt-20 bg-[#fcfaf8] min-h-screen">
       <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
-        {heroData && (
+        {/* Render Loader while fetching, then switch to either API or Mock */}
+        {loading ? (
+           <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
+              <Loader2 className="animate-spin text-white/50" size={48} />
+           </div>
+        ) : (
           <>
-            <img src={heroData.mediaUrl} className="absolute inset-0 w-full h-full object-cover z-0" alt="Hero" />
+            <img src={activeHero.mediaUrl} className="absolute inset-0 w-full h-full object-cover z-0" alt="Hero" />
             <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/80 via-blue-700/40 to-red-700/60" />
             <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-20 gap-5">
               <div className="flex items-center gap-2 px-4 py-2 text-white bg-white/20 backdrop-blur-md border border-white/30 rounded-3xl">
                 <SplitSquareHorizontal size={16} />
-                <p className="text-xs font-bold uppercase tracking-wider">Interactive Learning</p>
+                <p className="text-xs font-bold uppercase tracking-wider">
+                  {heroData ? "Interactive Learning" : "Preview Mode"}
+                </p>
               </div>
-              <h1 className="text-white text-4xl md:text-6xl font-bold font-serif leading-tight max-w-3xl">{heroData.title}</h1>
-              <p className="text-white text-lg max-w-xl opacity-90">{heroData.description}</p>
+              <h1 className="text-white text-4xl md:text-6xl font-bold font-serif leading-tight max-w-3xl">{activeHero.title}</h1>
+              <p className="text-white text-lg max-w-xl opacity-90">{activeHero.description}</p>
             </div>
           </>
         )}
@@ -275,10 +282,10 @@ function Activities() {
       </section>
 
       {(selectedEx || fetchError) && (
-        <div className="fixed inset-0 z-999 bg-slate-900/60 backdrop-blur-xl flex justify-center items-center p-4 mt-10">
+        <div className="fixed inset-0 z-[999] bg-slate-900/60 backdrop-blur-xl flex justify-center items-center p-4">
           <div className="fixed inset-0" onClick={() => {setSelectedEx(null); setFetchError(null);}} />
           
-          <div className="relative bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl animate-in fade-in zoom-in duration-300 flex flex-col max-h-[75vh]">
+          <div className="relative bg-white w-full max-w-4xl rounded-[2.5rem] shadow-2xl animate-in fade-in zoom-in duration-300 flex flex-col max-h-[85vh]">
             <button 
               onClick={() => {setSelectedEx(null); setFetchError(null);}} 
               className="absolute top-5 right-5 p-2 bg-slate-100 hover:bg-red-50 hover:text-red-600 text-slate-900 rounded-full transition-all z-50"
@@ -288,7 +295,6 @@ function Activities() {
               <X size={20} strokeWidth={3} />
             </button>
 
-            {/* Added modalScrollRef here */}
             <div ref={modalScrollRef} className="overflow-y-auto p-6 md:p-10 custom-scrollbar">
               {fetchError ? (
                 <div className="text-center py-10">

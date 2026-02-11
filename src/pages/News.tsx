@@ -5,6 +5,7 @@ import {
 } from "lucide-react";
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import img1 from "../assets/img/_A1A4703.jpg"
 
 // --- Types & Interfaces ---
 interface BlogPost {
@@ -26,7 +27,6 @@ interface GalleryHero {
   mediaUrl: string;
 }
 
-// Refined interface to include all possible properties from the API
 interface ApiResponseItem {
   id: number;
   attributes?: {
@@ -42,6 +42,13 @@ interface ApiResponseItem {
   purpose?: string;
   subPurpose?: string;
 }
+
+// --- Mock Data ---
+const MOCK_HERO: GalleryHero = {
+  title: "Atoile News & Updates",
+  description: "Stay informed with the latest developments, project milestones, and cultural events from the French Embassy Fund and our partners across Nigeria.",
+  mediaUrl: img1
+};
 
 function News() {
   const XLogo = ({ className = "w-4 h-4" }: { className?: string }) => (
@@ -97,7 +104,10 @@ function News() {
           });
         }
       })
-      .catch(err => console.error("Hero Fetch Error:", err))
+      .catch(err => {
+        console.error("Hero Fetch Error:", err);
+        // On error, heroData remains null and we use MOCK_HERO in render
+      })
       .finally(() => setLoadingHero(false));
 
     const handleClickOutside = (event: MouseEvent) => {
@@ -162,22 +172,29 @@ function News() {
     navigate(`/news/${post.slug}`);
   };
 
+  // ✅ Determine which hero to display
+  const activeHero = heroData || MOCK_HERO;
+
   return (
     <main className="pt-20 bg-gray-50/30 min-h-screen relative">
       <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
         {loadingHero ? (
-          <div className="absolute inset-0 animate-pulse bg-slate-800" />
+          <div className="absolute inset-0 flex items-center justify-center bg-slate-800">
+            <Loader2 className="animate-spin text-white/50" size={48} />
+          </div>
         ) : (
           <>
-            <img src={heroData?.mediaUrl} className="absolute inset-0 w-full h-full object-cover z-0" alt="News hero" />
+            <img src={activeHero.mediaUrl} className="absolute inset-0 w-full h-full object-cover z-0" alt="News hero" />
             <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/80 via-blue-700/50 to-red-700/80" />
             <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-20 gap-5">
               <div className="flex flex-row items-center gap-2 px-4 py-2 text-white bg-white/20 backdrop-blur-md border border-white/30 rounded-3xl">
                 <Newspaper color="white" size={17} />
-                <p className="text-sm font-medium tracking-wide uppercase">Press & Updates</p>
+                <p className="text-sm font-medium tracking-wide uppercase">
+                  {heroData ? "Press & Updates" : "Latest News Preview"}
+                </p>
               </div>
-              <h1 className="text-white text-5xl md:text-7xl font-bold font-serif max-w-3xl leading-tight">{heroData?.title}</h1>
-              <p className="text-white/90 text-lg md:text-xl max-w-xl">{heroData?.description}</p>
+              <h1 className="text-white text-5xl md:text-7xl font-bold font-serif max-w-3xl leading-tight">{activeHero.title}</h1>
+              <p className="text-white/90 text-lg md:text-xl max-w-xl">{activeHero.description}</p>
             </div>
           </>
         )}

@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useMemo } from "react";
 import NigeriaMap from "../components/NigeriaMap";
 import logo from "../assets/img/vecteezy_ms-office-logo-on-transparent-background_14018577.jpg";
-
+import img1 from "../assets/img/_A1A4760.jpg"
 interface GalleryHero {
     title: string;
     description: string;
@@ -38,6 +38,15 @@ interface StrapiResponse {
     data: StrapiDataItem[];
 }
 
+// Mock data for fallback if API fails
+const MOCK_HERO: GalleryHero = {
+    title: "Bilingual and Competitive (BAC)",
+    description: "Strengthening the employability of Nigerian graduates through French language proficiency and digital resources.",
+    mediaUrl: img1, 
+    purpose: "Other Page",
+    subPurpose: "BAC"
+};
+
 function BAC() {
     const navigate = useNavigate();
     const projectGoalsRef = useRef<HTMLDivElement>(null);
@@ -66,7 +75,10 @@ function BAC() {
                         return attr.purpose === "Other Page" && attr.subPurpose === "BAC";
                     }
                 );
-                if (matchingHero) setHeroData(matchingHero.attributes || matchingHero);
+                
+                if (matchingHero) {
+                    setHeroData(matchingHero.attributes || matchingHero);
+                }
 
                 const bacRegex = /-bac$/i; 
 
@@ -87,14 +99,19 @@ function BAC() {
                 
                 setEventImages(bacGalleryImages);
             })
-            .catch(err => console.error("Data Fetch Error:", err))
+            .catch(err => {
+                console.error("Data Fetch Error:", err);
+                // If fetch fails, heroData remains null, triggering mock data display
+            })
             .finally(() => {
                 setLoadingHero(false);
                 setLoadingGallery(false);
             });
     }, [CLIENT_KEY]);
 
-    // useMemo solves the TS6133 error by using the imported hook for logic
+    // Choose between API data or Mock data
+    const activeHero = heroData || MOCK_HERO;
+
     const { currentGalleryItems, totalPages } = useMemo(() => {
         const indexOfLastItem = currentPage * itemsPerPage;
         const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -140,7 +157,7 @@ function BAC() {
                     </div>
                 ) : (
                     <>
-                        <img src={heroData?.mediaUrl} alt="Hero" className="absolute inset-0 w-full h-full object-cover z-0" />
+                        <img src={activeHero.mediaUrl} alt="Hero" className="absolute inset-0 w-full h-full object-cover z-0" />
                         <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/80 via-blue-800/40 to-red-700/60" />
 
                         <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-16 gap-6">
@@ -148,8 +165,8 @@ function BAC() {
                                 <Newspaper color="white" size={16} />
                                 <p className="text-xs md:text-sm font-bold tracking-wide uppercase">French Embassy Fund (FEF)</p>
                             </div>
-                            <h1 className="text-white text-4xl md:text-7xl font-bold font-serif max-w-4xl leading-tight">{heroData?.title}</h1>
-                            <p className="text-white/90 text-lg md:text-xl max-w-xl leading-relaxed">{heroData?.description}</p>
+                            <h1 className="text-white text-4xl md:text-7xl font-bold font-serif max-w-4xl leading-tight">{activeHero.title}</h1>
+                            <p className="text-white/90 text-lg md:text-xl max-w-xl leading-relaxed">{activeHero.description}</p>
                             
                             <div className="flex flex-wrap gap-4">
                                 <button onClick={scrollToGallery} className="px-8 py-4 bg-white text-blue-900 font-bold rounded-2xl hover:bg-blue-50 transition-all flex items-center gap-2 group shadow-xl active:scale-95">
@@ -191,7 +208,6 @@ function BAC() {
                             <div className="bg-slate-900 rounded-[2.5rem] p-8 lg:w-1/3 flex flex-col justify-between overflow-hidden relative">
                                 <div className="relative z-10">
                                     <div className="flex items-center gap-3 mb-6">
-                                        {/* logo usage solves TS6133 error */}
                                         <img src={logo} alt="Partner Logo" className="w-8 h-8 rounded-lg object-contain bg-white/10 p-1" />
                                         <div className="flex flex-col">
                                             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse mb-1"></div>
@@ -202,6 +218,7 @@ function BAC() {
                                 </div>
                                 <div className="mt-8 relative z-10 flex items-center gap-4">
                                     <div className="w-14 h-14 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+                                        {/* FIXED: Changed from item.icon to Laptop as 'item' is not defined in this scope */}
                                         <Laptop className="text-white" size={28} />
                                     </div>
                                     <div className="text-white/40 italic text-sm font-serif">"Empowering <br/> digital fluency"</div>

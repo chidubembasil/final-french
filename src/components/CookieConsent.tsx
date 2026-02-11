@@ -1,17 +1,48 @@
 import { useState, useEffect } from 'react';
 import { X, Cookie, Shield, Settings } from 'lucide-react';
 
+// FIX: Tells TypeScript that gtag and dataLayer exist on the window object
+declare global {
+  interface Window {
+    dataLayer: any[];
+    gtag: (...args: any[]) => void;
+  }
+}
+
 const CookieConsent = () => {
   const [showBanner, setShowBanner] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
 
-  // FIXED: Using a lazy initializer function to read localStorage once on mount.
-  // This prevents the "cascading render" error by avoiding setState inside useEffect.
+  // Sync consent with Google Analytics / DataLayer
+  const updateGoogleConsent = (prefs: { analytics: boolean; marketing: boolean }) => {
+    if (typeof window !== 'undefined') {
+      // Standard GTAG Consent Mode
+      if (typeof window.gtag === 'function') {
+        window.gtag('consent', 'update', {
+          'analytics_storage': prefs.analytics ? 'granted' : 'denied',
+          'ad_storage': prefs.marketing ? 'granted' : 'denied',
+        });
+      }
+
+      // Custom DataLayer Event for Tag Manager
+      window.dataLayer = window.dataLayer || [];
+      window.dataLayer.push({
+        event: 'consent_update',
+        consent_analytics: prefs.analytics,
+        consent_marketing: prefs.marketing
+      });
+    }
+  };
+
+  // Lazy initializer to read localStorage once on mount.
   const [preferences, setPreferences] = useState(() => {
     const consent = typeof window !== 'undefined' ? localStorage.getItem('cookieConsent') : null;
     if (consent) {
       try {
-        return JSON.parse(consent);
+        const parsed = JSON.parse(consent);
+        // Sync GA on initial load if consent exists
+        updateGoogleConsent(parsed);
+        return parsed;
       } catch {
         return { necessary: true, analytics: false, marketing: false };
       }
@@ -25,13 +56,13 @@ const CookieConsent = () => {
       const timer = setTimeout(() => setShowBanner(true), 1000);
       return () => clearTimeout(timer);
     }
-    // No longer calling setPreferences here, preventing the cascading render error.
   }, []);
 
   const acceptAll = () => {
     const allAccepted = { necessary: true, analytics: true, marketing: true };
     setPreferences(allAccepted);
     localStorage.setItem('cookieConsent', JSON.stringify(allAccepted));
+    updateGoogleConsent(allAccepted); 
     setShowBanner(false);
     setShowSettings(false);
   };
@@ -40,12 +71,14 @@ const CookieConsent = () => {
     const necessaryOnly = { necessary: true, analytics: false, marketing: false };
     setPreferences(necessaryOnly);
     localStorage.setItem('cookieConsent', JSON.stringify(necessaryOnly));
+    updateGoogleConsent(necessaryOnly); 
     setShowBanner(false);
     setShowSettings(false);
   };
 
   const savePreferences = () => {
     localStorage.setItem('cookieConsent', JSON.stringify(preferences));
+    updateGoogleConsent(preferences); 
     setShowBanner(false);
     setShowSettings(false);
   };

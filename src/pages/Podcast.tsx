@@ -1,5 +1,6 @@
-import { Headphones, Search, X, PlayCircle, ChevronLeft, ChevronRight, ArrowLeft, Calendar, User, Layers, Copy, Download, Check, Loader2 } from "lucide-react";
+import { Headphones, Search, X, PlayCircle, ChevronLeft, ChevronRight, ArrowLeft, Calendar, User, Layers, Download, Check, Loader2 } from "lucide-react";
 import { useState, useEffect, useMemo } from 'react';
+import img1 from "../assets/img/_A1A4787.jpg"
 
 interface Podcast {
   id: number;
@@ -29,7 +30,6 @@ interface GalleryHero {
   mediaUrl: string;
 }
 
-// ✅ FIXED: Replaced 'any' with specific attribute types
 interface StrapiAttributes extends Partial<Podcast>, Partial<GalleryHero> {
   purpose?: string;
   subPurpose?: string;
@@ -38,7 +38,6 @@ interface StrapiAttributes extends Partial<Podcast>, Partial<GalleryHero> {
 interface StrapiDataItem {
   id: number;
   attributes?: StrapiAttributes;
-  // Allow direct access if Strapi isn't using the 'attributes' wrapper
   purpose?: string;
   subPurpose?: string;
   title?: string;
@@ -51,6 +50,13 @@ interface StrapiDataItem {
 interface StrapiResponse {
   data: StrapiDataItem[];
 }
+
+// Mock data for the hero section fallback
+const DEFAULT_HERO: GalleryHero = {
+  title: "À toi le micro",
+  description: "Explore our collection of educational podcasts and videos designed for French language learners and teachers across Nigeria.",
+  mediaUrl: img1 
+};
 
 function Podcast() {
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
@@ -89,21 +95,28 @@ function Podcast() {
       })
       .then((data: StrapiResponse) => {
         const raw = Array.isArray(data) ? data : (data.data || []);
-        // ✅ FIXED: Replaced item: any with StrapiDataItem
         const hero = raw.find((item: StrapiDataItem) => {
           const attr = item.attributes || item;
           return attr.purpose === "Other Page" && attr.subPurpose === "Podcasts";
         });
+        
         if (hero) {
           const attr = hero.attributes || hero;
           setHeroData({
-            title: attr.title || '',
-            description: attr.description || '',
-            mediaUrl: attr.mediaUrl || '',
+            title: attr.title || DEFAULT_HERO.title,
+            description: attr.description || DEFAULT_HERO.description,
+            mediaUrl: attr.mediaUrl || DEFAULT_HERO.mediaUrl,
           });
+        } else {
+          // If no specific hero found in the response, use mock data
+          setHeroData(DEFAULT_HERO);
         }
       })
-      .catch(err => console.error("Hero fetch error:", err))
+      .catch(err => {
+        console.error("Hero fetch error:", err);
+        // Fallback to mock data on network error
+        setHeroData(DEFAULT_HERO);
+      })
       .finally(() => setLoadingHero(false));
 
     const podcastQuery = `${baseUrl}/api/podcasts?` +
@@ -119,7 +132,6 @@ function Podcast() {
       })
       .then((data: StrapiResponse) => {
         const raw = Array.isArray(data) ? data : (data.data || []);
-        // ✅ FIXED: Replaced item: any with StrapiDataItem
         const formatted = raw.map((item: StrapiDataItem) => {
           const attrs = item.attributes || item;
           return {
@@ -198,10 +210,10 @@ function Podcast() {
                 <p className="text-sm font-medium uppercase tracking-widest">À toi le micro</p>
               </div>
               <h1 className="text-white text-5xl md:text-7xl font-bold font-serif max-w-3xl leading-tight">
-                {heroData?.title || "Podcasts"}
+                {heroData?.title}
               </h1>
               <p className="text-white/90 text-lg md:text-xl max-w-xl leading-relaxed">
-                {heroData?.description || "Listen to learners and teachers"}
+                {heroData?.description}
               </p>
             </div>
           </>
@@ -380,7 +392,7 @@ function Podcast() {
                 disabled={!activePodcast.transcript}
                 className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-[10px] font-black uppercase hover:bg-gray-200 disabled:opacity-50"
               >
-                {copied ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+                {copied ? <Check size={14} className="text-green-600" /> : <Check size={14} />}
                 {copied ? 'Copied' : 'Copy Transcript'}
               </button>
               <button type="button" aria-label="Close modal" onClick={() => setActivePodcast(null)} className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-all">
