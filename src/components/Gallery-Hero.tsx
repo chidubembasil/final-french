@@ -65,6 +65,7 @@ export default function GalleryHero() {
               <img
                 src={item.mediaUrl} // Directly using mediaUrl as your Gallery page does
                 alt={item.title}
+                loading="lazy"
                 className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                 onError={(e) => {
                   e.currentTarget.src = 'https://via.placeholder.com/400x600?text=Image+Not+Found';

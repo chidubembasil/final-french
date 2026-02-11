@@ -115,7 +115,7 @@ function Gallery() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch(`${CLIENT_KEY}api/galleries`);
+        const response = await fetch(`${CLIENT_KEY}/api/galleries`);
         if (!response.ok) throw new Error("API Network Response error");
         const data = await response.json();
         
@@ -269,6 +269,7 @@ function Gallery() {
                     <img
                       src={img.mediaUrl}
                       alt={img.title}
+                      loading="lazy"
                       className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
                     />
                   </div>
@@ -376,6 +377,7 @@ function Gallery() {
                 ) : (
                   <img
                     src={selectedImage.mediaUrl}
+                    loading="lazy"
                     alt={selectedImage.title}
                     className="max-w-full max-h-[70vh] object-contain rounded-2xl shadow-2xl border border-white/10"
                   />

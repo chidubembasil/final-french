@@ -39,7 +39,7 @@ export default function CookiePolicy() {
                     
                     <section className="bg-blue-50/70 p-8 rounded-[2rem] border border-blue-100">
                         <p className="text-lg md:text-xl italic text-blue-900 leading-relaxed">
-                            Our web app uses cookies and similar technologies to enhance your experience, understand user behavior, and provide optional marketing content. This policy explains what cookies are, how we use them, and your choices regarding them.
+                            Our website uses cookies and similar technologies to enhance your experience, understand user behavior, and provide optional marketing content. This policy explains what cookies are, how we use them, and your choices regarding them.
                         </p>
                     </section>
 
@@ -121,7 +121,7 @@ export default function CookiePolicy() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:pl-14">
                         <section className="space-y-3">
                             <h2 className="text-xl font-bold text-gray-900 underline decoration-blue-200 decoration-4 underline-offset-4">4. Third-Party Cookies</h2>
-                            <p className="text-gray-600">Our web app may use cookies from third-party services like Google Analytics. These are subject to their own policies.</p>
+                            <p className="text-gray-600">Our website may use cookies from third-party services like Google Analytics. These are subject to their own policies.</p>
                         </section>
                         <section className="space-y-3">
                             <h2 className="text-xl font-bold text-gray-900 underline decoration-blue-200 decoration-4 underline-offset-4">5. Your Cookie Choices</h2>
@@ -143,12 +143,12 @@ export default function CookiePolicy() {
                             <Mail size={32} />
                         </div>
                         <h2 className="text-3xl font-bold text-gray-900 font-serif mb-2">Contact Us</h2>
-                        <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                        <p className="text-gray-600 mb-6 max-w-md mx-auto ">
                             If you have any questions about our use of cookies, please contact us at:
                         </p>
                         <a 
                             href="mailto:admin@atoilemicronaija.com" 
-                            className="text-2xl font-bold text-blue-700 hover:text-blue-800 transition-all underline underline-offset-8 decoration-blue-200 hover:decoration-blue-700"
+                            className="text-sm text-center font-bold text-blue-700 hover:text-blue-800 transition-all underline underline-offset-8 decoration-blue-200 hover:decoration-blue-700"
                         >
                             admin@atoilemicronaija.com
                         </a>

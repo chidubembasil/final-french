@@ -37,7 +37,7 @@ function NewsDetail() {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    fetch(`${CLIENT_KEY}api/news`)
+    fetch(`${CLIENT_KEY}/api/news`)
       .then(res => res.json())
       .then(data => {
         // Fixed: Replaced any in find loop
@@ -116,7 +116,7 @@ function NewsDetail() {
         </div>
 
         <div className="aspect-video w-full rounded-[2.5rem] overflow-hidden shadow-2xl border mb-12">
-          <img src={post.coverImage} className="w-full h-full object-cover" alt={post.title} />
+          <img src={post.coverImage} loading="lazy" className="w-full h-full object-cover" alt={post.title} />
         </div>
 
         <div className="prose prose-lg prose-slate max-w-none">

@@ -11,10 +11,10 @@ export default function PrivacyPolicy() {
         <div className="bg-slate-900 rounded-[2.5rem] p-8 md:p-12 mb-12 relative overflow-hidden shadow-xl">
           <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl" />
           <div className="relative z-10">
-            <div className="flex items-center gap-3 text-blue-400 mb-6">
+           {/*  <div className="flex items-center gap-3 text-blue-400 mb-6">
               <ShieldCheck size={32} />
               <span className="uppercase tracking-widest font-bold text-sm">Legal Documentation</span>
-            </div>
+            </div> */}
             <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
               Privacy Policy
             </h1>
@@ -166,12 +166,12 @@ export default function PrivacyPolicy() {
                 <h2 className="text-3xl font-bold mb-6">9. Contact Us</h2>
                 <p className="text-slate-300 mb-8 max-w-md">If you have questions about this Privacy Policy, please feel free to reach out to our team.</p>
                 <a href="mailto:admin@atoilemicronaija.com" className="inline-flex items-center gap-4 p-4 bg-white/10 hover:bg-white/20 border border-white/10 rounded-2xl transition-all group w-full sm:w-auto">
-                  <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <div className="w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform">
                     <Mail size={24} />
                   </div>
-                  <div>
+                  <div className="flex flex-col items-center gap-0.5 md:flex-row lg:flex-row ">
                     <p className="text-xs text-slate-400 font-bold uppercase tracking-wider">Email Us At</p>
-                    <p className="text-lg font-bold">admin@atoilemicronaija.com</p>
+                    <p className="text-sm font-bold pr-2.5">admin@atoilemicronaija.com</p>
                   </div>
                 </a>
               </div>

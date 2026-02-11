@@ -95,8 +95,8 @@ function Activities() {
     const fetchData = async () => {
       try {
         const [heroRes, exRes] = await Promise.all([
-          fetch(`${CLIENT_KEY}api/galleries`),
-          fetch(`${CLIENT_KEY}api/exercises`)
+          fetch(`${CLIENT_KEY}/api/galleries`),
+          fetch(`${CLIENT_KEY}/api/exercises`)
         ]);
         
         const heroJson = await heroRes.json();
@@ -203,7 +203,7 @@ function Activities() {
            </div>
         ) : (
           <>
-            <img src={activeHero.mediaUrl} className="absolute inset-0 w-full h-full object-cover z-0" alt="Hero" />
+            <img src={activeHero.mediaUrl} loading="lazy" className="absolute inset-0 w-full h-full object-cover z-0" alt="Hero" />
             <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/80 via-blue-700/40 to-red-700/60" />
             <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-20 gap-5">
               <div className="flex items-center gap-2 px-4 py-2 text-white bg-white/20 backdrop-blur-md border border-white/30 rounded-3xl">

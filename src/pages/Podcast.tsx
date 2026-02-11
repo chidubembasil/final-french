@@ -200,7 +200,7 @@ function Podcast() {
               src={heroData?.mediaUrl}
               className="absolute inset-0 w-full h-full object-cover z-0"
               alt="Podcast hero background"
-              loading="eager"
+              loading="lazy"
               decoding="async"
             />
             <div className="absolute inset-0 z-10 bg-gradient-to-br from-red-600/80 via-transparent to-blue-900/90" />

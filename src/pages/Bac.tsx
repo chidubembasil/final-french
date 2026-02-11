@@ -64,7 +64,7 @@ function BAC() {
     const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
     useEffect(() => {
-        fetch(`${CLIENT_KEY}api/galleries`)
+        fetch(`${CLIENT_KEY}/api/galleries`)
             .then((res) => res.json())
             .then((data: StrapiResponse | StrapiDataItem[]) => {
                 const rawData = Array.isArray(data) ? data : (data.data || []);
@@ -146,7 +146,7 @@ function BAC() {
                     <button className="absolute top-10 right-10 text-white hover:rotate-90 transition-transform" aria-label="cancel" title="cancel">
                         <X size={40} />
                     </button>
-                    <img src={selectedImg} className="max-w-full max-h-full rounded-lg shadow-2xl animate-in zoom-in duration-300" alt="Full view" />
+                    <img src={selectedImg} loading="lazy" className="max-w-full max-h-full rounded-lg shadow-2xl animate-in zoom-in duration-300" alt="Full view" />
                 </div>
             )}
 
@@ -157,7 +157,7 @@ function BAC() {
                     </div>
                 ) : (
                     <>
-                        <img src={activeHero.mediaUrl} alt="Hero" className="absolute inset-0 w-full h-full object-cover z-0" />
+                        <img src={activeHero.mediaUrl} loading="lazy" alt="Hero" className="absolute inset-0 w-full h-full object-cover z-0" />
                         <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/80 via-blue-800/40 to-red-700/60" />
 
                         <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-16 gap-6">
@@ -208,7 +208,7 @@ function BAC() {
                             <div className="bg-slate-900 rounded-[2.5rem] p-8 lg:w-1/3 flex flex-col justify-between overflow-hidden relative">
                                 <div className="relative z-10">
                                     <div className="flex items-center gap-3 mb-6">
-                                        <img src={logo} alt="Partner Logo" className="w-8 h-8 rounded-lg object-contain bg-white/10 p-1" />
+                                        <img src={logo} alt="Partner Logo" loading="lazy" className="w-8 h-8 rounded-lg object-contain bg-white/10 p-1" />
                                         <div className="flex flex-col">
                                             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse mb-1"></div>
                                             <span className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em]">Live Portal</span>
@@ -299,7 +299,7 @@ function BAC() {
                                         className="group relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-slate-100 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-700"
                                         onClick={() => setSelectedImg(img.coverImage)}
                                     >
-                                        <img src={img.coverImage} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={img.title} />
+                                        <img src={img.coverImage} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={img.title} />
                                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-8">
                                             <div className="translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                                                 <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2">{img.category}</p>

@@ -80,7 +80,7 @@ export default function Home() {
             try {
                 setLoading(true);
                 setError(null);
-                const response = await fetch(`${CLIENT_KEY}api/galleries`);
+                const response = await fetch(`${CLIENT_KEY}/api/galleries`);
                 
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 
@@ -174,6 +174,7 @@ export default function Home() {
                                         <div className="relative w-full h-full">
                                             <img
                                                 src={item.mediaUrl}
+                                                loading="lazy"
                                                 alt={item.title}
                                                 className="absolute inset-0 w-full h-full object-cover z-0"
                                             />

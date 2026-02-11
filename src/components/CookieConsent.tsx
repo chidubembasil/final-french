@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, Cookie, Shield, Settings } from 'lucide-react';
+import { Link} from "react-router-dom"; // Added useLocation
 
 // FIX: Tells TypeScript that gtag and dataLayer exist on the window object
 declare global {
@@ -106,8 +107,8 @@ const CookieConsent = () => {
               </p>
               
               <div className="mt-4 flex gap-4 text-[10px] font-black uppercase tracking-widest">
-                <a href="/privacy" className="text-blue-600 hover:text-red-600 transition-colors underline">Privacy Policy</a>
-                <a href="/cookies" className="text-blue-600 hover:text-red-600 transition-colors underline">Cookie Policy</a>
+                <Link to={"/privacy"} className="text-blue-600 hover:text-red-600 transition-colors underline">Privacy Policy</Link>
+                <Link to={"/cookies"} className="text-blue-600 hover:text-red-600 transition-colors underline">Cookie Policy</Link>
               </div>
             </div>
 
