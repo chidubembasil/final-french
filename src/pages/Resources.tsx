@@ -44,7 +44,7 @@ interface Celebration {
   eventDate?: string;
   externalUrl?: string;
   status: 'draft' | 'published';
-  celebrationType: 'Celebration' | 'Achievement';
+  celebrationType: 'Celebrations' | 'Achievements';
   publishedAt: string;
   createdAt: string;
   updatedAt: string;
@@ -278,8 +278,8 @@ function Pedagogies() {
   const currentItems = filteredPedagogies.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
   // Updated to use the new Celebrations API data
-  const achievements = useMemo(() => celebrations.filter(c => c.celebrationType === "Achievement"), [celebrations]);
-  const upcomingEvents = useMemo(() => celebrations.filter(c => c.celebrationType === "Celebration"), [celebrations]);
+  const achievements = useMemo(() => celebrations.filter(c => c.celebrationType === "Achievements"), [celebrations]);
+  const upcomingEvents = useMemo(() => celebrations.filter(c => c.celebrationType === "Celebrations"), [celebrations]);
 
   return (
     <main className="pt-20 bg-gray-50/30 min-h-screen">

@@ -20,7 +20,7 @@ export default function GalleryHero() {
     const fetchGalleries = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${CLIENT_KEY}api/galleries`);
+        const response = await fetch(`${CLIENT_KEY}/api/galleries`);
 
         if (!response.ok) throw new Error(`Failed to fetch`);
 

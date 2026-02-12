@@ -239,7 +239,7 @@ function BAC() {
                                     <a href="https://login.microsoftonline.com" target="_blank" rel="noopener noreferrer" className="py-5 px-12 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.15em] transition-all hover:bg-blue-700 hover:shadow-lg active:scale-95 shadow-md flex items-center gap-3">
                                         Launch LMS <ExternalLink size={16} />
                                     </a>
-                                    <p className="text-[10px] text-gray-400 font-medium">Powered by Microsoft 365 Education</p>
+                                   {/*  <p className="text-[10px] text-gray-400 font-medium">Powered by Microsoft 365 Education</p> */}
                                 </div>
                             </div>
                         </div>

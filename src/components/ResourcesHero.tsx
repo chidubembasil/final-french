@@ -25,7 +25,7 @@ export default function ResourceHero() {
 
     useEffect(() => {
         // Removed redundant setLoading(true) call to fix cascading render error
-        fetch(`${CLIENT_KEY}api/resources?limit=4`)
+        fetch(`${CLIENT_KEY}/api/resources?limit=4`)
             .then((res) => {
                 if (!res.ok) throw new Error('Network response was not ok');
                 return res.json();
