@@ -353,19 +353,12 @@ function Pedagogies() {
             </div>
             <div className="space-y-3">
               {achievements.length > 0 ? (
-                achievements.slice(0, 3).map((rank, index) => (
+                achievements.slice(0, 3).map((rank) => (
                   <div key={rank.id} className="flex items-center gap-4 p-3 rounded-2xl bg-white/5 border border-white/10 hover:bg-white/10 transition-all">
-                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-xs shrink-0 ${
-                      index === 0 ? 'bg-yellow-500 text-slate-900' : 
-                      index === 1 ? 'bg-slate-300 text-slate-900' : 
-                      index === 2 ? 'bg-orange-400 text-slate-900' : 'bg-white/10 text-white'
-                    }`}>
-                     
-                    </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-bold text-xs truncate">{rank.title}</h4>
                       <p className="text-[10px] text-white/50 truncate line-clamp-1">{rank.content}</p>
-                      <p>{rank.eventDate}</p>
+                      <p>{rank.eventDate ? new Date(rank.eventDate).toLocaleDateString() : 'No Date'}</p>
                     </div>
                   </div>
                 ))
@@ -409,7 +402,7 @@ function Pedagogies() {
                       <h4 className="font-bold text-sm text-slate-800 truncate">{event.title}</h4>
                       <p className="text-[10px] font-bold text-red-600 uppercase truncate">
                         {event.eventDate ? new Date(event.eventDate).toLocaleDateString() : "Special Event"}
-                        <p className="text-[10px] text-white/50 truncate line-clamp-1">{event.content}</p>
+                        <p className="text-[10px] text-red-600 truncate line-clamp-1">{event.content}</p>
                       </p>
                     </div>
                     {event.externalUrl && (
