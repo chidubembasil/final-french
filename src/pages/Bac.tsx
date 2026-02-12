@@ -204,29 +204,60 @@ function BAC() {
                 <div className="w-[90%] max-w-6xl relative group overflow-hidden">
                     <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-700"></div>
                     <div className="relative bg-white border border-gray-100 rounded-[3rem] p-2 shadow-xl hover:shadow-2xl transition-all duration-500">
-                        <div className="flex flex-col lg:flex-row items-stretch gap-2">
-                            <div className="bg-slate-900 rounded-[2.5rem] p-8 lg:w-1/3 flex flex-col justify-between overflow-hidden relative">
-                                <div className="relative z-10">
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <img src={logo} alt="Partner Logo" loading="lazy" className="w-8 h-8 rounded-lg object-contain bg-white/10 p-1" />
-                                        <div className="flex flex-col">
+                        <div className="flex flex-col lg:flex-col items-stretch gap-2">
+                           <div className="bg-slate-900 rounded-[2.5rem] p-8 lg:w-full flex flex-row justify-between items-end overflow-hidden relative group">
+   
+                                <div className="bg-slate-900 rounded-[2.5rem] p-8 lg:w-full flex flex-row justify-between items-center overflow-hidden relative group min-h-[250px]">
+                                
+                                    {/* Left Side Content */}
+                                    <div className="relative z-10 flex flex-col justify-between h-full">
+                                        <div>
+                                        <div className="flex items-center gap-3 mb-6">
+                                            <img 
+                                            src="/logo.png" 
+                                            alt="Partner Logo" 
+                                            loading="lazy" 
+                                            className="w-8 h-8 rounded-lg object-contain bg-white/10 p-1" 
+                                            />
+                                            <div className="flex flex-col">
                                             <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse mb-1"></div>
                                             <span className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em]">Live Portal</span>
+                                            </div>
+                                        </div>
+                                        
+                                        <h2 className="text-3xl font-serif font-bold text-white leading-tight">
+                                            Interactive <br />
+                                            <span className="text-blue-400">Resources</span>
+                                        </h2>
+                                        </div>
+
+                                        <div className="mt-8 flex items-center gap-4">
+                                        <div className="w-14 h-14 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+                                            <Laptop className="text-white" size={28} />
+                                        </div>
+                                        <div className="text-white/40 italic text-sm font-serif leading-tight">
+                                            "Empowering <br/> digital fluency"
+                                        </div>
                                         </div>
                                     </div>
-                                    <h2 className="text-3xl font-serif font-bold text-white leading-tight">Interactive <br /><span className="text-blue-400">Resources</span></h2>
-                                </div>
-                                <div className="mt-8 relative z-10 flex items-center gap-4">
-                                    <div className="w-14 h-14 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-                                        {/* FIXED: Changed from item.icon to Laptop as 'item' is not defined in this scope */}
-                                        <Laptop className="text-white" size={28} />
-                                    </div>
-                                    <div className="text-white/40 italic text-sm font-serif">"Empowering <br/> digital fluency"</div>
-                                </div>
-                                <div className="absolute bottom-[-20%] right-[-10%] w-40 h-40 bg-blue-600/20 rounded-full blur-2xl"></div>
-                            </div>
 
-                            <div className="flex-1 p-8 md:p-10 flex flex-col md:flex-row justify-between items-center gap-8">
+                                    {/* Right Side Link - Now perfectly centered vertically */}
+                                    <a 
+                                        href="https://login.microsoftonline.com" 
+                                        target="_blank" 
+                                        rel="noopener noreferrer"
+                                        className="relative z-20 flex items-center gap-2 py-5 px-12 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-300 shadow-lg hover:shadow-blue-500/20 h-fit"
+                                    >
+                                        Launch 365 
+                                        <ExternalLink size={12} strokeWidth={3} />
+                                    </a>
+
+                                    {/* Decorative Background Blur - Centered it slightly for better symmetry */}
+                                    <div className="absolute top-1/2 -translate-y-1/2 right-[-5%] w-40 h-40 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
+                                    </div>
+                                </div>
+
+                            <div className="flex-1 p-8 bg-[#F1F5F9] md:p-10 flex flex-col md:flex-row justify-between items-center gap-8">
                                 <div className="space-y-4 text-center md:text-left">
                                     <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full">
                                         <Users size={14} />
