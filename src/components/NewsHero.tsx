@@ -20,7 +20,11 @@ export default function NewsHero() {
 
     // Fetch initial news list (limited to 3 for the grid)
     useEffect(() => {
-        fetch(`${CLIENT_KEY}api/news?limit=3`)
+        // FIX: Ensure no trailing slash on the key, then force the slash before 'api'
+        const baseUrl = CLIENT_KEY.replace(/\/$/, "");
+        const finalUrl = `${baseUrl}/api/news?limit=3`;
+
+        fetch(finalUrl)
             .then(res => res.json())
             .then(data => {
                 const finalData = Array.isArray(data) ? data : (data?.data || []);
@@ -43,11 +47,9 @@ export default function NewsHero() {
             {/* --- News Grid --- */}
             <div className="w-[90%] max-w-7xl grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                 {news.length > 0 ? (
-                    // Replaced (item: any) with (item: NewsItem)
                     news.map((item: NewsItem) => (
                         <div 
                             key={item?.id || item?.slug} 
-                            // This navigates to your NewsDetail page using the slug
                             onClick={() => navigate(`/news/${item.slug}`)}
                             className="bg-white rounded-[2.5rem] overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all group cursor-pointer"
                         >
