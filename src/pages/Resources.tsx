@@ -360,11 +360,12 @@ function Pedagogies() {
                       index === 1 ? 'bg-slate-300 text-slate-900' : 
                       index === 2 ? 'bg-orange-400 text-slate-900' : 'bg-white/10 text-white'
                     }`}>
-                      #{index + 1}
+                     
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-bold text-xs truncate">{rank.title}</h4>
                       <p className="text-[10px] text-white/50 truncate line-clamp-1">{rank.content}</p>
+                      <p>{rank.eventDate}</p>
                     </div>
                   </div>
                 ))
@@ -408,6 +409,7 @@ function Pedagogies() {
                       <h4 className="font-bold text-sm text-slate-800 truncate">{event.title}</h4>
                       <p className="text-[10px] font-bold text-red-600 uppercase truncate">
                         {event.eventDate ? new Date(event.eventDate).toLocaleDateString() : "Special Event"}
+                        <p className="text-[10px] text-white/50 truncate line-clamp-1">{event.content}</p>
                       </p>
                     </div>
                     {event.externalUrl && (
