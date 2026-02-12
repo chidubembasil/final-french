@@ -1,4 +1,4 @@
-import { Mail, ShieldCheck, Clock, ArrowRight } from "lucide-react";
+import { Mail, Clock, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function PrivacyPolicy() {
@@ -177,23 +177,6 @@ export default function PrivacyPolicy() {
               </div>
             </section>
           </div>
-
-          {/* Sticky Sidebar */}
-          <aside className="lg:col-span-4 hidden lg:block">
-            <div className="sticky top-32 space-y-6">
-              <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm">
-                <h3 className="font-bold text-slate-800 mb-4 flex items-center gap-2">
-                  <ShieldCheck size={20} className="text-blue-500" />
-                  Navigation
-                </h3>
-                <nav className="space-y-3">
-                  <a href="#info-collection" className="block text-gray-500 hover:text-blue-600 transition-colors text-sm font-medium">1. Info Collection</a>
-                  <Link to="/cookies" className="block text-gray-500 hover:text-blue-600 transition-colors text-sm font-medium">Cookies Policy</Link>
-                  <Link to="/terms" className="block text-gray-500 hover:text-blue-600 transition-colors text-sm font-medium">Terms of Use</Link>
-                </nav>
-              </div>
-            </div>
-          </aside>
         </div>
       </div>
     </div>
