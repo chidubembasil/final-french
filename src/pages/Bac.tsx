@@ -85,7 +85,7 @@ function BAC() {
                 const bacGalleryImages = rawData
                     .filter((item: StrapiDataItem) => {
                         const attr = item.attributes || (item as unknown as StrapiAttributes);
-                        return attr.slug && bacRegex.test(attr.slug);
+                        return attr.title && bacRegex.test(attr.title);
                     })
                     .map((item: StrapiDataItem) => {
                         const attr = item.attributes || (item as unknown as StrapiAttributes);
