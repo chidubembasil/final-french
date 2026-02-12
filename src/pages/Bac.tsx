@@ -214,7 +214,7 @@ function BAC() {
                                         <div>
                                         <div className="flex items-center gap-3 mb-6">
                                             <img 
-                                            src="/logo.png" 
+                                            src={logo} 
                                             alt="Partner Logo" 
                                             loading="lazy" 
                                             className="w-8 h-8 rounded-lg object-contain bg-white/10 p-1" 
