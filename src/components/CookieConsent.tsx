@@ -100,8 +100,10 @@ const CookieConsent = () => {
               <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">
                 Privacy <span className="text-blue-600">Preferences</span>
               </h3>
+
+              {/* French Language */}
               <p className="text-sm text-slate-600 leading-relaxed max-w-4xl">
-                We use cookies to optimize your experience on our French language platform. 
+                We use cookies to optimize your experience on our website. 
                 By clicking <span className="font-bold text-blue-600">"Accept All"</span>, you agree to our use of analytics and marketing tools. 
                 You can choose to <span className="font-bold text-red-500">Decline</span> non-essential tracking.
               </p>

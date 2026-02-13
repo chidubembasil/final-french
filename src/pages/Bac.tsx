@@ -201,80 +201,89 @@ function BAC() {
                     ))}
                 </div>
                 
-                <div className="w-[90%] max-w-6xl relative group overflow-hidden">
-                    <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-700"></div>
-                    <div className="relative bg-white border border-gray-100 rounded-[3rem] p-2 shadow-xl hover:shadow-2xl transition-all duration-500">
-                        <div className="flex flex-col lg:flex-col items-stretch gap-2">
-                           <div className="bg-slate-900 rounded-[2.5rem] p-8 lg:w-full flex flex-row justify-between items-end overflow-hidden relative group">
-   
-                                <div className="bg-slate-900 rounded-[2.5rem] p-8 lg:w-full flex flex-row justify-between items-center overflow-hidden relative group min-h-[250px]">
-                                
-                                    {/* Left Side Content */}
-                                    <div className="relative z-10 flex flex-col justify-between h-full">
-                                        <div>
-                                        <div className="flex items-center gap-3 mb-6">
-                                            <img 
-                                            src={logo} 
-                                            alt="Partner Logo" 
-                                            loading="lazy" 
-                                            className="w-8 h-8 rounded-lg object-contain bg-white/10 p-1" 
-                                            />
-                                            <div className="flex flex-col">
-                                            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse mb-1"></div>
-                                            <span className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em]">Live Portal</span>
-                                            </div>
-                                        </div>
-                                        
-                                        <h2 className="text-3xl font-serif font-bold text-white leading-tight">
-                                            Interactive <br />
-                                            <span className="text-blue-400">Resources</span>
-                                        </h2>
-                                        </div>
+               <div className="w-[90%] max-w-6xl relative group overflow-hidden mx-auto">
+                {/* Decorative Background Glow */}
+                <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-700"></div>
 
-                                        <div className="mt-8 flex items-center gap-4">
-                                        <div className="w-14 h-14 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-                                            <Laptop className="text-white" size={28} />
-                                        </div>
-                                        <div className="text-white/40 italic text-sm font-serif leading-tight">
-                                            "Empowering <br/> digital fluency"
-                                        </div>
-                                        </div>
-                                    </div>
+                <div className="relative bg-white border border-gray-100 rounded-[2rem] md:rounded-[3rem] p-2 shadow-xl hover:shadow-2xl transition-all duration-500">
+                    <div className="flex flex-col items-stretch gap-2">
+                    
+                    {/* Top Card: Interactive Resources */}
+                    <div className="bg-slate-900 rounded-[1.8rem] md:rounded-[2.5rem] p-6 md:p-8 flex flex-col lg:flex-row justify-between items-center overflow-hidden relative group min-h-[250px] gap-8">
+                        
+                        {/* Left Side Content */}
+                        <div className="relative z-10 flex flex-col justify-between h-full items-center lg:items-start text-center lg:text-left">
+                        <div>
+                            <div className="flex items-center justify-center lg:justify-start gap-3 mb-6">
+                            <img 
+                                src={logo} 
+                                alt="Partner Logo" 
+                                className="w-8 h-8 rounded-lg object-contain bg-white/10 p-1" 
+                            />
+                            <div className="flex flex-col items-start">
+                                <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse mb-1"></div>
+                                <span className="text-white/60 text-[10px] font-black uppercase tracking-[0.2em]">Live Portal</span>
+                            </div>
+                            </div>
+                            
+                            <h2 className="text-2xl md:text-3xl font-serif font-bold text-white leading-tight">
+                            Interactive <br className="hidden lg:block" />
+                            <span className="text-blue-400"> Resources</span>
+                            </h2>
+                        </div>
 
-                                    {/* Right Side Link - Now perfectly centered vertically */}
-                                    <a 
-                                        href="https://login.microsoftonline.com" 
-                                        target="_blank" 
-                                        rel="noopener noreferrer"
-                                        className="relative z-20 flex items-center gap-2 py-5 px-12 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-300 shadow-lg hover:shadow-blue-500/20 h-fit"
-                                    >
-                                        Launch 365 
-                                        <ExternalLink size={12} strokeWidth={3} />
-                                    </a>
-
-                                    {/* Decorative Background Blur - Centered it slightly for better symmetry */}
-                                    <div className="absolute top-1/2 -translate-y-1/2 right-[-5%] w-40 h-40 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
-                                    </div>
-                                </div>
-
-                            <div className="flex-1 p-8 bg-[#F1F5F9] md:p-10 flex flex-col md:flex-row justify-between items-center gap-8">
-                                <div className="space-y-4 text-center md:text-left">
-                                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full">
-                                        <Users size={14} />
-                                        <span className="text-[10px] font-bold uppercase">Staff & Student Access</span>
-                                    </div>
-                                    <h3 className="text-2xl font-bold text-slate-800">Learning Management System</h3>
-                                    <p className="text-gray-500 text-base max-w-sm leading-relaxed text-justify">Access your personalized dashboard, course materials, and collaborative research tools in one secure environment.</p>
-                                </div>
-                                <div className="flex flex-col items-center gap-4">
-                                    <a href="https://login.microsoftonline.com" target="_blank" rel="noopener noreferrer" className="py-5 px-12 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.15em] transition-all hover:bg-blue-700 hover:shadow-lg active:scale-95 shadow-md flex items-center gap-3">
-                                        Launch LMS <ExternalLink size={16} />
-                                    </a>
-                                   {/*  <p className="text-[10px] text-gray-400 font-medium">Powered by Microsoft 365 Education</p> */}
-                                </div>
+                        <div className="mt-8 flex items-center gap-4">
+                            <div className="w-12 h-12 md:w-14 md:h-14 bg-white/10 backdrop-blur-xl rounded-2xl border border-white/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+                            <Laptop className="text-white" size={24} />
+                            </div>
+                            <div className="text-white/40 italic text-sm font-serif leading-tight">
+                            "Empowering <br/> digital fluency"
                             </div>
                         </div>
+                        </div>
+
+                        {/* Action Button */}
+                        <a 
+                        href="https://login.microsoftonline.com" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="relative z-20 flex items-center gap-2 py-4 lg:py-5 px-8 lg:px-12 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all duration-300 shadow-lg hover:shadow-blue-500/20 w-full lg:w-auto justify-center"
+                        >
+                        Launch 365 
+                        <ExternalLink size={12} strokeWidth={3} />
+                        </a>
+
+                        {/* Inner Card Background Glow */}
+                        <div className="absolute top-1/2 -translate-y-1/2 right-[-5%] w-40 h-40 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
                     </div>
+
+                    {/* Bottom Card: LMS Access */}
+                    <div className="flex-1 p-6 md:p-10 bg-[#F1F5F9] rounded-[1.8rem] md:rounded-[2.5rem] flex flex-col lg:flex-row justify-between items-center gap-8">
+                        <div className="space-y-4 text-center lg:text-left flex flex-col items-center lg:items-start">
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full">
+                            <Users size={14} />
+                            <span className="text-[10px] font-bold uppercase">Staff & Student Access</span>
+                        </div>
+                        <h3 className="text-2xl font-bold text-slate-800">Learning Management System</h3>
+                        <p className="text-gray-500 text-base max-w-sm leading-relaxed text-center lg:text-justify">
+                            Access your personalized dashboard, course materials, and collaborative research tools in one secure environment.
+                        </p>
+                        </div>
+
+                        <div className="w-full lg:w-auto">
+                        <a 
+                            href="https://login.microsoftonline.com" 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="w-full lg:w-auto py-5 px-12 bg-blue-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.15em] transition-all hover:bg-blue-700 hover:shadow-lg active:scale-95 shadow-md flex items-center justify-center gap-3"
+                        >
+                            Launch LMS <ExternalLink size={16} />
+                        </a>
+                        </div>
+                    </div> 
+
+                    </div>
+                </div>
                 </div>
 
                 <div className="w-[90%] max-w-7xl flex flex-col gap-8 py-10">
