@@ -92,7 +92,7 @@ function NewsDetail() {
           <span className="font-black uppercase tracking-widest text-[10px]">Back to News</span>
         </button>
 
-        <div className="space-y-6 text-center mb-10">
+        <div className="space-y-6 text-justify mb-10">
           <div className="inline-flex items-center gap-2 px-4 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest">
             <span>{post.category}</span>
           </div>
