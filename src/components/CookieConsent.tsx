@@ -105,7 +105,6 @@ const CookieConsent = () => {
               <p className="text-sm text-slate-600 leading-relaxed max-w-4xl">
                 We use cookies to optimize your experience on our website. 
                 By clicking <span className="font-bold text-blue-600">"Accept All"</span>, you agree to our use of analytics and marketing tools. 
-                You can choose to <span className="font-bold text-red-500">Decline</span> non-essential tracking.
               </p>
               
               <div className="mt-4 flex gap-4 text-[10px] font-black uppercase tracking-widest">

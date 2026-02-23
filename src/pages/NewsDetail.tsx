@@ -96,7 +96,7 @@ function NewsDetail() {
           <div className="inline-flex items-center gap-2 px-4 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest">
             <span>{post.category}</span>
           </div>
-          <h1 className="text-4xl md:text-6xl font-bold font-serif text-slate-900 leading-[1.1]">{post.title}</h1>
+          <h1 className="text-4xl md:text-6xl font-bold font-serif text-slate-900">{post.title}</h1>
           
           <div className="flex flex-col md:flex-row items-center justify-center gap-6 pt-6 border-t">
             <div className="flex items-center gap-6 text-gray-400 text-xs font-bold uppercase tracking-widest">
