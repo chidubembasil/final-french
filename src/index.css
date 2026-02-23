@@ -1,2 +1,18 @@
 @import "tailwindcss";
 /* @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700&display=swap'); */
+@layer components {
+  /* Only apply to screens smaller than 768px (Tailwind's md breakpoint) */
+  @media (max-width: 767px) {
+    .swiper-button-next,
+    .swiper-button-prev {
+      /* Uses Tailwind's scale or specific size */
+      @apply scale-50; 
+      
+      /* Or set the Swiper variable directly for better sharpness */
+      --swiper-navigation-size: 20px !important;
+      
+      /* Optional: adjust positioning to prevent them from hitting screen edges */
+      @apply right-2! left-2!; 
+    }
+  }
+}
