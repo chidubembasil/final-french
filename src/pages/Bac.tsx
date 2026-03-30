@@ -319,7 +319,7 @@ function BAC() {
                             <div className="flex items-center gap-2 text-blue-600 font-black text-xs uppercase tracking-widest">
                                 <ImageIcon size={14} /> <span>Event Visuals</span>
                             </div>
-                            <h2 className="text-4xl md:text-5xl font-serif font-bold text-slate-900">Project Highlights</h2>
+                            <h2 className="text-4xl md:text-5xl font-serif font-bold text-slate-900">Digital Resource Center</h2>
                         </div>
                         <p className="text-gray-500 max-w-sm text-sm">A visual journey through our latest French Embassy Fund workshops and events across Nigeria.</p>
                     </div>
@@ -343,7 +343,7 @@ function BAC() {
                                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-8">
                                             <div className="translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                                                 <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2">{img.category}</p>
-                                                <h3 className="text-white text-xl font-bold leading-tight">{img.title}</h3>
+                                                <h3 className="text-white text-xl font-bold leading-tight">{img.title.replace(/\s*-\s*bac\b.*/i, '')}</h3>
                                             </div>
                                         </div>
                                         <div className="absolute top-6 right-6 w-12 h-12 bg-white/20 backdrop-blur-md rounded-2xl flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all hover:bg-white hover:text-blue-600">
