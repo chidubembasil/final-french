@@ -319,7 +319,7 @@ function BAC() {
                             <div className="flex items-center gap-2 text-blue-600 font-black text-xs uppercase tracking-widest">
                                 <ImageIcon size={14} /> <span>Event Visuals</span>
                             </div>
-                            <h2 className="text-4xl md:text-5xl font-serif font-bold text-slate-900">Digital Resource Center</h2>
+                            <h2 className="text-4xl md:text-5xl font-serif font-bold text-slate-900">Digital Resource Centers</h2>
                         </div>
                         <p className="text-gray-500 max-w-sm text-sm">A visual journey through our latest French Embassy Fund workshops and events across Nigeria.</p>
                     </div>
