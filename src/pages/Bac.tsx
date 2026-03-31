@@ -108,6 +108,13 @@ function BAC() {
                 setLoadingGallery(false);
             });
     }, [CLIENT_KEY]);
+    
+    useEffect(() => {
+    // Only scroll if we aren't on the first mount
+    if (!loadingGallery) {
+        galleryRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+}, [currentPage]);
 
     // Choose between API data or Mock data
     const activeHero = heroData || MOCK_HERO;
