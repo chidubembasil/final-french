@@ -184,7 +184,7 @@ function News() {
           </div>
         ) : (
           <>
-            <img src={activeHero.mediaUrl} loading="lazy" className="absolute inset-0 w-full h-full object-cover z-0" alt="News hero" />
+            <img src={activeHero.mediaUrl} loading="eager" fetchPriority="high" className="absolute inset-0 w-full h-full object-cover z-0" alt="News hero" />
             <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/80 via-blue-700/50 to-red-700/80" />
             <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-20 gap-5">
               <div className="flex flex-row items-center gap-2 px-4 py-2 text-white bg-white/20 backdrop-blur-md border border-white/30 rounded-3xl">
@@ -267,7 +267,7 @@ function News() {
                     )}
                   </div>
                   <div className="relative h-60 overflow-hidden">
-                    <img src={post.coverImage} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={post.title} />
+                    <img src={post.coverImage} loading="eager" fetchPriority="high" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={post.title} />
                     <div className="absolute top-4 left-4 bg-blue-600 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase">{post.category}</div>
                   </div>
                   <div className="p-8">

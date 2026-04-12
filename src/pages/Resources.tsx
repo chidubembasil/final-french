@@ -291,7 +291,7 @@ function Pedagogies() {
           </div>
         ) : (
           <>
-            <img src={heroData?.mediaUrl || MOCK_HERO.mediaUrl} alt={heroData?.title || MOCK_HERO.title} loading="lazy" className="absolute inset-0 w-full h-full object-cover z-0" />
+            <img src={heroData?.mediaUrl || MOCK_HERO.mediaUrl} alt={heroData?.title || MOCK_HERO.title} loading="eager" className="absolute inset-0 w-full h-full object-cover z-0" />
             <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/90 via-blue-800/60 to-red-700/60" />
             <div className="relative z-30 w-full h-full flex flex-col items-start justify-center px-6 md:px-20 gap-5">
               <div className="flex items-center gap-2 text-white px-4 py-2 bg-white/10 backdrop-blur-md border border-white/20 rounded-full">
@@ -333,7 +333,7 @@ function Pedagogies() {
           
           <div className="w-full md:w-1/3 min-h-[150px] rounded-2xl overflow-hidden bg-white/5 flex items-center justify-center relative border border-white/10">
             {achievements[0]?.celebrationImage ? (
-              <img src={achievements[0].celebrationImage} alt="Achievements" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+              <img src={achievements[0].celebrationImage} alt="Achievements" loading="eager" className="absolute inset-0 w-full h-full object-cover" />
             ) : (
               <div className="flex flex-col items-center gap-2 text-yellow-500/20">
                 <Trophy size={64} />
@@ -376,7 +376,7 @@ function Pedagogies() {
         <div className="bg-white rounded-[3rem] p-8 border border-gray-100 shadow-sm flex flex-col md:flex-row gap-8 items-stretch">
           <div className="w-full md:w-1/3 min-h-[150px] rounded-2xl overflow-hidden bg-gray-50 flex items-center justify-center relative">
             {upcomingEvents[0]?.celebrationImage ? (
-              <img src={upcomingEvents[0].celebrationImage} alt="Events" loading="lazy" className="absolute inset-0 w-full h-full object-cover" />
+              <img src={upcomingEvents[0].celebrationImage} alt="Events" loading="eager" fetchPriority="high" className="absolute inset-0 w-full h-full object-cover" />
             ) : (
               <div className="flex flex-col items-center gap-2 text-red-100">
                 <CalendarDays size={64} />

@@ -77,6 +77,7 @@ function Header() {
         addScript.id = 'google-translate-script';
         addScript.src = '//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
         addScript.async = true;
+        addScript.defer = true;
         document.body.appendChild(addScript);
     }, []);
 

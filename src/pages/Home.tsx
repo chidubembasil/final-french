@@ -174,7 +174,8 @@ export default function Home() {
                                         <div className="relative w-full h-full">
                                             <img
                                                 src={item.mediaUrl}
-                                                loading="lazy"
+                                                loading="eager"
+                                                fetchPriority="high"
                                                 alt={item.title}
                                                 className="absolute inset-0 w-full h-full object-cover z-0"
                                             />

@@ -140,7 +140,7 @@ function Footer() {
                     <Link to="/cookies" className="hover:text-blue-400 transition-colors text-[11px]">Cookie Policy</Link>
                 </div>
                 <div className="max-w-7xl mx-auto border-t border-white/5 pt-8 flex flex-col md:flex-row justify-center items-center gap-4 text-[11px] uppercase tracking-tighter opacity-60">
-                    <p>© 2026 À TOI LE MICRO NAIJA. ALL RIGHTS RESERVED.</p>
+                    <p className="text-gray-300">© 2026 À TOI LE MICRO NAIJA. ALL RIGHTS RESERVED.</p>
                 </div>
             </div>
             

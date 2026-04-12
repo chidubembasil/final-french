@@ -1,4 +1,4 @@
-import { HashRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import "./index.css";
 
 // Components
@@ -22,7 +22,7 @@ import CookiePolicy from "./components/CookiePolicy";
 
 const App: React.FC = () => {
   return (
-    <HashRouter>
+    <BrowserRouter>
       <ScrollToTop />
       <SpeechProvider> 
         <Header />
@@ -47,7 +47,7 @@ const App: React.FC = () => {
         <Footer />
         <CookieConsent />
       </SpeechProvider>
-    </HashRouter>
+    </BrowserRouter>
   );
 };
 

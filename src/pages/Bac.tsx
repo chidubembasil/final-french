@@ -153,7 +153,7 @@ function BAC() {
                     <button className="absolute top-10 right-10 text-white hover:rotate-90 transition-transform" aria-label="cancel" title="cancel">
                         <X size={40} />
                     </button>
-                    <img src={selectedImg} loading="lazy" className="max-w-full max-h-full rounded-lg shadow-2xl animate-in zoom-in duration-300" alt="Full view" />
+                    <img src={selectedImg} loading="eager" fetchPriority="high" className="max-w-full max-h-full rounded-lg shadow-2xl animate-in zoom-in duration-300" alt="Full view" />
                 </div>
             )}
 
@@ -164,7 +164,7 @@ function BAC() {
                     </div>
                 ) : (
                     <>
-                        <img src={activeHero.mediaUrl} loading="lazy" alt="Hero" className="absolute inset-0 w-full h-full object-cover z-0" />
+                        <img src={activeHero.mediaUrl} loading="eager" fetchPriority="high" alt="Hero" className="absolute inset-0 w-full h-full object-cover z-0" />
                         <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/80 via-blue-800/40 to-red-700/60" />
 
                         <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-16 gap-6">
@@ -346,7 +346,7 @@ function BAC() {
                                         className="group relative aspect-[4/5] overflow-hidden rounded-[2.5rem] bg-slate-100 cursor-pointer shadow-sm hover:shadow-2xl transition-all duration-700"
                                         onClick={() => setSelectedImg(img.coverImage)}
                                     >
-                                        <img src={img.coverImage} loading="lazy" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={img.title} />
+                                        <img src={img.coverImage} loading="eager" fetchPriority="high" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-1000" alt={img.title} />
                                         <div className="absolute inset-0 bg-gradient-to-t from-slate-900/90 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex flex-col justify-end p-8">
                                             <div className="translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                                                 <p className="text-blue-400 text-[10px] font-black uppercase tracking-widest mb-2">{img.category}</p>

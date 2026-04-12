@@ -1,10 +1,9 @@
+import imagemin from 'vite-plugin-imagemin'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
-
 export default defineConfig({
-  // If hosting on GitHub Pages, change '/' to '/your-repo-name/'
   base: '', 
   plugins: [
     react({
@@ -13,17 +12,34 @@ export default defineConfig({
       },
     }),
     tailwindcss(),
+    imagemin({
+      gifsicle: { optimizationLevel: 7 },
+      optipng: { optimizationLevel: 7 },
+      mozjpeg: { quality: 75 },
+      pngquant: { quality: [0.8, 0.9] },
+      webp: { quality: 75 },
+    }),
   ],
   build: {
-    chunkSizeWarningLimit: 1000, // Silences the 500kb warning
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            return 'vendor';
-            
+            if (id.includes('react-dom') || id.includes('react/')) {
+              return 'react-vendor'
+            }
+            if (id.includes('swiper')) {
+              return 'swiper'
+            }
+            if (id.includes('react-router')) {
+              return 'router'
+            }
+            if (id.includes('framer-motion')) {
+              return 'animations'
+            }
+            return 'vendor' // everything else
           }
-          
         },
       },
     },

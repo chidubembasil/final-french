@@ -172,7 +172,8 @@ function Gallery() {
               src={heroData?.mediaUrl}
               alt="Gallery Hero"
               className="absolute inset-0 w-full h-full object-cover z-0"
-              loading="lazy"
+              loading="eager"
+              fetchPriority="high"
             />
             <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-900/80 via-blue-800/40 to-red-700/70" />
             <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-16 gap-5">
@@ -269,7 +270,8 @@ function Gallery() {
                     <img
                       src={img.mediaUrl}
                       alt={img.title}
-                      loading="lazy"
+                      loading="eager"
+                      fetchPriority="high"
                       className="w-full h-full object-cover transition duration-700 group-hover:scale-110"
                     />
                   </div>
@@ -377,7 +379,8 @@ function Gallery() {
                 ) : (
                   <img
                     src={selectedImage.mediaUrl}
-                    loading="lazy"
+                    loading="eager"
+                    fetchPriority="high"
                     alt={selectedImage.title}
                     className="max-w-full max-h-[70vh] object-contain rounded-2xl shadow-2xl border border-white/10"
                   />
