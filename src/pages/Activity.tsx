@@ -13,7 +13,6 @@ import {
   Layers,
   GraduationCap,
   Users,
-  ChevronDown,
   CheckCircle2,
   XCircle,
   Video,
@@ -21,8 +20,16 @@ import {
   ListOrdered,
   Link2,
   ToggleLeft,
+  ArrowLeft,
 } from "lucide-react";
 import img1 from "../assets/img/_A1A4707.jpg";
+
+// Background images from Unsplash
+const studentBg = "https://images.unsplash.com/photo-1741699428220-65f37f3fbbcb?w=800&q=80";
+const teacherBg = "https://images.unsplash.com/photo-1758270704080-e3556e6794a7?w=800&q=80";
+const beginnerBg = "https://plus.unsplash.com/premium_vector-1752505555076-d089a331c778?w=800&q=80";
+const intermediateBg = "https://images.unsplash.com/photo-1759070697203-78b035dc052c?w=800&q=80";
+const advancedBg = "https://images.unsplash.com/photo-1535515384173-d74166f26820?w=800&q=80";
 
 // ─────────────────────────────────────────────
 // INTERFACES
@@ -118,11 +125,26 @@ const MOCK_HERO = {
   mediaUrl: img1,
 };
 
-const extractIframeUrl = (content: string): string | null => {
-  if (!content) return null;
-  if (content.startsWith("http")) return content;
-  const m = content.match(/src=["']([^"']+)["']/);
-  return m ? m[1] : null;
+// FIXED: Better regex to extract iframe src URL from embedCode
+const extractIframeUrl = (embedCode: string): string | null => {
+  if (!embedCode) return null;
+  
+  // If it's already a URL, return it
+  if (embedCode.startsWith("http")) return embedCode;
+  
+  // Extract src from iframe tag - handles various quote styles and spacing
+  const srcMatch = embedCode.match(/<iframe[^>]+src\s*=\s*["']([^"']+)["'][^>]*>/i);
+  if (srcMatch && srcMatch[1]) {
+    return srcMatch[1].trim();
+  }
+  
+  // Fallback: look for any URL in the content
+  const urlMatch = embedCode.match(/(https?:\/\/[^\s"<>]+)/);
+  if (urlMatch) {
+    return urlMatch[1];
+  }
+  
+  return null;
 };
 
 const isEmbedContent = (content: any): boolean => {
@@ -143,6 +165,18 @@ const DIFF: Record<string, { bg: string; text: string; border: string; dot: stri
   Beginners:    { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", dot: "bg-emerald-400" },
   Intermediate: { bg: "bg-amber-50",   text: "text-amber-700",   border: "border-amber-200",   dot: "bg-amber-400"   },
   Advanced:     { bg: "bg-rose-50",    text: "text-rose-700",    border: "border-rose-200",    dot: "bg-rose-400"    },
+};
+
+// Background images for each thumbnail
+const AUDIENCE_BACKGROUNDS: Record<string, string> = {
+  "Students": studentBg,
+  "Teachers": teacherBg,
+};
+
+const DIFFICULTY_BACKGROUNDS: Record<string, string> = {
+  "Beginners": beginnerBg,
+  "Intermediate": intermediateBg,
+  "Advanced": advancedBg,
 };
 
 const getQType = (q: AnyQuestion) => (q as any).type || "mcq";
@@ -166,7 +200,7 @@ function EmptyState({ icon, msg }: { icon: React.ReactNode; msg: string }) {
 }
 
 // ─────────────────────────────────────────────
-// SCORING
+// SCORING - FIXED FOR PARTIAL CREDIT
 // ─────────────────────────────────────────────
 type ChoiceMap  = Record<number, number>;
 type MatchMap   = Record<number, Record<string, string>>;
@@ -174,34 +208,103 @@ type SeqMap     = Record<number, string[]>;
 type TextMap    = Record<number, string>;
 type FibMap     = Record<number, string[]>;
 
-function scoreQ(
+// Calculate score for a single question (returns points earned and max points)
+function calculateQuestionScore(
   q: AnyQuestion, idx: number,
   choice: ChoiceMap, match: MatchMap, seq: SeqMap, text: TextMap, fib: FibMap
-): boolean {
+): { earned: number; max: number } {
   const t = getQType(q);
-  if (t === "mcq" || t === "true_false")
-    return choice[idx] === (q as MCQQuestion).correctAnswer;
-  if (t === "gap_filling")
-    return (text[idx] || "").trim().toLowerCase() === (q as GapFillingQuestion).correctAnswer.trim().toLowerCase();
-  if (t === "short_answer")
-    return (text[idx] || "").trim().toLowerCase() === (q as ShortAnswerQuestion).correctAnswer.trim().toLowerCase();
+  
+  // Essay questions are not auto-graded
+  if (t === "essay") return { earned: 0, max: 0 };
+  
+  // MCQ and True/False - binary scoring (1 point)
+  if (t === "mcq" || t === "true_false") {
+    const correct = choice[idx] === (q as MCQQuestion).correctAnswer;
+    return { earned: correct ? 1 : 0, max: 1 };
+  }
+  
+  // Gap Filling - binary scoring (1 point)
+  if (t === "gap_filling") {
+    const correct = (text[idx] || "").trim().toLowerCase() === (q as GapFillingQuestion).correctAnswer.trim().toLowerCase();
+    return { earned: correct ? 1 : 0, max: 1 };
+  }
+  
+  // Short Answer - binary scoring (1 point)
+  if (t === "short_answer") {
+    const correct = (text[idx] || "").trim().toLowerCase() === (q as ShortAnswerQuestion).correctAnswer.trim().toLowerCase();
+    return { earned: correct ? 1 : 0, max: 1 };
+  }
+  
+  // Sequencing/Ordering - partial credit based on correct positions
   if (t === "sequencing" || t === "ordering") {
     const sq = q as SequencingQuestion;
-    const given = seq[idx] || sq.sequence || sq.correctAnswer;
-    return JSON.stringify(given) === JSON.stringify(sq.correctAnswer);
+    const correctAnswer = sq.correctAnswer;
+    const given = seq[idx] || sq.sequence || [...correctAnswer];
+    const totalItems = correctAnswer.length;
+    
+    if (totalItems === 0) return { earned: 0, max: 0 };
+    
+    // Count correct positions
+    let correctCount = 0;
+    for (let i = 0; i < totalItems; i++) {
+      if (given[i] === correctAnswer[i]) {
+        correctCount++;
+      }
+    }
+    
+    return { earned: correctCount, max: totalItems };
   }
+  
+  // Matching - partial credit based on correct pairs
   if (t === "matching") {
     const mq = q as MatchingQuestion;
     const given = match[idx] || {};
-    return mq.pairs.every(p => given[p.left] === p.right);
+    const totalPairs = mq.pairs.length;
+    
+    if (totalPairs === 0) return { earned: 0, max: 0 };
+    
+    // Count correct matches
+    let correctCount = 0;
+    mq.pairs.forEach(p => {
+      if (given[p.left] === p.right) {
+        correctCount++;
+      }
+    });
+    
+    return { earned: correctCount, max: totalPairs };
   }
+  
+  // Fill in Blank - partial credit based on correct blanks
   if (t === "fill_in_blank") {
     const fq = q as FillInBlankQuestion;
     const given = fib[idx] || [];
-    return fq.blanks.every((b, i) => (given[i] || "").trim().toLowerCase() === b.trim().toLowerCase());
+    const totalBlanks = fq.blanks.length;
+    
+    if (totalBlanks === 0) return { earned: 0, max: 0 };
+    
+    // Count correct blanks
+    let correctCount = 0;
+    fq.blanks.forEach((b, i) => {
+      if ((given[i] || "").trim().toLowerCase() === b.trim().toLowerCase()) {
+        correctCount++;
+      }
+    });
+    
+    return { earned: correctCount, max: totalBlanks };
   }
-  return false; // essay
+  
+  return { earned: 0, max: 0 };
 }
+
+// Legacy function for backward compatibility (binary scoring)
+// function scoreQ(
+//   q: AnyQuestion, idx: number,
+//   choice: ChoiceMap, match: MatchMap, seq: SeqMap, text: TextMap, fib: FibMap
+// ): boolean {
+//   const result = calculateQuestionScore(q, idx, choice, match, seq, text, fib);
+//   return result.earned === result.max && result.max > 0;
+// }
 
 // ─────────────────────────────────────────────
 // COMPONENT
@@ -217,8 +320,11 @@ function Activities() {
   const [modalStage,  setModalStage]  = useState<"info" | "test" | "result">("info");
   const [loading, setLoading]         = useState(true);
 
-  const [activeAudience,   setActiveAudience]   = useState<string | null>(null);
-  const [activeDifficulty, setActiveDifficulty] = useState<string | null>(null);
+  // Navigation state - hierarchical flow
+  const [currentView, setCurrentView] = useState<"main" | "difficulty" | "exercises">("main");
+  const [selectedAudience, setSelectedAudience] = useState<string | null>(null);
+  const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
+  
   const [searchQuery,      setSearchQuery]      = useState("");
 
   const [mcqPage,  setMcqPage]  = useState(1);
@@ -295,19 +401,34 @@ function Activities() {
           });
         });
 
+        // FIXED: Properly extract from exercise-resources API response
         const tempH5P: H5PContent[] = [];
-        (h5pJson.data || h5pJson).forEach((item: any) => {
+        const h5pData = h5pJson.data || h5pJson;
+        
+        h5pData.forEach((item: any) => {
+          // Handle both direct properties and attributes wrapper
           const data = item.attributes || item;
-          const cs = typeof data.content === "string" ? data.content : JSON.stringify(data.content ?? "");
-          const embedUrl = extractIframeUrl(cs);
-          if (!embedUrl) return;
+          
+          // Get embedCode from the response
+          const embedCode = data.embedCode || data.content || data.html || "";
+          
+          // Extract URL using regex
+          const embedUrl = extractIframeUrl(embedCode);
+          
+          if (!embedUrl) {
+            console.warn("Could not extract URL from:", embedCode);
+            return;
+          }
+
+          console.log("Extracted H5P URL:", embedUrl); // Debug log
+
           tempH5P.push({
             id: item.id,
             title: data.title || "Interactive Exercise",
             description: data.description || "",
-            embedUrl,
+            embedUrl: embedUrl,
             difficulty: cap(data.difficulty || "Beginners"),
-            audience:   cap(data.audience   || "Students"),
+            audience: cap(data.audience || data.category || "Students"), // fallback to category
           });
         });
 
@@ -317,46 +438,81 @@ function Activities() {
         const ha = heroJson.data || heroJson;
         const hm = ha.find((i: any) => (i.attributes?.subPurpose || i.subPurpose) === "Activities");
         if (hm) setHeroData(hm.attributes || hm);
-      } catch {
-        console.warn("API Error – using fallback UI");
+      } catch (err) {
+        console.warn("API Error – using fallback UI", err);
       } finally {
         setLoading(false);
       }
     })();
   }, [CLIENT_KEY]);
 
+  // Filter exercises based on current selections
   const filteredEx = useMemo(() =>
     exercisesList.filter(ex =>
       ex.title?.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      (activeAudience   ? ex.audience?.toLowerCase()   === activeAudience.toLowerCase()   : true) &&
-      (activeDifficulty ? ex.difficulty === activeDifficulty : true)
-    ), [exercisesList, searchQuery, activeAudience, activeDifficulty]);
+      (selectedAudience   ? ex.audience?.toLowerCase()   === selectedAudience.toLowerCase()   : true) &&
+      (selectedDifficulty ? ex.difficulty === selectedDifficulty : true)
+    ), [exercisesList, searchQuery, selectedAudience, selectedDifficulty]);
 
+  // Filter H5P for main level (only by audience, not difficulty)
   const filteredH5P = useMemo(() =>
     h5pContents.filter(h =>
       h.title?.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      (activeAudience   ? h.audience?.toLowerCase()   === activeAudience.toLowerCase()   : true) &&
-      (activeDifficulty ? h.difficulty === activeDifficulty : true)
-    ), [h5pContents, searchQuery, activeAudience, activeDifficulty]);
+      (selectedAudience ? h.audience?.toLowerCase() === selectedAudience.toLowerCase() : true)
+    ), [h5pContents, searchQuery, selectedAudience]);
 
   const currentEx  = filteredEx.slice((mcqPage - 1) * ITEMS_PP, mcqPage * ITEMS_PP);
   const currentH5P = filteredH5P.slice((h5pPage - 1) * ITEMS_PP, h5pPage * ITEMS_PP);
   const totalMcqPg = Math.ceil(filteredEx.length  / ITEMS_PP);
   const totalH5pPg = Math.ceil(filteredH5P.length / ITEMS_PP);
 
+  // FIXED: Calculate total score using partial credit system
   const { totalScore, maxScore } = useMemo(() => {
     if (!selectedEx || modalStage !== "result") return { totalScore: 0, maxScore: 0 };
-    let pts = 0;
+    
+    let totalEarned = 0;
+    let totalMax = 0;
+    
     selectedEx.content.forEach((q, i) => {
-      if (getQType(q) !== "essay" && scoreQ(q, i, choiceAnswers, matchAnswers, seqAnswers, textAnswers, fibAnswers)) pts++;
+      const result = calculateQuestionScore(q, i, choiceAnswers, matchAnswers, seqAnswers, textAnswers, fibAnswers);
+      totalEarned += result.earned;
+      totalMax += result.max;
     });
-    return { totalScore: pts, maxScore: selectedEx.content.filter(q => getQType(q) !== "essay").length };
+    
+    return { totalScore: totalEarned, maxScore: totalMax };
   }, [selectedEx, modalStage, choiceAnswers, matchAnswers, seqAnswers, textAnswers, fibAnswers]);
 
   const resetModal = (ex: Exercise) => {
     setSelectedEx(ex); setModalStage("info");
     setChoiceAnswers({}); setMatchAnswers({}); setSeqAnswers({}); setTextAnswers({}); setFibAnswers({});
     setTestPage(0);
+  };
+
+  // Navigation handlers
+  const handleAudienceSelect = (audience: string) => {
+    setSelectedAudience(audience);
+    setCurrentView("difficulty");
+    setSelectedDifficulty(null);
+    setMcqPage(1);
+    setH5pPage(1);
+  };
+
+  const handleDifficultySelect = (difficulty: string) => {
+    setSelectedDifficulty(difficulty);
+    setCurrentView("exercises");
+    setMcqPage(1);
+  };
+
+  const handleBackToMain = () => {
+    setCurrentView("main");
+    setSelectedAudience(null);
+    setSelectedDifficulty(null);
+    setSearchQuery("");
+  };
+
+  const handleBackToDifficulty = () => {
+    setCurrentView("difficulty");
+    setSelectedDifficulty(null);
   };
 
   const pageQs     = selectedEx ? selectedEx.content.slice(testPage * Q_PP, (testPage + 1) * Q_PP) : [];
@@ -390,148 +546,275 @@ function Activities() {
 
       <section className="py-24 px-6 md:px-12 max-w-7xl mx-auto">
 
-        {/* FILTER BAR */}
-        <div className="bg-white p-10 rounded-[4rem] shadow-sm border border-gray-100 mb-20 flex flex-col gap-10">
-          <div className="relative">
-            <Search className="absolute left-8 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-            <input type="text" placeholder="Search activities..." className="w-full pl-16 pr-8 py-6 rounded-[2rem] bg-gray-50 outline-none text-sm font-medium" value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+        {/* ════════════════════════════════════════════════════════
+            GLOBAL SEARCH BAR (Always visible at top)
+        ════════════════════════════════════════════════════════ */}
+        <div className="mb-16">
+          <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-gray-100 max-w-3xl mx-auto">
+            <div className="relative">
+              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400" size={22} />
+              <input 
+                type="text" 
+                placeholder="Search all exercises and activities..." 
+                className="w-full pl-14 pr-6 py-5 rounded-[2rem] bg-gray-50 outline-none text-base font-medium" 
+                value={searchQuery} 
+                onChange={e => setSearchQuery(e.target.value)} 
+              />
+            </div>
           </div>
+        </div>
 
-          <div>
-          
-            <div className="grid grid-cols-2 gap-5">
-              {[
-                { role: "Students", icon: <GraduationCap size={28} />, sub: "Exercises tailored for learners", grad: "from-blue-600 to-indigo-700", activeBorder: "border-blue-600", activeShadow: "shadow-blue-100", hoverBorder: "hover:border-blue-300", iconBg: "bg-blue-50 text-blue-600" },
-                { role: "Teachers", icon: <Users size={28} />,         sub: "Resources for educators",         grad: "from-violet-600 to-purple-700", activeBorder: "border-violet-600", activeShadow: "shadow-violet-100", hoverBorder: "hover:border-violet-300", iconBg: "bg-violet-50 text-violet-600" },
-              ].map(({ role, icon, sub, grad, activeBorder, activeShadow, hoverBorder, iconBg }) => {
-                const on = activeAudience === role;
+        {/* ════════════════════════════════════════════════════════
+            VIEW 1: MAIN - Students & Teachers Selection
+        ════════════════════════════════════════════════════════ */}
+        {currentView === "main" && (
+          <div className="space-y-20">
+            {/* Students & Teachers Section */}
+            <div>
+              <div className="text-center mb-12">
+                <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Select Exercise</h2>
+                <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em]">Select your role to begin</p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-20">
+                {/* Students Card with Background Image */}
+                <button 
+                  onClick={() => handleAudienceSelect("Students")}
+                  className="group relative h-[400px] rounded-[3rem] overflow-hidden shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 text-left"
+                >
+                  {/* Background Image */}
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
+                    style={{ backgroundImage: `url(${AUDIENCE_BACKGROUNDS["Students"]})` }}
+                  />
+                  {/* Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent group-hover:from-black/90 transition-all duration-300" />
+                  
+                  <div className="relative z-10 h-full flex flex-col justify-end p-10">
+                    <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-4 group-hover:bg-white/30 transition-all">
+                      <GraduationCap size={32} className="text-white" />
+                    </div>
+                    <h3 className="text-3xl font-black text-white mb-2">Students</h3>
+                    <p className="text-white/80 font-medium mb-4">Access exercises tailored for learners</p>
+                    <div className="flex items-center gap-2 text-white text-[11px] font-black uppercase tracking-widest">
+                      Get Started <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                </button>
+
+                {/* Teachers Card with Background Image */}
+                <button 
+                  onClick={() => handleAudienceSelect("Teachers")}
+                  className="group relative h-[400px] rounded-[3rem] overflow-hidden shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 text-left"
+                >
+                  {/* Background Image */}
+                  <div 
+                    className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
+                    style={{ backgroundImage: `url(${AUDIENCE_BACKGROUNDS["Teachers"]})` }}
+                  />
+                  {/* Overlay */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent group-hover:from-black/90 transition-all duration-300" />
+                  
+                  <div className="relative z-10 h-full flex flex-col justify-end p-10">
+                    <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-4 group-hover:bg-white/30 transition-all">
+                      <Users size={32} className="text-white" />
+                    </div>
+                    <h3 className="text-3xl font-black text-white mb-2">Teachers</h3>
+                    <p className="text-white/80 font-medium mb-4">Resources and tools for educators</p>
+                    <div className="flex items-center gap-2 text-white text-[11px] font-black uppercase tracking-widest">
+                      Get Started <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* More Exercises (H5P) Section - Now at Main Level with H1 */}
+            <div>
+              <h1 className="text-4xl font-black text-slate-900 mb-2 tracking-tight text-center">More Exercises</h1>
+              <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] text-center mb-10">Interactive Learning Modules</p>
+              
+              {filteredH5P.length === 0 ? (
+                <EmptyState icon={<PlayCircle size={32} className="text-gray-300" />} msg="No interactive modules available." />
+              ) : (
+                <>
+                  {totalH5pPg > 1 && (
+                    <div className="flex justify-end gap-3 mb-6">
+                      <button aria-label="Prev" disabled={h5pPage === 1} onClick={() => setH5pPage(p => p - 1)} className="p-4 rounded-2xl bg-white border border-gray-100 disabled:opacity-20 hover:bg-gray-50"><ChevronLeft size={24} /></button>
+                      <button aria-label="Next" disabled={h5pPage === totalH5pPg} onClick={() => setH5pPage(p => p + 1)} className="p-4 rounded-2xl bg-white border border-gray-100 disabled:opacity-20 hover:bg-gray-50"><ChevronRight size={24} /></button>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {currentH5P.map(h5p => {
+                      const dc = DIFF[h5p.difficulty] || DIFF["Beginners"];
+                      return (
+                        <div 
+                          key={h5p.id} 
+                          className="group bg-white rounded-[3rem] p-8 border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all cursor-pointer overflow-hidden flex flex-col" 
+                          onClick={() => setSelectedH5P(h5p)}
+                        >
+                          <div className="flex justify-between items-start mb-6">
+                            <div className="w-14 h-14 rounded-2xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-all shadow-inner">
+                              <PlayCircle size={28} />
+                            </div>
+                            <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-xl border ${dc.bg} ${dc.text} ${dc.border}`}>Interactive</span>
+                          </div>
+                          <h3 className="text-xl font-black text-slate-800 mb-3 group-hover:text-purple-600 transition-colors tracking-tight">{h5p.title}</h3>
+                          <p className="text-gray-500 text-sm line-clamp-2 mb-6 leading-relaxed font-medium">{h5p.description}</p>
+                          <div className="mt-auto flex items-center gap-3 text-[10px] font-black uppercase tracking-widest pt-6 border-t border-gray-50">
+                            <span className={`w-2 h-2 rounded-full ${dc.dot}`} /><span className={dc.text}>{h5p.difficulty}</span>
+                            <span className="text-gray-300 mx-2">·</span>
+                            <span className="text-gray-400">{h5p.audience}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════════════════
+            VIEW 2: DIFFICULTY SELECTION
+        ════════════════════════════════════════════════════════ */}
+        {currentView === "difficulty" && selectedAudience && (
+          <div className="space-y-12">
+            {/* Back Button */}
+            <button 
+              onClick={handleBackToMain}
+              className="flex items-center gap-3 text-slate-500 hover:text-slate-900 font-bold text-sm uppercase tracking-widest transition-colors group"
+            >
+              <div className="p-3 rounded-2xl bg-gray-100 group-hover:bg-gray-200 transition-colors">
+                <ArrowLeft size={20} />
+              </div>
+              <span>Back to Roles</span>
+            </button>
+
+            <div className="text-center">
+              <h2 className="text-4xl font-black text-slate-900 mb-2 tracking-tight">{selectedAudience}</h2>
+              <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em]">Select difficulty level</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+              {DIFFICULTIES.map((difficulty) => {
+                /* const c = DIFF[difficulty]; */
+                const bgImage = DIFFICULTY_BACKGROUNDS[difficulty];
+                
                 return (
-                  <button key={role} onClick={() => { setActiveAudience(a => a === role ? null : role); setActiveDifficulty(null); setMcqPage(1); setH5pPage(1); }}
-                    className={`relative group rounded-[2.5rem] overflow-hidden border-2 transition-all duration-300 text-left ${on ? `${activeBorder} shadow-2xl ${activeShadow} scale-[1.02]` : `border-gray-100 ${hoverBorder} hover:shadow-xl hover:scale-[1.01]`}`}>
-                    <div className={`absolute inset-0 transition-opacity duration-300 bg-gradient-to-br ${grad} ${on ? "opacity-100" : "opacity-0 group-hover:opacity-60"}`} />
-                    <div className="relative z-10 p-8 flex flex-col gap-4">
-                      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all ${on ? "bg-white/20 text-white" : `${iconBg} group-hover:bg-white/20 group-hover:text-white`}`}>{icon}</div>
-                      <div>
-                        <h3 className={`text-2xl font-black tracking-tight transition-colors ${on ? "text-white" : "text-slate-900 group-hover:text-white"}`}>{role}</h3>
-                        <p className={`text-sm font-medium mt-1 transition-colors ${on ? "text-white/70" : "text-gray-400 group-hover:text-white/70"}`}>{sub}</p>
+                  <button
+                    key={difficulty}
+                    onClick={() => handleDifficultySelect(difficulty)}
+                    className="group relative h-[350px] rounded-[3rem] overflow-hidden shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 text-left"
+                  >
+                    {/* Background Image */}
+                    <div 
+                      className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
+                      style={{ backgroundImage: `url(${bgImage})` }}
+                    />
+                    {/* Color Overlay based on difficulty */}
+                    <div className={`absolute inset-0 bg-gradient-to-t ${difficulty === "Beginners" ? "from-emerald-900/90 via-emerald-700/50" : difficulty === "Intermediate" ? "from-amber-900/90 via-amber-700/50" : "from-rose-900/90 via-rose-700/50"} to-transparent opacity-80 group-hover:opacity-90 transition-all duration-300`} />
+                    
+                    <div className="relative z-10 h-full flex flex-col justify-end p-8">
+                      <div className={`w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-4 group-hover:bg-white/30 transition-all`}>
+                        {difficulty === "Beginners" && <Book size={28} className="text-white" />}
+                        {difficulty === "Intermediate" && <Layers size={28} className="text-white" />}
+                        {difficulty === "Advanced" && <Trophy size={28} className="text-white" />}
                       </div>
-                      {on && <div className="flex items-center gap-2 text-white/80 text-[10px] font-black uppercase tracking-widest"><ChevronDown size={14} /> Select difficulty below</div>}
+                      <h3 className="text-2xl font-black text-white mb-2">{difficulty}</h3>
+                      <p className="text-white/80 text-sm font-medium mb-4">
+                        {difficulty === "Beginners" && "Start your learning journey with foundational exercises"}
+                        {difficulty === "Intermediate" && "Build upon your existing knowledge and skills"}
+                        {difficulty === "Advanced" && "Challenge yourself with complex problem-solving"}
+                      </p>
+                      <div className="flex items-center gap-2 text-white text-[11px] font-black uppercase tracking-widest">
+                        Explore Exercises <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                      </div>
                     </div>
                   </button>
                 );
               })}
             </div>
           </div>
+        )}
 
-          {activeAudience && (
-            <div className="pt-8 border-t border-gray-100">
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400 mb-5">Choose difficulty</p>
-              <div className="grid grid-cols-3 gap-4">
-                {DIFFICULTIES.map(d => {
-                  const c = DIFF[d]; const on = activeDifficulty === d;
-                  return (
-                    <button key={d} onClick={() => { setActiveDifficulty(p => p === d ? null : d); setMcqPage(1); setH5pPage(1); }}
-                      className={`rounded-[2rem] p-6 border-2 text-left transition-all duration-200 ${on ? `${c.border} ${c.bg} shadow-lg scale-[1.03]` : "border-gray-100 bg-white hover:border-gray-200 hover:shadow-md hover:scale-[1.01]"}`}>
-                      <div className="flex items-center gap-3 mb-3">
-                        <span className={`w-3 h-3 rounded-full ${on ? c.dot : "bg-gray-200"}`} />
-                        <span className={`text-[10px] font-black uppercase tracking-[0.25em] ${on ? c.text : "text-gray-400"}`}>{d}</span>
-                      </div>
-                      <p className={`text-xs font-medium leading-relaxed ${on ? c.text : "text-gray-400"}`}>
-                        {d === "Beginners" && "Start your journey"}
-                        {d === "Intermediate" && "Build on your skills"}
-                        {d === "Advanced" && "Push your limits"}
-                      </p>
-                    </button>
-                  );
-                })}
+        {/* ════════════════════════════════════════════════════════
+            VIEW 3: EXERCISES LIST (Language Exercises Only)
+        ════════════════════════════════════════════════════════ */}
+        {currentView === "exercises" && selectedAudience && selectedDifficulty && (
+          <div className="space-y-12">
+            {/* Back Button & Breadcrumb */}
+            <div className="flex flex-col gap-6">
+              <button 
+                onClick={handleBackToDifficulty}
+                className="flex items-center gap-3 text-slate-500 hover:text-slate-900 font-bold text-sm uppercase tracking-widest transition-colors group w-fit"
+              >
+                <div className="p-3 rounded-2xl bg-gray-100 group-hover:bg-gray-200 transition-colors">
+                  <ArrowLeft size={20} />
+                </div>
+                <span>Back to Difficulty</span>
+              </button>
+              
+              <div className="flex items-center gap-4 text-[11px] font-black uppercase tracking-widest">
+                <span className="text-slate-400">{selectedAudience}</span>
+                <ChevronRight size={14} className="text-slate-300" />
+                <span className="text-slate-400">{selectedDifficulty}</span>
+                <ChevronRight size={14} className="text-slate-300" />
+                <span className="text-blue-600">Exercises</span>
               </div>
             </div>
-          )}
-        </div>
 
-        {/* LANGUAGE EXERCISES */}
-        <div className="mb-24">
-          <div className="flex justify-between items-end mb-12">
+            {/* Language Exercises Section */}
             <div>
-              <h2 className="text-4xl font-black text-slate-900 mb-2 tracking-tight">Language Exercises</h2>
-              <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em]">Skill Evaluation</p>
-            </div>
-            {totalMcqPg > 1 && (
-              <div className="flex gap-3">
-                <button aria-label="Prev" disabled={mcqPage === 1} onClick={() => setMcqPage(p => p - 1)} className="p-4 rounded-2xl bg-white border border-gray-100 disabled:opacity-20 hover:bg-gray-50"><ChevronLeft size={24} /></button>
-                <button aria-label="Next" disabled={mcqPage === totalMcqPg} onClick={() => setMcqPage(p => p + 1)} className="p-4 rounded-2xl bg-white border border-gray-100 disabled:opacity-20 hover:bg-gray-50"><ChevronRight size={24} /></button>
+              <div className="flex justify-between items-end mb-8">
+                <div>
+                  <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Language Exercises</h2>
+                  <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em]">Skill Evaluation</p>
+                </div>
+                {totalMcqPg > 1 && (
+                  <div className="flex gap-3">
+                    <button aria-label="Prev" disabled={mcqPage === 1} onClick={() => setMcqPage(p => p - 1)} className="p-4 rounded-2xl bg-white border border-gray-100 disabled:opacity-20 hover:bg-gray-50"><ChevronLeft size={24} /></button>
+                    <button aria-label="Next" disabled={mcqPage === totalMcqPg} onClick={() => setMcqPage(p => p + 1)} className="p-4 rounded-2xl bg-white border border-gray-100 disabled:opacity-20 hover:bg-gray-50"><ChevronRight size={24} /></button>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
-          {currentEx.length === 0
-            ? <EmptyState icon={<Book size={32} className="text-gray-300" />} msg={activeAudience ? "No exercises match your filters." : "Select your audience above to get started."} />
-            : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                {currentEx.map(ex => {
-                  const dc = DIFF[ex.difficulty] || DIFF["Beginners"];
-                  return (
-                    <div key={ex.id} className="group bg-white rounded-[3.5rem] p-10 border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all overflow-hidden flex flex-col">
-                      <div className="flex justify-between items-start mb-8">
-                        <div className="w-16 h-16 rounded-3xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all shadow-inner">
-                          {ex.podcastId ? <Volume2 size={32} /> : <ExTypeIcon type={ex.exerciseType} />}
-                        </div>
-                        <span className={`text-[10px] font-black uppercase px-4 py-2 rounded-xl border ${dc.bg} ${dc.text} ${dc.border}`}>{ex.exerciseType.replace(/_/g," ")}</span>
-                      </div>
-                      <h3 className="text-2xl font-black text-slate-800 mb-4 group-hover:text-blue-600 transition-colors tracking-tight">{ex.title}</h3>
-                      <p className="text-gray-500 text-sm line-clamp-3 mb-10 leading-relaxed font-medium">{ex.description}</p>
-                      <div className="mt-auto">
-                        <div className="flex items-center justify-between pt-8 border-t border-gray-50 mb-10">
-                          <span className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${dc.text}`}><span className={`w-2 h-2 rounded-full ${dc.dot}`} />{ex.difficulty}</span>
-                          <span className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest"><Layers size={14} />{ex.audience}</span>
-                        </div>
-                        <button onClick={() => resetModal(ex)} className="w-full py-6 bg-slate-900 text-white rounded-3xl text-[11px] font-black uppercase tracking-[0.25em] flex items-center justify-center gap-4 hover:bg-blue-600 hover:shadow-2xl hover:shadow-blue-200 transition-all active:scale-95">
-                          {ex.podcastId ? "Listen & Solve" : "Begin Exercise"} <ArrowRight size={18} />
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-        </div>
 
-        {/* MORE EXERCISES */}
-        <div>
-          <div className="flex justify-between items-end mb-12">
-            <div>
-              <h2 className="text-4xl font-black text-slate-900 mb-2 tracking-tight">More Exercises</h2>
-              <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em]">Interactive Learning Modules</p>
+              {currentEx.length === 0 ? (
+                <EmptyState icon={<Book size={32} className="text-gray-300" />} msg="No exercises found for this criteria." />
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {currentEx.map(ex => {
+                    const dc = DIFF[ex.difficulty] || DIFF["Beginners"];
+                    return (
+                      <div key={ex.id} className="group bg-white rounded-[3rem] p-8 border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all overflow-hidden flex flex-col">
+                        <div className="flex justify-between items-start mb-6">
+                          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all shadow-inner">
+                            {ex.podcastId ? <Volume2 size={28} /> : <ExTypeIcon type={ex.exerciseType} />}
+                          </div>
+                          <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-xl border ${dc.bg} ${dc.text} ${dc.border}`}>{ex.exerciseType.replace(/_/g," ")}</span>
+                        </div>
+                        <h3 className="text-xl font-black text-slate-800 mb-3 group-hover:text-blue-600 transition-colors tracking-tight">{ex.title}</h3>
+                        <p className="text-gray-500 text-sm line-clamp-3 mb-8 leading-relaxed font-medium">{ex.description}</p>
+                        <div className="mt-auto">
+                          <div className="flex items-center justify-between pt-6 border-t border-gray-50 mb-6">
+                            <span className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${dc.text}`}><span className={`w-2 h-2 rounded-full ${dc.dot}`} />{ex.difficulty}</span>
+                            <span className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest"><Layers size={14} />{ex.audience}</span>
+                          </div>
+                          <button onClick={() => resetModal(ex)} className="w-full py-5 bg-slate-900 text-white rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-blue-600 hover:shadow-xl hover:shadow-blue-200 transition-all active:scale-95">
+                            {ex.podcastId ? "Listen & Solve" : "Begin Exercise"} <ArrowRight size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-            {totalH5pPg > 1 && (
-              <div className="flex gap-3">
-                <button aria-label="Prev" disabled={h5pPage === 1} onClick={() => setH5pPage(p => p - 1)} className="p-4 rounded-2xl bg-white border border-gray-100 disabled:opacity-20 hover:bg-gray-50"><ChevronLeft size={24} /></button>
-                <button aria-label="Next" disabled={h5pPage === totalH5pPg} onClick={() => setH5pPage(p => p + 1)} className="p-4 rounded-2xl bg-white border border-gray-100 disabled:opacity-20 hover:bg-gray-50"><ChevronRight size={24} /></button>
-              </div>
-            )}
           </div>
-          {currentH5P.length === 0
-            ? <EmptyState icon={<PlayCircle size={32} className="text-gray-300" />} msg={activeAudience ? "No interactive modules match your filters." : "Select your audience above to explore modules."} />
-            : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-                {currentH5P.map(h5p => {
-                  const dc = DIFF[h5p.difficulty] || DIFF["Beginners"];
-                  return (
-                    <div key={h5p.id} className="group bg-white rounded-[3.5rem] p-10 border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all cursor-pointer overflow-hidden flex flex-col" onClick={() => setSelectedH5P(h5p)}>
-                      <div className="flex justify-between items-start mb-8">
-                        <div className="w-16 h-16 rounded-3xl bg-purple-50 text-purple-600 flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-all shadow-inner"><PlayCircle size={32} /></div>
-                        <span className={`text-[10px] font-black uppercase px-4 py-2 rounded-xl border ${dc.bg} ${dc.text} ${dc.border}`}>Interactive</span>
-                      </div>
-                      <h3 className="text-2xl font-black text-slate-800 mb-4 group-hover:text-purple-600 transition-colors tracking-tight">{h5p.title}</h3>
-                      <p className="text-gray-500 text-sm line-clamp-2 mb-8 leading-relaxed font-medium">{h5p.description}</p>
-                      <div className="mt-auto flex items-center gap-3 text-[10px] font-black uppercase tracking-widest pt-8 border-t border-gray-50">
-                        <span className={`w-2 h-2 rounded-full ${dc.dot}`} /><span className={dc.text}>{h5p.difficulty}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-        </div>
+        )}
+
       </section>
 
       {/* ══════════════════════════════════════
@@ -743,7 +1026,7 @@ function Activities() {
                       {maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0}%
                     </h3>
                     <p className="text-slate-400 font-bold uppercase tracking-[0.4em] text-[11px]">
-                      {totalScore} / {maxScore} correct
+                      {totalScore} / {maxScore} points
                       {selectedEx.content.some(q => getQType(q) === "essay") && " · Essays excluded"}
                     </p>
                   </div>
@@ -754,14 +1037,23 @@ function Activities() {
                     {selectedEx.content.map((q, idx) => {
                       const qt = getQType(q);
                       const isEssay = qt === "essay";
-                      const ok = isEssay ? null : scoreQ(q, idx, choiceAnswers, matchAnswers, seqAnswers, textAnswers, fibAnswers);
+                      const scoreResult = calculateQuestionScore(q, idx, choiceAnswers, matchAnswers, seqAnswers, textAnswers, fibAnswers);
+                      const ok = isEssay ? null : scoreResult.earned === scoreResult.max && scoreResult.max > 0;
+                      const partial = !isEssay && scoreResult.earned > 0 && scoreResult.earned < scoreResult.max;
 
                       return (
-                        <div key={idx} className={`p-7 rounded-[2.5rem] border-2 ${isEssay ? "border-amber-200 bg-amber-50" : ok ? "border-emerald-200 bg-emerald-50" : "border-rose-200 bg-rose-50"}`}>
+                        <div key={idx} className={`p-7 rounded-[2.5rem] border-2 ${isEssay ? "border-amber-200 bg-amber-50" : ok ? "border-emerald-200 bg-emerald-50" : partial ? "border-amber-200 bg-amber-50" : "border-rose-200 bg-rose-50"}`}>
                           <div className="flex items-start gap-4 mb-5">
-                            <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${isEssay ? "bg-amber-200 text-amber-700" : ok ? "bg-emerald-200 text-emerald-700" : "bg-rose-200 text-rose-700"}`}>{idx+1}</span>
+                            <span className={`w-8 h-8 rounded-xl flex items-center justify-center text-xs font-black shrink-0 ${isEssay ? "bg-amber-200 text-amber-700" : ok ? "bg-emerald-200 text-emerald-700" : partial ? "bg-amber-200 text-amber-700" : "bg-rose-200 text-rose-700"}`}>{idx+1}</span>
                             <p className="font-bold text-slate-800 text-sm leading-relaxed flex-1">{q.question}</p>
-                            {!isEssay && (ok ? <CheckCircle2 size={20} className="text-emerald-500 shrink-0" /> : <XCircle size={20} className="text-rose-500 shrink-0" />)}
+                            {!isEssay && (
+                              <div className="text-right">
+                                <span className={`text-xs font-black ${ok ? "text-emerald-600" : partial ? "text-amber-600" : "text-rose-600"}`}>
+                                  {scoreResult.earned}/{scoreResult.max}
+                                </span>
+                                {ok ? <CheckCircle2 size={20} className="text-emerald-500 shrink-0 ml-2 inline" /> : partial ? <span className="text-amber-500 ml-2">~</span> : <XCircle size={20} className="text-rose-500 shrink-0 ml-2 inline" />}
+                              </div>
+                            )}
                           </div>
 
                           {/* MCQ / TF options with colour coding */}
@@ -807,7 +1099,7 @@ function Activities() {
                             );
                           })()}
 
-                          {/* Sequencing / Ordering */}
+                          {/* Sequencing / Ordering - show partial credit */}
                           {(qt === "sequencing" || qt === "ordering") && (() => {
                             const sq = q as SequencingQuestion;
                             const given = seqAnswers[idx] || [...(sq.sequence || sq.correctAnswer)];
@@ -830,7 +1122,7 @@ function Activities() {
                             );
                           })()}
 
-                          {/* Matching */}
+                          {/* Matching - show partial credit */}
                           {qt === "matching" && (() => {
                             const mq = q as MatchingQuestion;
                             const given = matchAnswers[idx] || {};
@@ -852,7 +1144,7 @@ function Activities() {
                             );
                           })()}
 
-                          {/* Fill in Blank */}
+                          {/* Fill in Blank - show partial credit */}
                           {qt === "fill_in_blank" && (() => {
                             const fq = q as FillInBlankQuestion;
                             const given = fibAnswers[idx] || [];
@@ -896,7 +1188,7 @@ function Activities() {
       )}
 
       {/* ══════════════════════════════════════
-          H5P MODAL
+          H5P MODAL - FIXED AND ADDED
       ══════════════════════════════════════ */}
       {selectedH5P && (
         <div className="fixed inset-0 z-[999] bg-slate-900/95 backdrop-blur-2xl flex justify-center items-center p-4">
@@ -909,8 +1201,14 @@ function Activities() {
               <button aria-label="Close" onClick={() => setSelectedH5P(null)} className="p-5 bg-gray-50 rounded-full hover:bg-red-50 hover:text-red-500 transition-all shadow-sm"><X size={24} /></button>
             </div>
             <div className="flex-1 bg-gray-100 p-6">
-              <iframe src={selectedH5P.embedUrl} className="w-full h-full rounded-[2.5rem] border-none shadow-2xl bg-white" allowFullScreen loading="lazy"
-                allow="autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" />
+              <iframe 
+                src={selectedH5P.embedUrl} 
+                title={selectedH5P.title}
+                className="w-full h-full rounded-[2.5rem] border-none shadow-2xl bg-white" 
+                allowFullScreen 
+                loading="lazy"
+                allow="autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+              />
             </div>
           </div>
         </div>
