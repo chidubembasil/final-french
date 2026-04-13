@@ -18,7 +18,7 @@ import AboutUs from "../components/About";
 import BACSection from "../components/BacHero";
 import InteractiveActivities from "../components/ActiHero";
 import PartnersSection from "../components/Partners";
-import img1 from "../assets/img/Bac.jpg"
+import img1 from "../assets/img/BAC.jpg"
 import img2 from "../assets/img/Atoile.jpg"
 import img3 from "../assets/img/_A1A4779.jpg"
 
