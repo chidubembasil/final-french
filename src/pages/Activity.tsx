@@ -382,7 +382,7 @@ function Activities() {
                   <div className="flex gap-6 pt-10">
                     {testPage > 0 && <button onClick={() => setTestPage(p => p - 1)} className="flex-1 py-7 bg-gray-100 rounded-3xl font-black uppercase text-[12px] tracking-widest hover:bg-gray-200 transition-all">Go Back</button>}
                     {(testPage + 1) * questionsPerPage < (selectedEx.content as RawQuestion[]).length ? (
-                      <button onClick={() => { setTestPage(p => p + 1); modalScrollRef.current?.scrollTo(0,0); }} className="flex-1 py-7 bg-blue-600 text-white rounded-3xl font-black uppercase text-[12px] tracking-widest shadow-xl shadow-blue-100 hover:bg-blue-700">Next Page</button>
+                      <button onClick={() => { setTestPage(p => p + 1); modalScrollRef.current?.scrollTo(0,0); }} className="flex-1 py-7 bg-blue-600 text-white rounded-3xl font-black uppercase text-[12px] tracking-widest shadow-xl shadow-blue-100 hover:bg-blue-700">Next</button>
                     ) : (
                       <button onClick={() => setModalStage('result')} className="flex-1 py-7 bg-slate-900 text-white rounded-3xl font-black uppercase text-[12px] tracking-widest shadow-xl shadow-slate-200 hover:bg-black">Submit Answers</button>
                     )}
