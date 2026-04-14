@@ -403,6 +403,7 @@ useEffect(() => {
         const tempEx: Exercise[] = [];
         (exJson.data || exJson).forEach((item: any) => {
           const data = item.attributes || item;
+          console.log("Exercise raw data:", data);
           const cs = typeof data.content === "string" ? data.content : JSON.stringify(data.content);
           let parsed: AnyQuestion[] = [];
           let isEmbed = false;
@@ -451,7 +452,7 @@ useEffect(() => {
             difficulty: normalizeDifficulty(data.difficulty), // fixed
             audience: normalizeAudience(data.audience),       // fixed
             mediaUrl: data.exerciseImage || data.mediaUrl,
-            podcastId: data.podcastId ?? null,
+            podcastId: data.podcast?.data?.id ?? data.podcast_id ?? data.podcastId ?? null,
             publishedAt: data.publishedAt,
             content: normalised,
             isEmbed,
