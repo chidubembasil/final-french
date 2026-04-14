@@ -365,7 +365,7 @@ useEffect(() => {
       audioRef.current.currentTime = 0;
     }
   };
-}, [selectedEx]);
+}, [selectedEx]);   
 
   useEffect(() => {
     document.body.style.overflow = selectedEx || selectedH5P ? "hidden" : "unset";
