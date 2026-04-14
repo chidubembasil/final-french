@@ -313,7 +313,7 @@ function calculateQuestionScore(
 // ─────────────────────────────────────────────
 function Activities() {
   const [exercisesList, setExercisesList] = useState<Exercise[]>([]);
-  const [podcastsMap, setPodcastsMap]     = useState<Record<number, PodcastMedia>>({});
+  const [podcastsMap, setPodcastsMap]     = useState<Record<string, PodcastMedia>>({});
   const [heroData, setHeroData]           = useState<any>(MOCK_HERO);
   const [h5pContents, setH5pContents]     = useState<H5PContent[]>([]);
 
@@ -345,7 +345,7 @@ function Activities() {
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
   const audioRef = useRef<HTMLAudioElement>(null);
   const [audioPlaying, setAudioPlaying] = useState(false);
-  const podMedia = selectedEx?.podcastId? podcastsMap[selectedEx.podcastId] : null;
+  const podMedia = selectedEx?.podcastId? podcastsMap[String(selectedEx.podcastId)] : null;
 
 useEffect(() => {
   if (modalStage === "test" && podMedia && audioRef.current &&!isVideoUrl(podMedia.mediaUrl)) {
@@ -391,11 +391,11 @@ useEffect(() => {
         console.log("Exercises raw:", exJson);
         console.log("Exercises count:", (exJson.data || exJson).length);
 
-        const pMap: Record<number, PodcastMedia> = {};
+        const pMap: Record<string, PodcastMedia> = {};
         (podJson.data || podJson).forEach((p: any) => {
           const a = p.attributes || p;
           const url = a.mediaUrl || a.url || "";
-          pMap[p.id] = { id: p.id, mediaUrl: url, mediaType: a.mediaType || (isVideoUrl(url) ? "video" : "audio") };
+          pMap[String(p.id)] = { id: p.id, mediaUrl: url, mediaType: a.mediaType || (isVideoUrl(url) ? "video" : "audio") };
         });
         setPodcastsMap(pMap);
 
@@ -624,7 +624,7 @@ useEffect(() => {
               <input 
                 type="text" 
                 placeholder="Search all exercises and activities..." 
-                className="w-full pl-14 pr-6 py-5 rounded-[2rem] bg-gray-50 outline-none text-base font-medium" 
+                className="w-full pl-14 pr-6 py-5 rounded-4xl bg-gray-50 outline-none text-base font-medium" 
                 value={searchQuery} 
                 onChange={e => setSearchQuery(e.target.value)} 
               />
