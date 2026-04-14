@@ -601,7 +601,7 @@ useEffect(() => {
       {/* HERO */}
       <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
         <img src={heroData?.mediaUrl || MOCK_HERO.mediaUrl} className="absolute inset-0 w-full h-full object-cover z-0 opacity-70" alt="Hero" />
-        <div className="absolute inset-0 z-10 bg-gradient-to-br from-red-600/80 via-transparent to-blue-900/90" />
+        <div className="absolute inset-0 z-10 bg-linear-to-br from-red-600/80 via-transparent to-blue-900/90" />
         <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-16 gap-5">
           <div className="flex items-center gap-2 px-4 py-2 text-white bg-white/20 backdrop-blur-md border border-white/30 rounded-3xl">
             <Book size={17} />
@@ -631,6 +631,45 @@ useEffect(() => {
             </div>
           </div>
         </div>
+        {/* Show search results on ANY view when searching */}
+        {searchQuery.trim().length > 0 && (
+          <div className="mb-20">
+            <div className="text-center mb-10">
+              <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Search Results</h2>
+              <p className="text-slate-400 font-bold uppercase text- tracking-[0.3em]">{filteredEx.length} found</p>
+            </div>
+            {filteredEx.length === 0? (
+              <EmptyState icon={<Book size={32} className="text-gray-300" />} msg="No exercises match your search." />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredEx.map(ex => {
+                  const dc = DIFF[ex.difficulty] || DIFF["Beginners"];
+                  return (
+                    <div key={ex.id} className="group bg-white rounded- p-8 border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all overflow-hidden flex flex-col">
+                      <div className="flex justify-between items-start mb-6">
+                        <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all shadow-inner">
+                          {ex.podcastId? <Volume2 size={28} /> : <ExTypeIcon type={ex.exerciseType} />}
+                        </div>
+                        <span className={`text- font-black uppercase px-3 py-1.5 rounded-xl border ${dc.bg} ${dc.text} ${dc.border}`}>{ex.exerciseType.replace(/_/g," ")}</span>
+                      </div>
+                      <h3 className="text-xl font-black text-slate-800 mb-3 group-hover:text-blue-600 transition-colors tracking-tight">{ex.title}</h3>
+                      <p className="text-gray-500 text-sm line-clamp-3 mb-8 leading-relaxed font-medium">{ex.description}</p>
+                      <div className="mt-auto">
+                        <div className="flex items-center justify-between pt-6 border-t border-gray-50 mb-6">
+                          <span className={`flex items-center gap-2 text- font-black uppercase tracking-widest ${dc.text}`}><span className={`w-2 h-2 rounded-full ${dc.dot}`} />{ex.difficulty}</span>
+                          <span className="flex items-center gap-2 text- font-black text-gray-400 uppercase tracking-widest"><Layers size={14} />{ex.audience}</span>
+                        </div>
+                        <button onClick={() => resetModal(ex)} className="w-full py-5 bg-slate-900 text-white rounded-2xl text- font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-blue-600 hover:shadow-xl hover:shadow-blue-200 transition-all active:scale-95">
+                          {ex.podcastId? "Listen & Solve" : "Begin Exercise"} <ArrowRight size={16} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ════════════════════════════════════════════════════════
             VIEW 1: MAIN - Students & Teachers Selection
@@ -935,26 +974,30 @@ useEffect(() => {
                   </div>
 
                   {/* Audio / Video Player (shown when podcastId exists) */}
-                  {podMedia && (
-                    <div className="bg-gradient-to-br from-blue-700 to-indigo-800 p-10 rounded-[3rem] text-white shadow-2xl shadow-blue-200">
+                  {podMedia &&!isVideoUrl(podMedia.mediaUrl) && (
+                    <div className="bg-linear-to-br from-blue-700 to-indigo-800 p-10 rounded- text-white shadow-2xl shadow-blue-200 sticky top-0 z-10">
                       <div className="flex items-center gap-4 mb-5">
                         <div className="p-3 bg-white/20 rounded-2xl">
-                          {isVideoUrl(podMedia.mediaUrl) ? <Video className="animate-pulse" size={24} /> : <Volume2 className={audioPlaying? "animate-pulse" : ""} size={24} />}
+                          <Volume2 className={audioPlaying? "animate-pulse" : ""} size={24} />
                         </div>
-                        <span className="font-black text-[11px] uppercase tracking-[0.35em] opacity-90">
-                          {isVideoUrl(podMedia.mediaUrl) ? "Video Context" : "Audio Context"}
+                        <span className="font-black text- uppercase tracking-[0.35em] opacity-90">
+                          Audio Context - Continues playing
                         </span>
                       </div>
-                      {isVideoUrl(podMedia.mediaUrl) ? (
-                        <video controls className="w-full rounded-2xl bg-black/20" style={{ maxHeight: 260 }}>
-                          <source src={podMedia.mediaUrl} />
-                          Your browser does not support video.
-                        </video>
-                      ) : (
-                        <audio controls className="w-full h-14 accent-white bg-white/10 rounded-2xl p-2">
-                          <source src={podMedia.mediaUrl} type="audio/mpeg" />
-                        </audio>
-                      )}
+                      <audio
+                        ref={audioRef}
+                        controls
+                        preload="auto"
+                        className="w-full h-14 accent-white bg-white/10 rounded-2xl p-2"
+                        onPlay={() => setAudioPlaying(true)}
+                        onPause={() => setAudioPlaying(false)}
+                        onLoadedData={() => {
+                          if (modalStage === "test" && audioRef.current) {
+                            audioRef.current.play().catch(() => {});
+                          }
+                        }}
+                        src={podMedia.mediaUrl}
+                      />
                     </div>
                   )}
 
