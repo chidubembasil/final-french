@@ -933,7 +933,7 @@ useEffect(() => {
       </section>
 
       {/* ══════════════════════════════════════
-          EXERCISE MODAL
+          EXERCISE MODAL 
       ══════════════════════════════════════ */}
       {selectedEx && (
         <div className="fixed inset-0 z-[999] bg-slate-900/90 backdrop-blur-xl flex justify-center items-center p-4 mt-5">
