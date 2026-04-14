@@ -395,7 +395,7 @@ useEffect(() => {
         const pMap: Record<string, PodcastMedia> = {};
         (podJson.data || podJson).forEach((p: any) => {
           const a = p.attributes || p;
-          const url = a.mediaUrl || a.url || "";
+          const url = a.audioUrl || a.videoUrl || a.mediaUrl || a.url || "";
           pMap[String(p.id)] = { id: p.id, mediaUrl: url, mediaType: a.mediaType || (isVideoUrl(url) ? "video" : "audio") };
         });
         setPodcastsMap(pMap);
