@@ -273,7 +273,7 @@ function calculateQuestionScore(
         correctCount++;
       }
     });
-    
+         
     return { earned: correctCount, max: totalPairs };
   }
   
