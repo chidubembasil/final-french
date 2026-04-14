@@ -101,6 +101,7 @@ interface Exercise {
   content: AnyQuestion[];
   podcastId?: number | null;
   isEmbed?: boolean;
+  embedUrl?: string | null; // ADD THIS LINE
 }
 interface PodcastMedia {
   id: number;
@@ -338,12 +339,36 @@ function Activities() {
   const [textAnswers,   setTextAnswers]   = useState<TextMap>({});
   const [fibAnswers,    setFibAnswers]    = useState<FibMap>({});
   
-  const audioRef = useRef<HTMLAudioElement>(null);
-  const [audioPlaying, setAudioPlaying] = useState(false);
   const modalScrollRef = useRef<HTMLDivElement>(null);
   const ITEMS_PP = 6;
   const Q_PP     = 3;
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [audioPlaying, setAudioPlaying] = useState(false);
+  const podMedia = selectedEx?.podcastId? podcastsMap[selectedEx.podcastId] : null;
+
+useEffect(() => {
+  if (modalStage === "test" && podMedia && audioRef.current &&!isVideoUrl(podMedia.mediaUrl)) {
+    audioRef.current.play().catch(() => setAudioPlaying(false));
+  }
+}, [modalStage, selectedEx?.id, podMedia]);
+
+useEffect(() => {
+  if (modalStage === "result" && audioRef.current) {
+    audioRef.current.pause();
+    audioRef.current.currentTime = 0;
+    setAudioPlaying(false);
+  }
+}, [modalStage]);
+
+useEffect(() => {
+  return () => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+  };
+}, [selectedEx]);
 
   useEffect(() => {
     document.body.style.overflow = selectedEx || selectedH5P ? "hidden" : "unset";
@@ -432,69 +457,7 @@ function Activities() {
           });
         });
         // Start audio when entering test mode
-        useEffect(() => {
-          if (modalStage === "test" && podMedia && audioRef.current) {
-            {/* Audio / Video Player - won't restart on page change */}
-            {podMedia &&!isVideoUrl(podMedia.mediaUrl) && (
-              <div className="bg-gradient-to-br from-blue-700 to-indigo-800 p-10 rounded- text-white shadow-2xl shadow-blue-200 sticky top-0 z-10">
-                <div className="flex items-center gap-4 mb-5">
-                  <div className="p-3 bg-white/20 rounded-2xl">
-                    <Volume2 className={audioPlaying? "animate-pulse" : ""} size={24} />
-                  </div>
-                  <span className="font-black text- uppercase tracking-[0.35em] opacity-90">
-                    Audio Context - Continues playing
-                  </span>
-                </div>
-                <audio
-                  ref={audioRef}
-                  key={selectedEx?.id} // only remount when exercise changes
-                  controls
-                  className="w-full h-14 accent-white bg-white/10 rounded-2xl p-2"
-                  onPlay={() => setAudioPlaying(true)}
-                  onPause={() => setAudioPlaying(false)}
-                  src={podMedia.mediaUrl}
-                />
-              </div>
-            )}
-
-            {/* Video still works the same - it should restart on page change anyway */}
-            {podMedia && isVideoUrl(podMedia.mediaUrl) && (
-              <div className="bg-gradient-to-br from-blue-700 to-indigo-800 p-10 rounded- text-white shadow-2xl shadow-blue-200">
-                <div className="flex items-center gap-4 mb-5">
-                  <div className="p-3 bg-white/20 rounded-2xl">
-                    <Video className="animate-pulse" size={24} />
-                  </div>
-                  <span className="font-black text- uppercase tracking-[0.35em] opacity-90">
-                    Video Context
-                  </span>
-                </div>
-                <video controls className="w-full rounded-2xl bg-black/20" style={{ maxHeight: 260 }}>
-                  <source src={podMedia.mediaUrl} />
-                  Your browser does not support video.
-                </video>
-              </div>
-            )}
-          }
-        }, [modalStage, selectedEx?.id]); // only runs when exercise changes or stage changes
-
-        // Stop audio when they submit / go to results
-        useEffect(() => {
-          if (modalStage === "result" && audioRef.current) {
-            audioRef.current.pause();
-            audioRef.current.currentTime = 0;
-            setAudioPlaying(false);
-          }
-        }, [modalStage]);
-
-        // Cleanup: stop audio when modal closes
-        useEffect(() => {
-          return () => {
-            if (audioRef.current) {
-              audioRef.current.pause();
-              audioRef.current.currentTime = 0;
-            }
-          };
-        }, [selectedEx]);
+        
 
         // FIXED: Properly extract from exercise-resources API response
         const tempH5P: H5PContent[] = [];
@@ -624,7 +587,6 @@ function Activities() {
   const pageQs     = selectedEx ? selectedEx.content.slice(testPage * Q_PP, (testPage + 1) * Q_PP) : [];
   const totalPgs   = selectedEx ? Math.ceil(selectedEx.content.length / Q_PP) : 1;
   const isLastPg   = selectedEx ? (testPage + 1) * Q_PP >= selectedEx.content.length : false;
-  const podMedia   = selectedEx?.podcastId ? podcastsMap[selectedEx.podcastId] : null;
 
   if (loading) return (
     <div className="h-screen w-full flex flex-col items-center justify-center bg-white">
@@ -977,7 +939,7 @@ function Activities() {
                     <div className="bg-gradient-to-br from-blue-700 to-indigo-800 p-10 rounded-[3rem] text-white shadow-2xl shadow-blue-200">
                       <div className="flex items-center gap-4 mb-5">
                         <div className="p-3 bg-white/20 rounded-2xl">
-                          {isVideoUrl(podMedia.mediaUrl) ? <Video className="animate-pulse" size={24} /> : <Volume2 className="animate-pulse" size={24} />}
+                          {isVideoUrl(podMedia.mediaUrl) ? <Video className="animate-pulse" size={24} /> : <Volume2 className={audioPlaying? "animate-pulse" : ""} size={24} />}
                         </div>
                         <span className="font-black text-[11px] uppercase tracking-[0.35em] opacity-90">
                           {isVideoUrl(podMedia.mediaUrl) ? "Video Context" : "Audio Context"}
