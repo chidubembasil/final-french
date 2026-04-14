@@ -775,7 +775,7 @@ useEffect(() => {
                   <button
                     key={difficulty}
                     onClick={() => handleDifficultySelect(difficulty)}
-                    className="group relative h-[350px] rounded-[3rem] overflow-hidden shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 text-left"
+                    className="group relative h-87.5 rounded-[3rem] overflow-hidden shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 text-left"
                   >
                     {/* Background Image */}
                     <div 
