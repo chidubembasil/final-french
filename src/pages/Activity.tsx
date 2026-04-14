@@ -387,13 +387,29 @@ function Activities() {
             return q;
           });
 
+         const normalizeAudience = (s?: string) => {
+            const v = (s || "").toLowerCase().trim();
+            if (v.startsWith("student")) return "Students";
+            if (v.startsWith("teacher")) return "Teachers";
+            return "Students";
+          };
+
+          const normalizeDifficulty = (s?: string) => {
+            const v = (s || "").toLowerCase().trim();
+            if (v.startsWith("begin")) return "Beginners";
+            if (v.startsWith("inter")) return "Intermediate";
+            if (v.startsWith("adv")) return "Advanced";
+            return "Beginners";
+          };
+
+          // ... inside your forEach loop
           tempEx.push({
             id: item.id,
             title: data.title || "",
             description: data.description || "",
             exerciseType: data.exerciseType || "mcq",
-            difficulty: cap(data.difficulty || "Beginners"),
-            audience:   cap(data.audience   || "Students"),
+            difficulty: normalizeDifficulty(data.difficulty), // fixed
+            audience: normalizeAudience(data.audience),       // fixed
             mediaUrl: data.exerciseImage || data.mediaUrl,
             podcastId: data.podcastId ?? null,
             publishedAt: data.publishedAt,
@@ -433,6 +449,7 @@ function Activities() {
         });
 
         setExercisesList(tempEx);
+        console.table(tempEx.map(e => ({ id: e.id, audience: e.audience, difficulty: e.difficulty })));
         setH5pContents(tempH5P);
 
         const ha = heroJson.data || heroJson;
