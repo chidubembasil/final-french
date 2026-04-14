@@ -100,6 +100,7 @@ interface Exercise {
   publishedAt: string | null;
   content: AnyQuestion[];
   podcastId?: number | null;
+  isEmbed?: boolean;
 }
 interface PodcastMedia {
   id: number;
@@ -361,6 +362,9 @@ function Activities() {
         const [heroJson, exJson, h5pJson, podJson] = await Promise.all([
           heroRes.json(), exRes.json(), h5pRes.json(), podRes.json(),
         ]);
+        console.log("CLIENT_KEY:", CLIENT_KEY);
+        console.log("Exercises raw:", exJson);
+        console.log("Exercises count:", (exJson.data || exJson).length);
 
         const pMap: Record<number, PodcastMedia> = {};
         (podJson.data || podJson).forEach((p: any) => {
@@ -374,10 +378,18 @@ function Activities() {
         (exJson.data || exJson).forEach((item: any) => {
           const data = item.attributes || item;
           const cs = typeof data.content === "string" ? data.content : JSON.stringify(data.content);
-          if (!cs || isEmbedContent(cs)) return;
           let parsed: AnyQuestion[] = [];
-          try { parsed = JSON.parse(cs); } catch { parsed = []; }
-          if (!Array.isArray(parsed)) return;
+          let isEmbed = false;
+
+          if (!cs) return; // only skip if truly empty
+
+          if (isEmbedContent(cs)) {
+            isEmbed = true; 
+            parsed = []; // no questions, but keep the exercise
+          } else {
+            try { parsed = JSON.parse(cs); } catch { parsed = []; }
+            if (!Array.isArray(parsed)) parsed = [];
+          }
 
           const normalised = parsed.map((q: any) => {
             const t = q.type || "mcq";
@@ -416,6 +428,7 @@ function Activities() {
             podcastId: data.podcastId ?? null,
             publishedAt: data.publishedAt,
             content: normalised,
+            isEmbed,
           });
         });
         // Start audio when entering test mode
