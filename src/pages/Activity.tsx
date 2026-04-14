@@ -336,7 +336,9 @@ function Activities() {
   const [seqAnswers,    setSeqAnswers]    = useState<SeqMap>({});
   const [textAnswers,   setTextAnswers]   = useState<TextMap>({});
   const [fibAnswers,    setFibAnswers]    = useState<FibMap>({});
-
+  
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [audioPlaying, setAudioPlaying] = useState(false);
   const modalScrollRef = useRef<HTMLDivElement>(null);
   const ITEMS_PP = 6;
   const Q_PP     = 3;
@@ -416,6 +418,70 @@ function Activities() {
             content: normalised,
           });
         });
+        // Start audio when entering test mode
+        useEffect(() => {
+          if (modalStage === "test" && podMedia && audioRef.current) {
+            {/* Audio / Video Player - won't restart on page change */}
+            {podMedia &&!isVideoUrl(podMedia.mediaUrl) && (
+              <div className="bg-gradient-to-br from-blue-700 to-indigo-800 p-10 rounded- text-white shadow-2xl shadow-blue-200 sticky top-0 z-10">
+                <div className="flex items-center gap-4 mb-5">
+                  <div className="p-3 bg-white/20 rounded-2xl">
+                    <Volume2 className={audioPlaying? "animate-pulse" : ""} size={24} />
+                  </div>
+                  <span className="font-black text- uppercase tracking-[0.35em] opacity-90">
+                    Audio Context - Continues playing
+                  </span>
+                </div>
+                <audio
+                  ref={audioRef}
+                  key={selectedEx?.id} // only remount when exercise changes
+                  controls
+                  className="w-full h-14 accent-white bg-white/10 rounded-2xl p-2"
+                  onPlay={() => setAudioPlaying(true)}
+                  onPause={() => setAudioPlaying(false)}
+                  src={podMedia.mediaUrl}
+                />
+              </div>
+            )}
+
+            {/* Video still works the same - it should restart on page change anyway */}
+            {podMedia && isVideoUrl(podMedia.mediaUrl) && (
+              <div className="bg-gradient-to-br from-blue-700 to-indigo-800 p-10 rounded- text-white shadow-2xl shadow-blue-200">
+                <div className="flex items-center gap-4 mb-5">
+                  <div className="p-3 bg-white/20 rounded-2xl">
+                    <Video className="animate-pulse" size={24} />
+                  </div>
+                  <span className="font-black text- uppercase tracking-[0.35em] opacity-90">
+                    Video Context
+                  </span>
+                </div>
+                <video controls className="w-full rounded-2xl bg-black/20" style={{ maxHeight: 260 }}>
+                  <source src={podMedia.mediaUrl} />
+                  Your browser does not support video.
+                </video>
+              </div>
+            )}
+          }
+        }, [modalStage, selectedEx?.id]); // only runs when exercise changes or stage changes
+
+        // Stop audio when they submit / go to results
+        useEffect(() => {
+          if (modalStage === "result" && audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current.currentTime = 0;
+            setAudioPlaying(false);
+          }
+        }, [modalStage]);
+
+        // Cleanup: stop audio when modal closes
+        useEffect(() => {
+          return () => {
+            if (audioRef.current) {
+              audioRef.current.pause();
+              audioRef.current.currentTime = 0;
+            }
+          };
+        }, [selectedEx]);
 
         // FIXED: Properly extract from exercise-resources API response
         const tempH5P: H5PContent[] = [];
@@ -464,12 +530,22 @@ function Activities() {
   }, [CLIENT_KEY]);
 
   // Filter exercises based on current selections
-    const filteredEx = useMemo(() =>
-    exercisesList.filter(ex =>
-      ex.title?.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      (selectedAudience   ? ex.audience?.toLowerCase() === selectedAudience.toLowerCase() : true) &&
-      (selectedDifficulty ? ex.difficulty === selectedDifficulty : true)
-    ), [exercisesList, searchQuery, selectedAudience, selectedDifficulty]);
+    const filteredEx = useMemo(() => {
+      const matchesSearch = (ex: Exercise) =>
+        ex.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        ex.description?.toLowerCase().includes(searchQuery.toLowerCase());
+
+      // If user is searching, ignore audience + difficulty and search everything
+      if (searchQuery.trim().length > 0) {
+        return exercisesList.filter(matchesSearch);
+      }
+
+      // No search query: use the normal hierarchical filters
+      return exercisesList.filter(ex =>
+        (selectedAudience? ex.audience === selectedAudience : true) &&
+        (selectedDifficulty? ex.difficulty === selectedDifficulty : true)
+      );
+    }, [exercisesList, searchQuery, selectedAudience, selectedDifficulty]);
 
   // Filter H5P for main level (only by audience, not difficulty)
   const filteredH5P = useMemo(() =>
@@ -754,6 +830,14 @@ function Activities() {
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {searchQuery.trim().length > 0 && currentView === "exercises" && (
+          <div className="mb-6 px-6 py-3 bg-blue-50 border border-blue-200 rounded-2xl text-center">
+            <p className="text- font-black uppercase tracking-widest text-blue-700">
+              Searching all exercises · {filteredEx.length} result{filteredEx.length!== 1? "s" : ""}
+            </p>
           </div>
         )}
 
