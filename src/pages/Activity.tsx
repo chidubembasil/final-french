@@ -548,7 +548,7 @@ useEffect(() => {
       const result = calculateQuestionScore(q, i, choiceAnswers, matchAnswers, seqAnswers, textAnswers, fibAnswers);
       totalEarned += result.earned;
       totalMax += result.max;
-    });
+    });   
     
     return { totalScore: totalEarned, maxScore: totalMax };
   }, [selectedEx, modalStage, choiceAnswers, matchAnswers, seqAnswers, textAnswers, fibAnswers]);
