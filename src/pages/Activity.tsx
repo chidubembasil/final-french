@@ -348,11 +348,7 @@ function Activities() {
   const [audioPlaying, setAudioPlaying] = useState(false);
   const podMedia = selectedEx?.podcastId? podcastsMap[String(selectedEx.podcastId)] : null;
 
-useEffect(() => {
-  if (modalStage === "test" && podMedia && audioRef.current &&!isVideoUrl(podMedia.mediaUrl)) {
-    audioRef.current.play().catch(() => setAudioPlaying(false));
-  }
-}, [modalStage, selectedEx?.id, podMedia]);
+
 
 useEffect(() => {
   if (modalStage === "result" && audioRef.current) {
@@ -992,15 +988,10 @@ useEffect(() => {
                       <audio
                         ref={audioRef}
                         controls
-                        preload="auto"
+                        preload="metadata"
                         className="w-full h-14 accent-white bg-white/10 rounded-2xl p-2"
                         onPlay={() => setAudioPlaying(true)}
                         onPause={() => setAudioPlaying(false)}
-                        onLoadedData={() => {
-                          if (modalStage === "test" && audioRef.current) {
-                            audioRef.current.play().catch(() => {});
-                          }
-                        }}
                         src={podMedia.mediaUrl}
                       />
                     </div>
