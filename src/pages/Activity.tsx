@@ -311,6 +311,7 @@ function calculateQuestionScore(
 // ─────────────────────────────────────────────
 // COMPONENT
 // ─────────────────────────────────────────────
+
 function Activities() {
   const [exercisesList, setExercisesList] = useState<Exercise[]>([]);
   const [podcastsMap, setPodcastsMap]     = useState<Record<string, PodcastMedia>>({});
@@ -587,7 +588,10 @@ useEffect(() => {
   const pageQs     = selectedEx ? selectedEx.content.slice(testPage * Q_PP, (testPage + 1) * Q_PP) : [];
   const totalPgs   = selectedEx ? Math.ceil(selectedEx.content.length / Q_PP) : 1;
   const isLastPg   = selectedEx ? (testPage + 1) * Q_PP >= selectedEx.content.length : false;
-
+  console.log("podcastId:", selectedEx?.podcastId, "podMedia:", podMedia);
+  console.log("selectedEx.podcastId:", selectedEx?.podcastId);
+  console.log("podcastsMap keys:", Object.keys(podcastsMap));
+  console.log("podMedia:", podMedia);
   if (loading) return (
     <div className="h-screen w-full flex flex-col items-center justify-center bg-white">
       <Loader2 className="animate-spin text-blue-600 mb-4" size={40} />
@@ -595,7 +599,7 @@ useEffect(() => {
     </div>
   );
 
-  return (
+  return ( 
     <main className="pt-20 bg-[#fcfaf8] min-h-screen w-full overflow-y-auto">
 
       {/* HERO */}
