@@ -346,7 +346,7 @@ function Activities() {
     document.body.style.overflow = selectedEx || selectedH5P ? "hidden" : "unset";
     return () => { document.body.style.overflow = "unset"; };
   }, [selectedEx, selectedH5P]);
-
+   
   useEffect(() => {
     (async () => {
       try {
@@ -447,10 +447,10 @@ function Activities() {
   }, [CLIENT_KEY]);
 
   // Filter exercises based on current selections
-  const filteredEx = useMemo(() =>
+    const filteredEx = useMemo(() =>
     exercisesList.filter(ex =>
       ex.title?.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      (selectedAudience   ? ex.audience?.toLowerCase()   === selectedAudience.toLowerCase()   : true) &&
+      (selectedAudience   ? ex.audience?.toLowerCase() === selectedAudience.toLowerCase() : true) &&
       (selectedDifficulty ? ex.difficulty === selectedDifficulty : true)
     ), [exercisesList, searchQuery, selectedAudience, selectedDifficulty]);
 
@@ -821,7 +821,7 @@ function Activities() {
           EXERCISE MODAL
       ══════════════════════════════════════ */}
       {selectedEx && (
-        <div className="fixed inset-0 z-[999] bg-slate-900/90 backdrop-blur-xl flex justify-center items-center p-4">
+        <div className="fixed inset-0 z-[999] bg-slate-900/90 backdrop-blur-xl flex justify-center items-center p-4 mt-5">
           <div className="relative bg-white w-full max-w-4xl rounded-[4rem] shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
             <button aria-label="Close" onClick={() => setSelectedEx(null)} className="absolute top-10 right-10 z-50 p-5 bg-gray-50 rounded-full hover:bg-red-50 hover:text-red-500 transition-all shadow-sm"><X size={22} /></button>
 
@@ -1191,7 +1191,7 @@ function Activities() {
           H5P MODAL - FIXED AND ADDED
       ══════════════════════════════════════ */}
       {selectedH5P && (
-        <div className="fixed inset-0 z-[999] bg-slate-900/95 backdrop-blur-2xl flex justify-center items-center p-4">
+        <div className="fixed inset-0 z-[999] bg-slate-900/95 backdrop-blur-2xl flex justify-center items-center p-4 mt-5">
           <div className="relative bg-white w-full max-w-6xl h-[92vh] rounded-[4rem] shadow-2xl flex flex-col overflow-hidden">
             <div className="flex items-center justify-between p-10 border-b border-gray-50">
               <div>
@@ -1200,7 +1200,7 @@ function Activities() {
               </div>
               <button aria-label="Close" onClick={() => setSelectedH5P(null)} className="p-5 bg-gray-50 rounded-full hover:bg-red-50 hover:text-red-500 transition-all shadow-sm"><X size={24} /></button>
             </div>
-            <div className="flex-1 bg-gray-100 p-6">
+            <div className="flex-1 bg-gray-100 p-6 overflow-y-auto">
               <iframe 
                 src={selectedH5P.embedUrl} 
                 title={selectedH5P.title}
