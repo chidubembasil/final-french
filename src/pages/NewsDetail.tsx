@@ -119,7 +119,7 @@ function NewsDetail() {
           <img src={post.coverImage} loading="eager" fetchPriority="high" className="w-full h-full object-cover" alt={post.title} />
         </div>
 
-        <div className="prose prose-lg prose-slate max-w-none prose-p:leading-relaxed prose-p:text-gray-700 prose-p:mb-8 prose-p:text-justify [hyphens:auto]">
+        <div className="prose prose-lg prose-slate max-w-none prose-p:leading-relaxed prose-p:text-gray-700 prose-p:mb-10 prose-p:text-justify [hyphens:auto]">
           <div className="text-lg text-justify">
             {post.content
               .split(/\n\s*\n/)
