@@ -119,14 +119,15 @@ function NewsDetail() {
           <img src={post.coverImage} loading="eager" fetchPriority="high" className="w-full h-full object-cover" alt={post.title} />
         </div>
 
-        <div className="prose prose-lg prose-slate max-w-none prose-p:leading-relaxed prose-p:text-gray-700 prose-p:mb-5 prose-p:text-justify [hyphens:auto]">
+        <div className="prose prose-lg prose-slate max-w-none prose-p:leading-relaxed prose-p:text-gray-700 prose-p:mb-8 prose-p:text-justify [hyphens:auto]">
           <div className="text-lg">
             {post.content
-              .split(/\n\s*\n/) // Split on double line breaks = actual paragraphs
+              .split(/\n\s*\n/)
               .filter((p: string) => p.trim() !== '')
               .map((para: string, i: number) => (
                 <p key={i}>{para.trim()}</p>
-              ))}
+              ))
+            }
           </div>
         </div>
       </div>
