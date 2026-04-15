@@ -120,7 +120,7 @@ function NewsDetail() {
         </div>
 
         <div className="prose prose-lg prose-slate max-w-none prose-p:leading-relaxed prose-p:text-gray-700 prose-p:mb-8 prose-p:text-justify [hyphens:auto]">
-          <div className="text-lg">
+          <div className="text-lg text-justify">
             {post.content
               .split(/\n\s*\n/)
               .filter((p: string) => p.trim() !== '')
