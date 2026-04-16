@@ -503,7 +503,7 @@ function Activities() {
       } finally {
         setLoading(false);
       }
-    })();
+    })();  
   }, [CLIENT_KEY]);
 
   // ADD THIS: Scroll to top when entering exercises view
