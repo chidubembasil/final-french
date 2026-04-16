@@ -1360,7 +1360,7 @@ function Activities() {
                 </button>
               </div>
               
-              <div className="flex-1 bg-gray-100 p-6 overflow-y-auto relative">
+              <div className="flex-1 bg-gray-100 overflow-y-auto relative">
                 {h5pIframeLoading && (
                   <div className="absolute inset-6 rounded-[2.5rem] bg-white flex flex-col items-center justify-center z-10">
                     <Loader2 className="animate-spin text-purple-600 mb-4" size={48} />
