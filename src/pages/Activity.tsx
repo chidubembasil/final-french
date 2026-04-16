@@ -1342,7 +1342,7 @@ function Activities() {
       ══════════════════════════════════════ */}
       {selectedH5P && (
         <div className="fixed inset-0 z-[999] bg-slate-900/95 backdrop-blur-2xl flex justify-center items-center p-4 mt-5">
-          <div className="relative bg-white w-full max-w-6xl h- rounded- shadow-2xl flex flex-col overflow-hidden">
+          <div className="relative bg-white w-full max-w-6xl h-[92vh] rounded-[4rem] shadow-2xl flex flex-col overflow-hidden">
             <div className="flex items-center justify-between p-10 border-b border-gray-50 shrink-0">
               <div>
                 <h3 className="font-black text-2xl text-slate-900 tracking-tight">{selectedH5P.title}</h3>
