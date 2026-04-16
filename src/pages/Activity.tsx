@@ -1337,8 +1337,8 @@ function Activities() {
         </div>
       )}
 
-      {/* ══════════════════════════════════════
-          H5P MODAL - FULL HEIGHT FIX
+     {/* ══════════════════════════════════════
+          H5P MODAL - CONTAINER + IFRAME FULL HEIGHT
       ══════════════════════════════════════ */}
       {selectedH5P && (
         <div className="fixed inset-0 z-[999] bg-slate-900/95 backdrop-blur-2xl flex justify-center items-center p-4 mt-5">
@@ -1360,7 +1360,7 @@ function Activities() {
               </button>
             </div>
             
-            {/* CHANGED: removed p-6 and overflow-y-auto, added min-h-0 */}
+            {/* Container: flex-1 + min-h-0 = fills all remaining space */}
             <div className="flex-1 bg-gray-100 relative min-h-0">
               {h5pIframeLoading && (
                 <div className="absolute inset-0 bg-white flex flex-col items-center justify-center z-10">
@@ -1371,7 +1371,7 @@ function Activities() {
                 </div>
               )}
 
-              {/* CHANGED: removed rounded/shadow from iframe, it's edge-to-edge now */}
+              {/* Iframe: w-full h-full = fills the container */}
               <iframe 
                 src={selectedH5P.embedUrl} 
                 title={selectedH5P.title}
