@@ -458,14 +458,6 @@ function Activities() {
           });
         });
         // Start audio when entering test mode
-        // ADD THIS: Scroll to top when entering exercises view
-        useEffect(() => {
-          if (currentView === "exercises" && exercisesTopRef.current) {
-            setTimeout(() => {
-              exercisesTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-            }, 100);
-          }
-        }, [currentView, selectedDifficulty]);
         
 
         // FIXED: Properly extract from exercise-resources API response
@@ -513,6 +505,15 @@ function Activities() {
       }
     })();
   }, [CLIENT_KEY]);
+
+  // ADD THIS: Scroll to top when entering exercises view
+  useEffect(() => {
+    if (currentView === "exercises" && exercisesTopRef.current) {
+      setTimeout(() => {
+        exercisesTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 100);
+    }
+  }, [currentView, selectedDifficulty]);
 
   // Filter exercises based on current selections
     const filteredEx = useMemo(() => {
