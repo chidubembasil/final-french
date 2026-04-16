@@ -18,7 +18,7 @@ interface GalleryHero {
 }
 
 interface EventImage {
-    id: number;
+    id: number; 
     title: string;
     coverImage: string;
     category: string;
