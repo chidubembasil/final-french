@@ -157,7 +157,7 @@ function Gallery() {
 
   const handlePaginate = (pageNumber: number) => {
     setCurrentPage(pageNumber);
-    document.getElementById('gallery-grid')?.scrollIntoView({ behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: 'smooth' });    
   };
 
   return (
@@ -202,9 +202,9 @@ function Gallery() {
                 </div>
               </div>
               <div className="hidden md:block h-8 w-px bg-gray-200" />
-              <div className="flex items-center gap-3 overflow-x-auto no-scrollbar w-full">
+              <div className="flex items-center gap-3 overflow-x-auto no-scrollbar w-full pb-1.5">
                 <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest shrink-0">Category</span>
-                <div className="flex gap-2">
+                <div className="flex gap-2 mt-1.5 mb-1.5">
                   {categories.map((cat) => (
                     <button key={cat} onClick={() => setActiveCategory(cat)} className={`px-5 py-2 rounded-full text-xs font-medium transition-all whitespace-nowrap ${activeCategory === cat ? "bg-blue-600 text-white shadow-md" : "bg-gray-100 text-gray-600 hover:bg-gray-200"}`}>{cat}</button>
                   ))}

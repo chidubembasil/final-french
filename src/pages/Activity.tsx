@@ -322,6 +322,8 @@ function Activities() {
   const [selectedH5P, setSelectedH5P] = useState<H5PContent | null>(null);
   const [modalStage,  setModalStage]  = useState<"info" | "test" | "result">("info");
   const [loading, setLoading]         = useState(true);
+  const [exerciseLoading, setExerciseLoading] = useState(false); // ADD THIS LINE
+ 
 
   // Navigation state - hierarchical flow
   const [currentView, setCurrentView] = useState<"main" | "difficulty" | "exercises">("main");
@@ -341,6 +343,7 @@ function Activities() {
   const [fibAnswers,    setFibAnswers]    = useState<FibMap>({});
   
   const modalScrollRef = useRef<HTMLDivElement>(null);
+  const exercisesTopRef = useRef<HTMLDivElement>(null); // ADD THIS LINE
   const ITEMS_PP = 6;
   const Q_PP     = 3;
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
@@ -350,22 +353,22 @@ function Activities() {
 
 
 
-useEffect(() => {
-  if (modalStage === "result" && audioRef.current) {
-    audioRef.current.pause();
-    audioRef.current.currentTime = 0;
-    setAudioPlaying(false);
-  }
-}, [modalStage]);
-
-useEffect(() => {
-  return () => {
-    if (audioRef.current) {
+  useEffect(() => {
+    if (modalStage === "result" && audioRef.current) {
       audioRef.current.pause();
       audioRef.current.currentTime = 0;
+      setAudioPlaying(false);
     }
-  };
-}, [selectedEx]);   
+  }, [modalStage]);
+
+  useEffect(() => {
+    return () => {
+      if (audioRef.current) {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      }
+    };
+  }, [selectedEx]);   
 
   useEffect(() => {
     document.body.style.overflow = selectedEx || selectedH5P ? "hidden" : "unset";
@@ -455,6 +458,14 @@ useEffect(() => {
           });
         });
         // Start audio when entering test mode
+        // ADD THIS: Scroll to top when entering exercises view
+        useEffect(() => {
+          if (currentView === "exercises" && exercisesTopRef.current) {
+            setTimeout(() => {
+              exercisesTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }, 100);
+          }
+        }, [currentView, selectedDifficulty]);
         
 
         // FIXED: Properly extract from exercise-resources API response
@@ -549,10 +560,17 @@ useEffect(() => {
     return { totalScore: totalEarned, maxScore: totalMax };
   }, [selectedEx, modalStage, choiceAnswers, matchAnswers, seqAnswers, textAnswers, fibAnswers]);
 
-  const resetModal = (ex: Exercise) => {
-    setSelectedEx(ex); setModalStage("info");
-    setChoiceAnswers({}); setMatchAnswers({}); setSeqAnswers({}); setTextAnswers({}); setFibAnswers({});
+    const resetModal = (ex: Exercise) => {
+    setExerciseLoading(true); // ADD THIS
+    setSelectedEx(ex);
+    setModalStage("info");
+    setChoiceAnswers({});
+    setMatchAnswers({});
+    setSeqAnswers({});
+    setTextAnswers({});
+    setFibAnswers({});
     setTestPage(0);
+    setTimeout(() => setExerciseLoading(false), 400); // ADD THIS
   };
 
   // Navigation handlers
@@ -613,7 +631,7 @@ useEffect(() => {
         </div>
       </div>
 
-      <section className="py-24 px-6 md:px-12 max-w-7xl mx-auto">
+      <section className="py-24 px-6 md:px-12 max-w-7xl mx-auto" ref={exercisesTopRef}>
 
         {/* ════════════════════════════════════════════════════════
             GLOBAL SEARCH BAR (Always visible at top)
@@ -728,7 +746,7 @@ useEffect(() => {
                       <Users size={32} className="text-white" />
                     </div>
                     <h3 className="text-3xl font-black text-white mb-2">Teachers</h3>
-                    <p className="text-white/80 font-medium mb-4">Resources and tools for educators</p>
+                    <p className="text-white/80 font-medium mb-4">Exercises for educators</p>
                     <div className="flex items-center gap-2 text-white text-[11px] font-black uppercase tracking-widest">
                       Get Started <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                     </div>
@@ -939,6 +957,13 @@ useEffect(() => {
       {selectedEx && (
         <div className="fixed inset-0 z-[999] bg-slate-900/90 backdrop-blur-xl flex justify-center items-center p-4 mt-5">
           <div className="relative bg-white w-full max-w-4xl rounded-[4rem] shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
+            {exerciseLoading && (
+                <div className="absolute inset-0 z-[60] bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center rounded-[4rem]">
+                  <Loader2 className="animate-spin text-blue-600 mb-4" size={48} />
+                  <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">Loading Exercise...</p>
+                </div>
+              )
+            }
             <button aria-label="Close" onClick={() => setSelectedEx(null)} className="absolute top-10 right-10 z-50 p-5 bg-gray-50 rounded-full hover:bg-red-50 hover:text-red-500 transition-all shadow-sm"><X size={22} /></button>
 
             <div ref={modalScrollRef} className="overflow-y-auto p-10 md:p-14 custom-scrollbar">

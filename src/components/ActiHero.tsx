@@ -28,8 +28,7 @@ export default function InteractiveActivities() {
             Explore All Exercises
           </h2>
           <p className="text-gray-500 text-lg leading-relaxed max-w-xl mb-10">
-            Access our full library of listening, vocabulary, grammar, and speaking 
-            activities designed to improve your bilingual skills.
+            Access our full library of activities designed to improve your bilingual skills.
           </p>
 
           <button 

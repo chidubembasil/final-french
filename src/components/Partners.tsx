@@ -32,7 +32,7 @@ export default function PartnersSection() {
             Our Strategic <span className="text-red-600">Partners</span>
           </h2>
           <p className="text-gray-500 max-w-2xl mx-auto">
-            The BAC project is supported by a network of international institutional, 
+            We are supported by a network of international institutional, 
             academic, and technical leaders committed to Nigerian excellence.
           </p>
         </div>

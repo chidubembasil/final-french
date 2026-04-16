@@ -372,7 +372,7 @@ function Pedagogies() {
 
       {/* --- OTHER RESOURCES & EVENTS (CELEBRATIONS) --- */}
       <div className="max-w-7xl mx-auto px-4 md:px-8 py-12 grid grid-cols-1 gap-8">
-        <p className="font-bold text-5xl w-full text-center mt-8 underline ">Other Resources & Events</p>
+        <p className="font-bold text-5xl w-full text-center mt-8 underline ">Events</p>
         <div className="bg-white rounded-[3rem] p-8 border border-gray-100 shadow-sm flex flex-col md:flex-row gap-8 items-stretch">
           <div className="w-full md:w-1/3 min-h-[150px] rounded-2xl overflow-hidden bg-gray-50 flex items-center justify-center relative">
             {upcomingEvents[0]?.celebrationImage ? (
@@ -422,6 +422,7 @@ function Pedagogies() {
 
       {/* --- MAIN RESOURCES GRID --- */}
       <div className="px-4 md:px-8 py-12 max-w-7xl mx-auto">
+        <h1 className="text-white text-4xl md:text-7xl font-bold font-serif max-w-4xl leading-tight">Resources</h1>
         <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-gray-100 mb-12 space-y-8">
           <div className="relative flex-1">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={20} />

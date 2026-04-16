@@ -6,7 +6,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect, useRef, useMemo } from "react";
 import NigeriaMap from "../components/NigeriaMap";
-import logo from "../assets/img/vecteezy_ms-office-logo-on-transparent-background_14018577.jpg";
+// import logo from "../assets/img/vecteezy_ms-office-logo-on-transparent-background_14018577.jpg";
 import img1 from "../assets/img/_A1A4760.jpg"
 interface GalleryHero {
     title: string;
@@ -210,16 +210,16 @@ function BAC() {
                 
                <div className="w-[90%] max-w-6xl relative group overflow-hidden mx-auto">
                 {/* Decorative Background Glow */}
-                <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-700"></div>
-
-                <div className="relative bg-white border border-gray-100 rounded-[2rem] md:rounded-[3rem] p-2 shadow-xl hover:shadow-2xl transition-all duration-500">
+                {/* <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-700"></div>
+ */}
+               {/*  <div className="relative bg-white border border-gray-100 rounded-[2rem] md:rounded-[3rem] p-2 shadow-xl hover:shadow-2xl transition-all duration-500">
                     <div className="flex flex-col items-stretch gap-2">
-                    
+                     */}
                     {/* Top Card: Interactive Resources */}
-                    <div className="bg-slate-900 rounded-[1.8rem] md:rounded-[2.5rem] p-6 md:p-8 flex flex-col lg:flex-row justify-between items-center overflow-hidden relative group min-h-[250px] gap-8">
-                        
+                    {/* <div className="bg-slate-900 rounded-[1.8rem] md:rounded-[2.5rem] p-6 md:p-8 flex flex-col lg:flex-row justify-between items-center overflow-hidden relative group min-h-[250px] gap-8">
+                      */}   
                         {/* Left Side Content */}
-                        <div className="relative z-10 flex flex-col justify-between h-full items-center lg:items-start text-center lg:text-left">
+                       {/*  <div className="relative z-10 flex flex-col justify-between h-full items-center lg:items-start text-center lg:text-left">
                         <div>
                             <div className="flex items-center justify-center lg:justify-start gap-3 mb-6">
                             <img 
@@ -247,10 +247,10 @@ function BAC() {
                             "Empowering <br/> digital fluency"
                             </div>
                         </div>
-                        </div>
+                        </div> */}
 
                         {/* Action Button */}
-                        <a 
+                       {/*  <a 
                         href="https://login.microsoftonline.com" 
                         target="_blank" 
                         rel="noopener noreferrer"
@@ -260,12 +260,12 @@ function BAC() {
                         <ExternalLink size={12} strokeWidth={3} />
                         </a>
 
-                        {/* Inner Card Background Glow */}
+                        
                         <div className="absolute top-1/2 -translate-y-1/2 right-[-5%] w-40 h-40 bg-blue-600/20 rounded-full blur-3xl pointer-events-none"></div>
                     </div>
-
+ */}
                     {/* Bottom Card: LMS Access */}
-                    <div className="flex-1 p-6 md:p-10 bg-[#F1F5F9] rounded-[1.8rem] md:rounded-[2.5rem] flex flex-col lg:flex-row justify-between items-center gap-8">
+                    {/* <div className="flex-1 p-6 md:p-10 bg-[#F1F5F9] rounded-[1.8rem] md:rounded-[2.5rem] flex flex-col lg:flex-row justify-between items-center gap-8">
                         <div className="space-y-4 text-center lg:text-left flex flex-col items-center lg:items-start">
                         <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-700 rounded-full">
                             <Users size={14} />
@@ -288,9 +288,9 @@ function BAC() {
                         </a>
                         </div>
                     </div> 
-
-                    </div>
-                </div>
+ */}
+                       {/*  </div>
+                    </div> */}
                 </div>
 
                 <div className="w-[90%] max-w-7xl flex flex-col gap-8 py-10">
