@@ -1337,60 +1337,55 @@ function Activities() {
         </div>
       )}
 
-      {/* 
-        ══════════════════════════════════════
-          H5P MODAL - WITH LOADING SPINNER
-        ══════════════════════════════════════ 
-      */}
-      {selectedH5P && (
-        <div className="fixed inset-0 z-[999] bg-slate-900/95 backdrop-blur-2xl flex justify-center items-center p-4 mt-5">
-          <div className="relative bg-white w-full max-w-6xl h- rounded- shadow-2xl flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between p-10 border-b border-gray-50">
-              <div>
-                <h3 className="font-black text-2xl text-slate-900 tracking-tight">{selectedH5P.title}</h3>
-                <p className="text- font-black text-purple-600 uppercase tracking-[0.3em] mt-1">Interactive Module</p>
-              </div>
-              <button
-                aria-label="Close"
-                onClick={() => {
-                  setSelectedH5P(null);
-                  setH5pIframeLoading(true); // reset for next time
-                }}
-                className="p-5 bg-gray-50 rounded-full hover:bg-red-50 hover:text-red-500 transition-all shadow-sm"
-              >
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="flex-1 bg-gray-100 p-6 overflow-hidden relative">
-              {/* Loading Spinner Overlay */}
-              {h5pIframeLoading && (
-                <div className="absolute inset-6 rounded-[2.5rem] bg-white flex flex-col items-center justify-center z-10">
-                  <Loader2 className="animate-spin text-purple-600 mb-5" size={48} />
-                  <p className="text- font-black uppercase tracking-[0.3em] text-slate-400">
-                    Loading Interactive Content...
-                  </p>
-                  <p className="text- font-medium text-slate-300 mt-2">
-                    Connecting to h5p.com
-                  </p>
-                </div>
-              )}
-
-              <iframe
-                src={selectedH5P.embedUrl}
-                title={selectedH5P.title}
-                className="w-full h-full rounded-[2.5rem] border-none shadow-2xl bg-white"
-                allowFullScreen
-                loading="lazy"
-                allow="autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; geolocation; microphone; camera; midi"
-                onLoad={() => setH5pIframeLoading(false)}
-                onError={() => setH5pIframeLoading(false)} // hide spinner even if it fails
-              />
-            </div>
-          </div>
-        </div>
-      )}
       
+        {/* ══════════════════════════════════════
+    H5P MODAL - FIXED HEIGHT + SPINNER
+══════════════════════════════════════ */}
+{selectedH5P && (
+  <div className="fixed inset-0 z-[999] bg-slate-900/95 backdrop-blur-2xl flex justify-center items-center p-4 mt-5">
+    <div className="relative bg-white w-full max-w-6xl h- rounded- shadow-2xl flex flex-col overflow-hidden">
+      <div className="flex items-center justify-between px-10 py-8 border-b border-gray-50 shrink-0">
+        <div>
+          <h3 className="font-black text-2xl text-slate-900 tracking-tight">{selectedH5P.title}</h3>
+          <p className="text- font-black text-purple-600 uppercase tracking-[0.3em] mt-1">Interactive Module</p>
+        </div>
+        <button
+          aria-label="Close"
+          onClick={() => {
+            setSelectedH5P(null);
+            setH5pIframeLoading(true);
+          }}
+          className="p-5 bg-gray-50 rounded-full hover:bg-red-50 hover:text-red-500 transition-all shadow-sm"
+        >
+          <X size={24} />
+        </button>
+      </div>
+
+      {/* Key changes: flex-1, relative, removed p-6, min-h-0 */}
+      <div className="flex-1 bg-gray-100 relative min-h-0">
+        {h5pIframeLoading && (
+          <div className="absolute inset-0 bg-white flex flex-col items-center justify-center z-10">
+            <Loader2 className="animate-spin text-purple-600 mb-5" size={48} />
+            <p className="text- font-black uppercase tracking-[0.3em] text-slate-400">
+              Loading Interactive Content...
+            </p>
+          </div>
+        )}
+
+        <iframe
+          src={selectedH5P.embedUrl}
+          title={selectedH5P.title}
+          className="w-full h-full border-none"
+          allowFullScreen
+          loading="lazy"
+          allow="autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; geolocation; microphone; camera; midi"
+          onLoad={() => setH5pIframeLoading(false)}
+          onError={() => setH5pIframeLoading(false)}
+        />
+      </div>
+    </div>
+  </div>
+)}
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
