@@ -1337,9 +1337,11 @@ function Activities() {
         </div>
       )}
 
-      {/* ══════════════════════════════════════
-            H5P MODAL - WITH LOADING SPINNER
-      ══════════════════════════════════════ */}
+      {/* 
+        ══════════════════════════════════════
+          H5P MODAL - WITH LOADING SPINNER
+        ══════════════════════════════════════ 
+      */}
       {selectedH5P && (
         <div className="fixed inset-0 z-[999] bg-slate-900/95 backdrop-blur-2xl flex justify-center items-center p-4 mt-5">
           <div className="relative bg-white w-full max-w-6xl h- rounded- shadow-2xl flex flex-col overflow-hidden">
