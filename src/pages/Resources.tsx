@@ -422,7 +422,7 @@ function Pedagogies() {
 
       {/* --- MAIN RESOURCES GRID --- */}
       <div className="px-4 md:px-8 py-12 max-w-7xl mx-auto">
-        <h1 className="text-black text-4xl md:text-7xl font-bold font-serif max-w-4xl leading-tight">Resources</h1>
+        
         <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-gray-100 mb-12 space-y-8">
           <div className="relative flex-1">
             <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
@@ -440,7 +440,7 @@ function Pedagogies() {
             </select>
           </div>
         </div>
-
+        <h1 className="font-bold text-5xl w-full text-center mt-8 underline ">Resources</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {currentItems.map((item) => (
             <div 
