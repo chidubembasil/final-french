@@ -440,7 +440,7 @@ function Pedagogies() {
             </select>
           </div>
         </div>
-        <h1 className="font-bold text-5xl w-full text-center mt-8 underline ">Resources</h1>
+        <h1 className="font-bold text-5xl w-full text-center mt-8 underline mb-2.5">Resources</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {currentItems.map((item) => (
             <div 
