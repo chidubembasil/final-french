@@ -25,11 +25,16 @@ import {
 import img1 from "../assets/img/_A1A4707.jpg";
 
 // Background images from Unsplash
-const studentBg = "https://images.unsplash.com/photo-1741699428220-65f37f3fbbcb?w=800&q=80";
-const teacherBg = "https://images.unsplash.com/photo-1758270704080-e3556e6794a7?w=800&q=80";
-const beginnerBg = "https://plus.unsplash.com/premium_vector-1752505555076-d089a331c778?w=800&q=80";
-const intermediateBg = "https://images.unsplash.com/photo-1759070697203-78b035dc052c?w=800&q=80";
-const advancedBg = "https://images.unsplash.com/photo-1535515384173-d74166f26820?w=800&q=80";
+// Audience thumbnails
+const childrenBg    = "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800&q=80";
+const adolescentBg  = "https://images.unsplash.com/photo-1529070538774-1843cb3265df?w=800&q=80";
+const adultBg       = "https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=800&q=80";
+
+// Difficulty thumbnails (used per audience category)
+const a1Bg          = "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&q=80";
+const a2Bg          = "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=800&q=80";
+const b1Bg          = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80";
+const b2Bg          = "https://images.unsplash.com/photo-1535515384173-d74166f26820?w=800&q=80";
 
 // ─────────────────────────────────────────────
 // INTERFACES
@@ -101,7 +106,7 @@ interface Exercise {
   content: AnyQuestion[];
   podcastId?: number | null;
   isEmbed?: boolean;
-  embedUrl?: string | null; // ADD THIS LINE
+  embedUrl?: string | null;
 }
 interface PodcastMedia {
   id: number;
@@ -128,28 +133,15 @@ const MOCK_HERO = {
   mediaUrl: img1,
 };
 
-// FIXED: Better regex to extract iframe src URL from embedCode
 const extractIframeUrl = (embedCode: string): string | null => {
   if (!embedCode) return null;
-  
-  // If it's already a URL, return it
   if (embedCode.startsWith("http")) return embedCode;
-  
-  // Extract src from iframe tag - handles various quote styles and spacing
   const srcMatch = embedCode.match(/<iframe[^>]+src\s*=\s*["']([^"']+)["'][^>]*>/i);
-  if (srcMatch && srcMatch[1]) {
-    return srcMatch[1].trim();
-  }
-  
-  // Fallback: look for any URL in the content
+  if (srcMatch && srcMatch[1]) return srcMatch[1].trim();
   const urlMatch = embedCode.match(/(https?:\/\/[^\s"<>]+)/);
-  if (urlMatch) {
-    return urlMatch[1];
-  }
-  
+  if (urlMatch) return urlMatch[1];
   return null;
 };
-
 
 const isEmbedContent = (content: any): boolean => {
   if (typeof content !== "string") return false;
@@ -164,23 +156,37 @@ const isVideoUrl = (url: string) =>
 
 const cap = (s: string) => (s ? s.charAt(0).toUpperCase() + s.slice(1).toLowerCase() : "");
 
-const DIFFICULTIES = ["Beginners", "Intermediate", "Advanced"];
+// ── UPDATED: 4 difficulty levels with CEFR labels
+const DIFFICULTIES = ["Beginner (A1)", "Elementary (A2)", "Intermediate (B1)", "Upper Intermediate (B2)"];
+
 const DIFF: Record<string, { bg: string; text: string; border: string; dot: string }> = {
-  Beginners:    { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", dot: "bg-emerald-400" },
-  Intermediate: { bg: "bg-amber-50",   text: "text-amber-700",   border: "border-amber-200",   dot: "bg-amber-400"   },
-  Advanced:     { bg: "bg-rose-50",    text: "text-rose-700",    border: "border-rose-200",    dot: "bg-rose-400"    },
+  "Beginner (A1)":           { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", dot: "bg-emerald-400" },
+  "Elementary (A2)":         { bg: "bg-sky-50",     text: "text-sky-700",     border: "border-sky-200",     dot: "bg-sky-400"     },
+  "Intermediate (B1)":       { bg: "bg-amber-50",   text: "text-amber-700",   border: "border-amber-200",   dot: "bg-amber-400"   },
+  "Upper Intermediate (B2)": { bg: "bg-rose-50",    text: "text-rose-700",    border: "border-rose-200",    dot: "bg-rose-400"    },
 };
 
-// Background images for each thumbnail
+// ── UPDATED: 3 audience categories
 const AUDIENCE_BACKGROUNDS: Record<string, string> = {
-  "Students": studentBg,
-  "Teachers": teacherBg,
+  "Children":   childrenBg,
+  "Adolescent": adolescentBg,
+  "Adult":      adultBg,
 };
 
+// Difficulty backgrounds (same set reused across all audience categories)
 const DIFFICULTY_BACKGROUNDS: Record<string, string> = {
-  "Beginners": beginnerBg,
-  "Intermediate": intermediateBg,
-  "Advanced": advancedBg,
+  "Beginner (A1)":           a1Bg,
+  "Elementary (A2)":         a2Bg,
+  "Intermediate (B1)":       b1Bg,
+  "Upper Intermediate (B2)": b2Bg,
+};
+
+// Difficulty gradient overlays
+const DIFFICULTY_GRADIENTS: Record<string, string> = {
+  "Beginner (A1)":           "from-emerald-900/90 via-emerald-700/50",
+  "Elementary (A2)":         "from-sky-900/90 via-sky-700/50",
+  "Intermediate (B1)":       "from-amber-900/90 via-amber-700/50",
+  "Upper Intermediate (B2)": "from-rose-900/90 via-rose-700/50",
 };
 
 const getQType = (q: AnyQuestion) => (q as any).type || "mcq";
@@ -197,7 +203,7 @@ function ExTypeIcon({ type }: { type: string }) {
 function EmptyState({ icon, msg }: { icon: React.ReactNode; msg: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-24 text-center">
-      <div className="w-20 h-20 rounded-[2rem] bg-gray-100 flex items-center justify-center mb-6">{icon}</div>
+      <div className="w-20 h-20 rounded- bg-gray-100 flex items-center justify-center mb-6">{icon}</div>
       <p className="text-slate-400 font-bold text-sm">{msg}</p>
     </div>
   );
@@ -212,103 +218,58 @@ type SeqMap     = Record<number, string[]>;
 type TextMap    = Record<number, string>;
 type FibMap     = Record<number, string[]>;
 
-// Calculate score for a single question (returns points earned and max points)
 function calculateQuestionScore(
   q: AnyQuestion, idx: number,
   choice: ChoiceMap, match: MatchMap, seq: SeqMap, text: TextMap, fib: FibMap
 ): { earned: number; max: number } {
   const t = getQType(q);
-  
-  // Essay questions are not auto-graded
   if (t === "essay") return { earned: 0, max: 0 };
-  
-  // MCQ and True/False - binary scoring (1 point)
   if (t === "mcq" || t === "true_false") {
     const correct = choice[idx] === (q as MCQQuestion).correctAnswer;
     return { earned: correct ? 1 : 0, max: 1 };
   }
-  
-  // Gap Filling - binary scoring (1 point)
   if (t === "gap_filling") {
     const correct = (text[idx] || "").trim().toLowerCase() === (q as GapFillingQuestion).correctAnswer.trim().toLowerCase();
     return { earned: correct ? 1 : 0, max: 1 };
   }
-  
-  // Short Answer - binary scoring (1 point)
   if (t === "short_answer") {
     const correct = (text[idx] || "").trim().toLowerCase() === (q as ShortAnswerQuestion).correctAnswer.trim().toLowerCase();
     return { earned: correct ? 1 : 0, max: 1 };
   }
-  
-  // Sequencing/Ordering - partial credit based on correct positions
   if (t === "sequencing" || t === "ordering") {
     const sq = q as SequencingQuestion;
     const correctAnswer = sq.correctAnswer;
     const given = seq[idx] || sq.sequence || [...correctAnswer];
     const totalItems = correctAnswer.length;
-    
     if (totalItems === 0) return { earned: 0, max: 0 };
-    
-    // Count correct positions
     let correctCount = 0;
     for (let i = 0; i < totalItems; i++) {
-      if (given[i] === correctAnswer[i]) {
-        correctCount++;
-      }
+      if (given[i] === correctAnswer[i]) correctCount++;
     }
-    
     return { earned: correctCount, max: totalItems };
   }
-  
-  // Matching - partial credit based on correct pairs
   if (t === "matching") {
     const mq = q as MatchingQuestion;
     const given = match[idx] || {};
     const totalPairs = mq.pairs.length;
-    
     if (totalPairs === 0) return { earned: 0, max: 0 };
-    
-    // Count correct matches
     let correctCount = 0;
-    mq.pairs.forEach(p => {
-      if (given[p.left] === p.right) {
-        correctCount++;
-      }
-    });
-         
+    mq.pairs.forEach(p => { if (given[p.left] === p.right) correctCount++; });
     return { earned: correctCount, max: totalPairs };
   }
-  
-  // Fill in Blank - partial credit based on correct blanks
   if (t === "fill_in_blank") {
     const fq = q as FillInBlankQuestion;
     const given = fib[idx] || [];
     const totalBlanks = fq.blanks.length;
-    
     if (totalBlanks === 0) return { earned: 0, max: 0 };
-    
-    // Count correct blanks
     let correctCount = 0;
     fq.blanks.forEach((b, i) => {
-      if ((given[i] || "").trim().toLowerCase() === b.trim().toLowerCase()) {
-        correctCount++;
-      }
+      if ((given[i] || "").trim().toLowerCase() === b.trim().toLowerCase()) correctCount++;
     });
-    
     return { earned: correctCount, max: totalBlanks };
   }
-  
   return { earned: 0, max: 0 };
 }
-
-// Legacy function for backward compatibility (binary scoring)
-// function scoreQ(
-//   q: AnyQuestion, idx: number,
-//   choice: ChoiceMap, match: MatchMap, seq: SeqMap, text: TextMap, fib: FibMap
-// ): boolean {
-//   const result = calculateQuestionScore(q, idx, choice, match, seq, text, fib);
-//   return result.earned === result.max && result.max > 0;
-// }
 
 // ─────────────────────────────────────────────
 // COMPONENT
@@ -325,15 +286,14 @@ function Activities() {
   const [selectedH5P, setSelectedH5P] = useState<H5PContent | null>(null);
   const [modalStage,  setModalStage]  = useState<"info" | "test" | "result">("info");
   const [loading, setLoading]         = useState(true);
-  const [exerciseLoading, setExerciseLoading] = useState(false); // ADD THIS LINE
- 
+  const [exerciseLoading, setExerciseLoading] = useState(false);
 
   // Navigation state - hierarchical flow
   const [currentView, setCurrentView] = useState<"main" | "difficulty" | "exercises">("main");
   const [selectedAudience, setSelectedAudience] = useState<string | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<string | null>(null);
   
-  const [searchQuery,      setSearchQuery]      = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
 
   const [mcqPage,  setMcqPage]  = useState(1);
   const [h5pPage,  setH5pPage]  = useState(1);
@@ -346,29 +306,22 @@ function Activities() {
   const [fibAnswers,    setFibAnswers]    = useState<FibMap>({});
   
   const modalScrollRef = useRef<HTMLDivElement>(null);
-  const exercisesTopRef = useRef<HTMLDivElement>(null); // ADD THIS LINE
+  const exercisesTopRef = useRef<HTMLDivElement>(null);
   const ITEMS_PP = 6;
   const Q_PP     = 3;
   
   const audioRef = useRef<HTMLAudioElement>(null);
   const [audioPlaying, setAudioPlaying] = useState(false);
-  const podMedia = selectedEx?.podcastId? podcastsMap[String(selectedEx.podcastId)] : null;
+  const podMedia = selectedEx?.podcastId ? podcastsMap[String(selectedEx.podcastId)] : null;
   const getCardBackground = (url?: string | null) => {
     if (!url) return null;
-    // handle relative paths or full URLs
-    return url.startsWith('http')? url : `${CLIENT_KEY}${url}`;
+    return url.startsWith('http') ? url : `${CLIENT_KEY}${url}`;
   };
-  // Add this state near your other useState hooks at the top of Activities()
-    const [h5pIframeLoading, setH5pIframeLoading] = useState(true);
+  const [h5pIframeLoading, setH5pIframeLoading] = useState(true);
 
-    // Reset loading when a new H5P is selected
-    useEffect(() => {
-      if (selectedH5P) {
-        setH5pIframeLoading(true);
-      }
-    }, [selectedH5P]);
-
-
+  useEffect(() => {
+    if (selectedH5P) setH5pIframeLoading(true);
+  }, [selectedH5P]);
 
   useEffect(() => {
     if (modalStage === "result" && audioRef.current) {
@@ -385,7 +338,7 @@ function Activities() {
         audioRef.current.currentTime = 0;
       }
     };
-  }, [selectedEx]);   
+  }, [selectedEx]);
 
   useEffect(() => {
     document.body.style.overflow = selectedEx || selectedH5P ? "hidden" : "unset";
@@ -424,11 +377,11 @@ function Activities() {
           let parsed: AnyQuestion[] = [];
           let isEmbed = false;
 
-          if (!cs) return; // only skip if truly empty
+          if (!cs) return;
 
           if (isEmbedContent(cs)) {
-            isEmbed = true; 
-            parsed = []; // no questions, but keep the exercise
+            isEmbed = true;
+            parsed = [];
           } else {
             try { parsed = JSON.parse(cs); } catch { parsed = []; }
             if (!Array.isArray(parsed)) parsed = [];
@@ -444,29 +397,39 @@ function Activities() {
             return q;
           });
 
-         const normalizeAudience = (s?: string) => {
+          // ── UPDATED: normalise audience to 3 categories
+          const normalizeAudience = (s?: string) => {
             const v = (s || "").toLowerCase().trim();
-            if (v.startsWith("student")) return "Students";
-            if (v.startsWith("teacher")) return "Teachers";
-            return "Students";
+            if (v.includes("child") || v.includes("kid"))   return "Children";
+            if (v.includes("adolescent") || v.includes("teen") || v.includes("youth")) return "Adolescent";
+            if (v.includes("adult"))                        return "Adult";
+            // legacy fallback
+            if (v.startsWith("student"))  return "Children";
+            if (v.startsWith("teacher"))  return "Adult";
+            return "Children";
           };
 
+          // ── UPDATED: normalise difficulty to 4 CEFR levels
           const normalizeDifficulty = (s?: string) => {
             const v = (s || "").toLowerCase().trim();
-            if (v.startsWith("begin")) return "Beginners";
-            if (v.startsWith("inter")) return "Intermediate";
-            if (v.startsWith("adv")) return "Advanced";
-            return "Beginners";
+            if (v.includes("a1") || v.includes("beginner"))           return "Beginner (A1)";
+            if (v.includes("a2") || v.includes("elementary"))         return "Elementary (A2)";
+            if (v.includes("b1") || (v.includes("intermediate") && !v.includes("upper"))) return "Intermediate (B1)";
+            if (v.includes("b2") || v.includes("upper"))              return "Upper Intermediate (B2)";
+            // legacy fallback
+            if (v.startsWith("begin"))  return "Beginner (A1)";
+            if (v.startsWith("inter"))  return "Intermediate (B1)";
+            if (v.startsWith("adv"))    return "Upper Intermediate (B2)";
+            return "Beginner (A1)";
           };
 
-          // ... inside your forEach loop
           tempEx.push({
             id: item.id,
             title: data.title || "",
             description: data.description || "",
             exerciseType: data.exerciseType || "mcq",
-            difficulty: normalizeDifficulty(data.difficulty), // fixed
-            audience: normalizeAudience(data.audience),       // fixed
+            difficulty: normalizeDifficulty(data.difficulty),
+            audience: normalizeAudience(data.audience),
             mediaUrl: data.exerciseImage || data.mediaUrl,
             podcastId: data.podcast?.data?.id ?? data.podcast_id ?? data.podcastId ?? null,
             publishedAt: data.publishedAt,
@@ -474,10 +437,7 @@ function Activities() {
             isEmbed,
           });
         });
-        // Start audio when entering test mode
-        
 
-        // FIXED: Properly extract from exercise-resources API response
         const tempH5P: H5PContent[] = [];
         const h5pData = h5pJson.data || h5pJson;
 
@@ -485,8 +445,18 @@ function Activities() {
           const data = item.attributes || item;
           const embedCode = data.embedCode || data.content || data.html || "";
           const embedUrl = extractIframeUrl(embedCode);
-          
           if (!embedUrl) return;
+
+          // ── UPDATED: normalise H5P audience to 3 categories
+          const normalizeH5PAudience = (s?: string) => {
+            const v = (s || "").toLowerCase().trim();
+            if (v.includes("child") || v.includes("kid"))   return "Children";
+            if (v.includes("adolescent") || v.includes("teen") || v.includes("youth")) return "Adolescent";
+            if (v.includes("adult"))                        return "Adult";
+            if (v.startsWith("student"))  return "Children";
+            if (v.startsWith("teacher"))  return "Adult";
+            return "Children";
+          };
 
           tempH5P.push({
             id: item.id,
@@ -494,10 +464,11 @@ function Activities() {
             description: data.description || "",
             embedUrl: embedUrl,
             difficulty: cap(data.difficulty || "Beginners"),
-            audience: cap(data.audience || data.category || "Students"),
-            embedImage: data.embedImage || null, // ADD THIS LINE
+            audience: normalizeH5PAudience(data.audience || data.category),
+            embedImage: data.embedImage || null,
           });
         });
+
         setExercisesList(tempEx);
         console.table(tempEx.map(e => ({ id: e.id, audience: e.audience, difficulty: e.difficulty })));
         setH5pContents(tempH5P);
@@ -510,10 +481,9 @@ function Activities() {
       } finally {
         setLoading(false);
       }
-    })();  
+    })();
   }, [CLIENT_KEY]);
 
-  // ADD THIS: Scroll to top when entering exercises view
   useEffect(() => {
     if (currentView === "exercises" && exercisesTopRef.current) {
       setTimeout(() => {
@@ -522,25 +492,20 @@ function Activities() {
     }
   }, [currentView, selectedDifficulty]);
 
-  // Filter exercises based on current selections
-    const filteredEx = useMemo(() => {
-      const matchesSearch = (ex: Exercise) =>
-        ex.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        ex.description?.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredEx = useMemo(() => {
+    const matchesSearch = (ex: Exercise) =>
+      ex.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ex.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
-      // If user is searching, ignore audience + difficulty and search everything
-      if (searchQuery.trim().length > 0) {
-        return exercisesList.filter(matchesSearch);
-      }
+    if (searchQuery.trim().length > 0) return exercisesList.filter(matchesSearch);
 
-      // No search query: use the normal hierarchical filters
-      return exercisesList.filter(ex =>
-        (selectedAudience? ex.audience === selectedAudience : true) &&
-        (selectedDifficulty? ex.difficulty === selectedDifficulty : true)
-      );
-    }, [exercisesList, searchQuery, selectedAudience, selectedDifficulty]);
+    return exercisesList.filter(ex =>
+      (selectedAudience  ? ex.audience  === selectedAudience  : true) &&
+      (selectedDifficulty ? ex.difficulty === selectedDifficulty : true)
+    );
+  }, [exercisesList, searchQuery, selectedAudience, selectedDifficulty]);
 
-  // Filter H5P for main level (only by audience, not difficulty)
+  // H5P filtered by audience (shown in the difficulty view per category)
   const filteredH5P = useMemo(() =>
     h5pContents.filter(h =>
       h.title?.toLowerCase().includes(searchQuery.toLowerCase()) &&
@@ -552,24 +517,20 @@ function Activities() {
   const totalMcqPg = Math.ceil(filteredEx.length  / ITEMS_PP);
   const totalH5pPg = Math.ceil(filteredH5P.length / ITEMS_PP);
 
-  // FIXED: Calculate total score using partial credit system
   const { totalScore, maxScore } = useMemo(() => {
     if (!selectedEx || modalStage !== "result") return { totalScore: 0, maxScore: 0 };
-    
     let totalEarned = 0;
     let totalMax = 0;
-    
     selectedEx.content.forEach((q, i) => {
       const result = calculateQuestionScore(q, i, choiceAnswers, matchAnswers, seqAnswers, textAnswers, fibAnswers);
       totalEarned += result.earned;
       totalMax += result.max;
-    });   
-    
+    });
     return { totalScore: totalEarned, maxScore: totalMax };
   }, [selectedEx, modalStage, choiceAnswers, matchAnswers, seqAnswers, textAnswers, fibAnswers]);
 
-    const resetModal = (ex: Exercise) => {
-    setExerciseLoading(true); // ADD THIS
+  const resetModal = (ex: Exercise) => {
+    setExerciseLoading(true);
     setSelectedEx(ex);
     setModalStage("info");
     setChoiceAnswers({});
@@ -578,7 +539,7 @@ function Activities() {
     setTextAnswers({});
     setFibAnswers({});
     setTestPage(0);
-    setTimeout(() => setExerciseLoading(false), 400); // ADD THIS
+    setTimeout(() => setExerciseLoading(false), 400);
   };
 
   // Navigation handlers
@@ -608,25 +569,26 @@ function Activities() {
     setSelectedDifficulty(null);
   };
 
-  const pageQs     = selectedEx ? selectedEx.content.slice(testPage * Q_PP, (testPage + 1) * Q_PP) : [];
-  const totalPgs   = selectedEx ? Math.ceil(selectedEx.content.length / Q_PP) : 1;
-  const isLastPg   = selectedEx ? (testPage + 1) * Q_PP >= selectedEx.content.length : false;
+  const pageQs   = selectedEx ? selectedEx.content.slice(testPage * Q_PP, (testPage + 1) * Q_PP) : [];
+  const totalPgs = selectedEx ? Math.ceil(selectedEx.content.length / Q_PP) : 1;
+  const isLastPg = selectedEx ? (testPage + 1) * Q_PP >= selectedEx.content.length : false;
   console.log("podcastId:", selectedEx?.podcastId, "podMedia:", podMedia);
   console.log("selectedEx.podcastId:", selectedEx?.podcastId);
   console.log("podcastsMap keys:", Object.keys(podcastsMap));
   console.log("podMedia:", podMedia);
+
   if (loading) return (
     <div className="h-screen w-full flex flex-col items-center justify-center bg-white">
       <Loader2 className="animate-spin text-blue-600 mb-4" size={40} />
-      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Syncing Workspace...</p>
+      <p className="text- font-black uppercase tracking-widest text-slate-400">Syncing Workspace...</p>
     </div>
   );
 
-  return ( 
+  return (
     <main className="pt-20 bg-[#fcfaf8] min-h-screen w-full overflow-y-auto">
 
       {/* HERO */}
-      <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
+      <div className="relative w-full h- overflow-hidden bg-slate-900">
         <img src={heroData?.mediaUrl || MOCK_HERO.mediaUrl} className="absolute inset-0 w-full h-full object-cover z-0 opacity-70" alt="Hero" />
         <div className="absolute inset-0 z-10 bg-linear-to-br from-red-600/80 via-transparent to-blue-900/90" />
         <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-16 gap-5">
@@ -641,41 +603,40 @@ function Activities() {
 
       <section className="py-24 px-6 md:px-12 max-w-7xl mx-auto" ref={exercisesTopRef}>
 
-        {/* ════════════════════════════════════════════════════════
-            GLOBAL SEARCH BAR (Always visible at top)
-        ════════════════════════════════════════════════════════ */}
+        {/* GLOBAL SEARCH BAR */}
         <div className="mb-16">
-          <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-gray-100 max-w-3xl mx-auto">
+          <div className="bg-white p-8 rounded- shadow-sm border border-gray-100 max-w-3xl mx-auto">
             <div className="relative">
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400" size={22} />
-              <input 
-                type="text" 
-                placeholder="Search all exercises and activities..." 
-                className="w-full pl-14 pr-6 py-5 rounded-4xl bg-gray-50 outline-none text-base font-medium" 
-                value={searchQuery} 
-                onChange={e => setSearchQuery(e.target.value)} 
+              <input
+                type="text"
+                placeholder="Search all exercises and activities..."
+                className="w-full pl-14 pr-6 py-5 rounded-4xl bg-gray-50 outline-none text-base font-medium"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
               />
             </div>
           </div>
         </div>
-        {/* Show search results on ANY view when searching */}
+
+        {/* Search results */}
         {searchQuery.trim().length > 0 && (
           <div className="mb-20">
             <div className="text-center mb-10">
               <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Search Results</h2>
               <p className="text-slate-400 font-bold uppercase text- tracking-[0.3em]">{filteredEx.length} found</p>
             </div>
-            {filteredEx.length === 0? (
+            {filteredEx.length === 0 ? (
               <EmptyState icon={<Book size={32} className="text-gray-300" />} msg="No exercises match your search." />
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 {filteredEx.map(ex => {
-                  const dc = DIFF[ex.difficulty] || DIFF["Beginners"];
+                  const dc = DIFF[ex.difficulty] || DIFF["Beginner (A1)"];
                   return (
                     <div key={ex.id} className="group bg-white rounded- p-8 border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all overflow-hidden flex flex-col">
                       <div className="flex justify-between items-start mb-6">
                         <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all shadow-inner">
-                          {ex.podcastId? <Volume2 size={28} /> : <ExTypeIcon type={ex.exerciseType} />}
+                          {ex.podcastId ? <Volume2 size={28} /> : <ExTypeIcon type={ex.exerciseType} />}
                         </div>
                         <span className={`text- font-black uppercase px-3 py-1.5 rounded-xl border ${dc.bg} ${dc.text} ${dc.border}`}>{ex.exerciseType.replace(/_/g," ")}</span>
                       </div>
@@ -687,7 +648,7 @@ function Activities() {
                           <span className="flex items-center gap-2 text- font-black text-gray-400 uppercase tracking-widest"><Layers size={14} />{ex.audience}</span>
                         </div>
                         <button onClick={() => resetModal(ex)} className="w-full py-5 bg-slate-900 text-white rounded-2xl text- font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-blue-600 hover:shadow-xl hover:shadow-blue-200 transition-all active:scale-95">
-                          {ex.podcastId? "Listen & Solve" : "Begin Exercise"} <ArrowRight size={16} />
+                          {ex.podcastId ? "Listen & Solve" : "Begin Exercise"} <ArrowRight size={16} />
                         </button>
                       </div>
                     </div>
@@ -699,77 +660,166 @@ function Activities() {
         )}
 
         {/* ════════════════════════════════════════════════════════
-            VIEW 1: MAIN - Students & Teachers Selection
+            VIEW 1: MAIN — Children, Adolescent, Adult Selection
         ════════════════════════════════════════════════════════ */}
         {currentView === "main" && (
           <div className="space-y-20">
-            {/* Students & Teachers Section */}
             <div>
               <div className="text-center mb-12">
                 <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Select Exercise</h2>
-                <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em]">Select your role to begin</p>
+                <p className="text-slate-400 font-bold uppercase text- tracking-[0.3em]">Select your category to begin</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto mb-20">
-                {/* Students Card with Background Image */}
-                <button 
-                  onClick={() => handleAudienceSelect("Students")}
-                  className="group relative h-[400px] rounded-[3rem] overflow-hidden shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 text-left"
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto mb-20">
+
+                {/* Children Card */}
+                <button
+                  onClick={() => handleAudienceSelect("Children")}
+                  className="group relative h-80 rounded- overflow-hidden shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 text-left"
                 >
-                  {/* Background Image */}
-                  <div 
+                  <div
                     className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-                    style={{ backgroundImage: `url(${AUDIENCE_BACKGROUNDS["Students"]})` }}
+                    style={{ backgroundImage: `url(${AUDIENCE_BACKGROUNDS["Children"]})` }}
                   />
-                  {/* Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent group-hover:from-black/90 transition-all duration-300" />
-                  
                   <div className="relative z-10 h-full flex flex-col justify-end p-10">
                     <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-4 group-hover:bg-white/30 transition-all">
                       <GraduationCap size={32} className="text-white" />
                     </div>
-                    <h3 className="text-3xl font-black text-white mb-2">Students</h3>
-                    <p className="text-white/80 font-medium mb-4">Access exercises tailored for learners</p>
-                    <div className="flex items-center gap-2 text-white text-[11px] font-black uppercase tracking-widest">
+                    <h3 className="text-3xl font-black text-white mb-2">Children</h3>
+                    <p className="text-white/80 font-medium mb-4">Fun exercises designed for young learners</p>
+                    <div className="flex items-center gap-2 text-white text- font-black uppercase tracking-widest">
                       Get Started <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
                 </button>
 
-                {/* Teachers Card with Background Image */}
-                <button 
-                  onClick={() => handleAudienceSelect("Teachers")}
-                  className="group relative h-[400px] rounded-[3rem] overflow-hidden shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 text-left"
+                {/* Adolescent Card */}
+                <button
+                  onClick={() => handleAudienceSelect("Adolescent")}
+                  className="group relative h-80 rounded- overflow-hidden shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 text-left"
                 >
-                  {/* Background Image */}
-                  <div 
+                  <div
                     className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-                    style={{ backgroundImage: `url(${AUDIENCE_BACKGROUNDS["Teachers"]})` }}
+                    style={{ backgroundImage: `url(${AUDIENCE_BACKGROUNDS["Adolescent"]})` }}
                   />
-                  {/* Overlay */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent group-hover:from-black/90 transition-all duration-300" />
-                  
                   <div className="relative z-10 h-full flex flex-col justify-end p-10">
                     <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-4 group-hover:bg-white/30 transition-all">
                       <Users size={32} className="text-white" />
                     </div>
-                    <h3 className="text-3xl font-black text-white mb-2">Teachers</h3>
-                    <p className="text-white/80 font-medium mb-4">Exercises for educators</p>
-                    <div className="flex items-center gap-2 text-white text-[11px] font-black uppercase tracking-widest">
+                    <h3 className="text-3xl font-black text-white mb-2">Adolescent</h3>
+                    <p className="text-white/80 font-medium mb-4">Exercises tailored for teens & youth</p>
+                    <div className="flex items-center gap-2 text-white text- font-black uppercase tracking-widest">
                       Get Started <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
                     </div>
                   </div>
                 </button>
+
+                {/* Adult Card */}
+                <button
+                  onClick={() => handleAudienceSelect("Adult")}
+                  className="group relative h-80 rounded- overflow-hidden shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 text-left"
+                >
+                  <div
+                    className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
+                    style={{ backgroundImage: `url(${AUDIENCE_BACKGROUNDS["Adult"]})` }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent group-hover:from-black/90 transition-all duration-300" />
+                  <div className="relative z-10 h-full flex flex-col justify-end p-10">
+                    <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-4 group-hover:bg-white/30 transition-all">
+                      <GraduationCap size={32} className="text-white" />
+                    </div>
+                    <h3 className="text-3xl font-black text-white mb-2">Adult</h3>
+                    <p className="text-white/80 font-medium mb-4">Advanced exercises for adult learners</p>
+                    <div className="flex items-center gap-2 text-white text- font-black uppercase tracking-widest">
+                      Get Started <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />
+                    </div>
+                  </div>
+                </button>
+
               </div>
             </div>
+          </div>
+        )}
 
-            {/* More Exercises (H5P) Section - Now at Main Level with H1 */}
-            <div>
-              <h1 className="text-4xl font-black text-slate-900 mb-2 tracking-tight text-center">More Exercises</h1>
-              <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em] text-center mb-10">Interactive Learning Modules</p>
-              
+        {/* ════════════════════════════════════════════════════════
+            VIEW 2: DIFFICULTY SELECTION (4 levels) + H5P per audience
+        ════════════════════════════════════════════════════════ */}
+        {currentView === "difficulty" && selectedAudience && (
+          <div className="space-y-16">
+            {/* Back Button */}
+            <button
+              onClick={handleBackToMain}
+              className="flex items-center gap-3 text-slate-500 hover:text-slate-900 font-bold text-sm uppercase tracking-widest transition-colors group"
+            >
+              <div className="p-3 rounded-2xl bg-gray-100 group-hover:bg-gray-200 transition-colors">
+                <ArrowLeft size={20} />
+              </div>
+              <span>Back to Categories</span>
+            </button>
+
+            <div className="text-center">
+              <h2 className="text-4xl font-black text-slate-900 mb-2 tracking-tight">{selectedAudience}</h2>
+              <p className="text-slate-400 font-bold uppercase text- tracking-[0.3em]">Select difficulty level</p>
+            </div>
+
+            {/* 4 difficulty thumbnails */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+              {DIFFICULTIES.map((difficulty) => {
+                const bgImage   = DIFFICULTY_BACKGROUNDS[difficulty];
+                const gradient  = DIFFICULTY_GRADIENTS[difficulty];
+                const dc        = DIFF[difficulty];
+
+                return (
+                  <button
+                    key={difficulty}
+                    onClick={() => handleDifficultySelect(difficulty)}
+                    className="group relative h-72 rounded- overflow-hidden shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 text-left"
+                  >
+                    <div
+                      className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
+                      style={{ backgroundImage: `url(${bgImage})` }}
+                    />
+                    <div className={`absolute inset-0 bg-gradient-to-t ${gradient} to-transparent opacity-85 group-hover:opacity-95 transition-all duration-300`} />
+
+                    <div className="relative z-10 h-full flex flex-col justify-end p-7">
+                      <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-3 group-hover:bg-white/30 transition-all">
+                        <Book size={22} className="text-white" />
+                      </div>
+                      {/* CEFR badge */}
+                      <span className={`self-start text-xs font-black uppercase px-2.5 py-1 rounded-lg mb-2 ${dc.bg} ${dc.text} ${dc.border} border`}>
+                        {difficulty.match(/\((.*?)\)/)?.[1]}
+                      </span>
+                      <h3 className="text-xl font-black text-white mb-1 leading-tight">
+                        {difficulty.replace(/\s*\(.*?\)/, "")}
+                      </h3>
+                      <p className="text-white/70 text-xs font-medium mb-3">
+                        {difficulty === "Beginner (A1)"           && "Start from the very basics"}
+                        {difficulty === "Elementary (A2)"         && "Build everyday vocabulary & phrases"}
+                        {difficulty === "Intermediate (B1)"       && "Express yourself with confidence"}
+                        {difficulty === "Upper Intermediate (B2)" && "Master complex language skills"}
+                      </p>
+                      <div className="flex items-center gap-2 text-white text-xs font-black uppercase tracking-widest">
+                        Explore <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* ── VIDEO BASED INTERACTIVE EXERCISES (H5P) — scoped to this audience ── */}
+            <div className="pt-8 border-t border-gray-100">
+              <div className="mb-10">
+                <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Video Based Interactive Exercises</h2>
+                <p className="text-slate-400 font-bold uppercase text-xs tracking-[0.3em]">
+                  Interactive modules · {selectedAudience}
+                </p>
+              </div>
+
               {filteredH5P.length === 0 ? (
-                <EmptyState icon={<PlayCircle size={32} className="text-gray-300" />} msg="No interactive modules available." />
+                <EmptyState icon={<PlayCircle size={32} className="text-gray-300" />} msg="No interactive modules available for this category." />
               ) : (
                 <>
                   {totalH5pPg > 1 && (
@@ -781,7 +831,7 @@ function Activities() {
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     {currentH5P.map(h5p => {
-                      const dc = DIFF[h5p.difficulty] || DIFF["Beginners"];
+                      const dc = DIFF[h5p.difficulty] || DIFF["Beginner (A1)"];
                       const bgImage = getCardBackground(h5p.embedImage);
 
                       return (
@@ -790,10 +840,8 @@ function Activities() {
                           className="group relative bg-white rounded- border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all cursor-pointer overflow-hidden flex flex-col"
                           onClick={() => setSelectedH5P(h5p)}
                         >
-                          {/* Background Image Layer */}
-                          {bgImage? (
+                          {bgImage ? (
                             <>
-                              {/* eslint-disable-next-line react/forbid-dom-props */}
                               <div
                                 className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
                                 style={{ backgroundImage: `url(${bgImage})` }}
@@ -804,44 +852,37 @@ function Activities() {
                             <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-purple-100" />
                           )}
 
-                          {/* Content Layer */}
                           <div className="relative z-10 p-8 flex flex-col h-full">
                             <div className="flex justify-between items-start mb-6">
                               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner transition-all ${
                                 bgImage
-                                ? 'bg-white/20 backdrop-blur-md text-white group-hover:bg-white/30'
+                                  ? 'bg-white/20 backdrop-blur-md text-white group-hover:bg-white/30'
                                   : 'bg-purple-50 text-purple-600 group-hover:bg-purple-600 group-hover:text-white'
                               }`}>
                                 <PlayCircle size={28} />
                               </div>
                               <span className={`text- font-black uppercase px-3 py-1.5 rounded-xl border ${
                                 bgImage
-                                ? 'bg-white/20 backdrop-blur-md text-white border-white/30'
+                                  ? 'bg-white/20 backdrop-blur-md text-white border-white/30'
                                   : `${dc.bg} ${dc.text} ${dc.border}`
-                              }`}>
-                                Interactive
-                              </span>
+                              }`}>Interactive</span>
                             </div>
 
                             <h3 className={`text-xl font-black mb-3 transition-colors tracking-tight ${
-                              bgImage? 'text-white group-hover:text-purple-200' : 'text-slate-800 group-hover:text-purple-600'
-                            }`}>
-                              {h5p.title}
-                            </h3>
+                              bgImage ? 'text-white group-hover:text-purple-200' : 'text-slate-800 group-hover:text-purple-600'
+                            }`}>{h5p.title}</h3>
 
                             <p className={`text-sm line-clamp-2 mb-6 leading-relaxed font-medium ${
-                              bgImage? 'text-white/80' : 'text-gray-500'
-                            }`}>
-                              {h5p.description}
-                            </p>
+                              bgImage ? 'text-white/80' : 'text-gray-500'
+                            }`}>{h5p.description}</p>
 
                             <div className={`mt-auto flex items-center gap-3 text- font-black uppercase tracking-widest pt-6 border-t ${
-                              bgImage? 'border-white/20' : 'border-gray-50'
+                              bgImage ? 'border-white/20' : 'border-gray-50'
                             }`}>
-                              <span className={`w-2 h-2 rounded-full ${bgImage? 'bg-white' : dc.dot}`} />
-                              <span className={bgImage? 'text-white' : dc.text}>{h5p.difficulty}</span>
-                              <span className={bgImage? 'text-white/50' : 'text-gray-300'}>·</span>
-                              <span className={bgImage? 'text-white/70' : 'text-gray-400'}>{h5p.audience}</span>
+                              <span className={`w-2 h-2 rounded-full ${bgImage ? 'bg-white' : dc.dot}`} />
+                              <span className={bgImage ? 'text-white' : dc.text}>{h5p.difficulty}</span>
+                              <span className={bgImage ? 'text-white/50' : 'text-gray-300'}>·</span>
+                              <span className={bgImage ? 'text-white/70' : 'text-gray-400'}>{h5p.audience}</span>
                             </div>
                           </div>
                         </div>
@@ -854,85 +895,22 @@ function Activities() {
           </div>
         )}
 
-        {/* ════════════════════════════════════════════════════════
-            VIEW 2: DIFFICULTY SELECTION
-        ════════════════════════════════════════════════════════ */}
-        {currentView === "difficulty" && selectedAudience && (
-          <div className="space-y-12">
-            {/* Back Button */}
-            <button 
-              onClick={handleBackToMain}
-              className="flex items-center gap-3 text-slate-500 hover:text-slate-900 font-bold text-sm uppercase tracking-widest transition-colors group"
-            >
-              <div className="p-3 rounded-2xl bg-gray-100 group-hover:bg-gray-200 transition-colors">
-                <ArrowLeft size={20} />
-              </div>
-              <span>Back to Roles</span>
-            </button>
-
-            <div className="text-center">
-              <h2 className="text-4xl font-black text-slate-900 mb-2 tracking-tight">{selectedAudience}</h2>
-              <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em]">Select difficulty level</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-6xl mx-auto">
-              {DIFFICULTIES.map((difficulty) => {
-                /* const c = DIFF[difficulty]; */
-                const bgImage = DIFFICULTY_BACKGROUNDS[difficulty];
-                
-                return (
-                  <button
-                    key={difficulty}
-                    onClick={() => handleDifficultySelect(difficulty)}
-                    className="group relative h-87.5 rounded-[3rem] overflow-hidden shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 text-left"
-                  >
-                    {/* Background Image */}
-                    <div 
-                      className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-                      style={{ backgroundImage: `url(${bgImage})` }}
-                    />
-                    {/* Color Overlay based on difficulty */}
-                    <div className={`absolute inset-0 bg-gradient-to-t ${difficulty === "Beginners" ? "from-emerald-900/90 via-emerald-700/50" : difficulty === "Intermediate" ? "from-amber-900/90 via-amber-700/50" : "from-rose-900/90 via-rose-700/50"} to-transparent opacity-80 group-hover:opacity-90 transition-all duration-300`} />
-                    
-                    <div className="relative z-10 h-full flex flex-col justify-end p-8">
-                      <div className={`w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-4 group-hover:bg-white/30 transition-all`}>
-                        {difficulty === "Beginners" && <Book size={28} className="text-white" />}
-                        {difficulty === "Intermediate" && <Layers size={28} className="text-white" />}
-                        {difficulty === "Advanced" && <Trophy size={28} className="text-white" />}
-                      </div>
-                      <h3 className="text-2xl font-black text-white mb-2">{difficulty}</h3>
-                      <p className="text-white/80 text-sm font-medium mb-4">
-                        {difficulty === "Beginners" && "Start your learning journey with foundational exercises"}
-                        {difficulty === "Intermediate" && "Build upon your existing knowledge and skills"}
-                        {difficulty === "Advanced" && "Challenge yourself with complex problem-solving"}
-                      </p>
-                      <div className="flex items-center gap-2 text-white text-[11px] font-black uppercase tracking-widest">
-                        Explore Exercises <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                      </div>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         {searchQuery.trim().length > 0 && currentView === "exercises" && (
           <div className="mb-6 px-6 py-3 bg-blue-50 border border-blue-200 rounded-2xl text-center">
             <p className="text- font-black uppercase tracking-widest text-blue-700">
-              Searching all exercises · {filteredEx.length} result{filteredEx.length!== 1? "s" : ""}
+              Searching all exercises · {filteredEx.length} result{filteredEx.length !== 1 ? "s" : ""}
             </p>
           </div>
         )}
 
         {/* ════════════════════════════════════════════════════════
-            VIEW 3: EXERCISES LIST (Language Exercises Only)
+            VIEW 3: EXERCISES LIST
         ════════════════════════════════════════════════════════ */}
         {currentView === "exercises" && selectedAudience && selectedDifficulty && (
           <div className="space-y-12">
             {/* Back Button & Breadcrumb */}
             <div className="flex flex-col gap-6">
-              <button 
+              <button
                 onClick={handleBackToDifficulty}
                 className="flex items-center gap-3 text-slate-500 hover:text-slate-900 font-bold text-sm uppercase tracking-widest transition-colors group w-fit"
               >
@@ -941,8 +919,8 @@ function Activities() {
                 </div>
                 <span>Back to Difficulty</span>
               </button>
-              
-              <div className="flex items-center gap-4 text-[11px] font-black uppercase tracking-widest">
+
+              <div className="flex items-center gap-4 text- font-black uppercase tracking-widest">
                 <span className="text-slate-400">{selectedAudience}</span>
                 <ChevronRight size={14} className="text-slate-300" />
                 <span className="text-slate-400">{selectedDifficulty}</span>
@@ -956,7 +934,7 @@ function Activities() {
               <div className="flex justify-between items-end mb-8">
                 <div>
                   <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Language Exercises</h2>
-                  <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.3em]">Skill Evaluation</p>
+                  <p className="text-slate-400 font-bold uppercase text- tracking-[0.3em]">Skill Evaluation</p>
                 </div>
                 {totalMcqPg > 1 && (
                   <div className="flex gap-3">
@@ -971,16 +949,15 @@ function Activities() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                   {currentEx.map(ex => {
-                    const dc = DIFF[ex.difficulty] || DIFF["Beginners"];
+                    const dc = DIFF[ex.difficulty] || DIFF["Beginner (A1)"];
                     const bgImage = getCardBackground(ex.mediaUrl);
 
                     return (
                       <div
                         key={ex.id}
-                        className="group relative bg-white rounded-[3rem] border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all overflow-hidden flex flex-col"
+                        className="group relative bg-white rounded- border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all overflow-hidden flex flex-col"
                       >
-                        {/* Background Image Layer */}
-                        {bgImage? (
+                        {bgImage ? (
                           <>
                             <div
                               className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
@@ -992,49 +969,42 @@ function Activities() {
                           <div className="absolute inset-0 bg-gradient-to-br from-slate-50 to-slate-100" />
                         )}
 
-                        {/* Content Layer */}
                         <div className="relative z-10 p-8 flex flex-col h-full">
                           <div className="flex justify-between items-start mb-6">
                             <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner transition-all ${
                               bgImage
-                              ? 'bg-white/20 backdrop-blur-md text-white group-hover:bg-white/30'
+                                ? 'bg-white/20 backdrop-blur-md text-white group-hover:bg-white/30'
                                 : 'bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white'
                             }`}>
-                              {ex.podcastId? <Volume2 size={28} /> : <ExTypeIcon type={ex.exerciseType} />}
+                              {ex.podcastId ? <Volume2 size={28} /> : <ExTypeIcon type={ex.exerciseType} />}
                             </div>
-                            <span className={`text-[10px] font-black uppercase px-3 py-1.5 rounded-xl border ${
+                            <span className={`text- font-black uppercase px-3 py-1.5 rounded-xl border ${
                               bgImage
-                              ? 'bg-white/20 backdrop-blur-md text-white border-white/30'
+                                ? 'bg-white/20 backdrop-blur-md text-white border-white/30'
                                 : `${dc.bg} ${dc.text} ${dc.border}`
-                            }`}>
-                              {ex.exerciseType.replace(/_/g," ")}
-                            </span>
+                            }`}>{ex.exerciseType.replace(/_/g," ")}</span>
                           </div>
 
                           <h3 className={`text-xl font-black mb-3 transition-colors tracking-tight ${
-                            bgImage? 'text-white group-hover:text-blue-200' : 'text-slate-800 group-hover:text-blue-600'
-                          }`}>
-                            {ex.title}
-                          </h3>
+                            bgImage ? 'text-white group-hover:text-blue-200' : 'text-slate-800 group-hover:text-blue-600'
+                          }`}>{ex.title}</h3>
 
                           <p className={`text-sm line-clamp-3 mb-8 leading-relaxed font-medium ${
-                            bgImage? 'text-white/80' : 'text-gray-500'
-                          }`}>
-                            {ex.description}
-                          </p>
+                            bgImage ? 'text-white/80' : 'text-gray-500'
+                          }`}>{ex.description}</p>
 
                           <div className="mt-auto">
                             <div className={`flex items-center justify-between pt-6 border-t mb-6 ${
-                              bgImage? 'border-white/20' : 'border-gray-50'
+                              bgImage ? 'border-white/20' : 'border-gray-50'
                             }`}>
-                              <span className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${
-                                bgImage? 'text-white' : dc.text
+                              <span className={`flex items-center gap-2 text- font-black uppercase tracking-widest ${
+                                bgImage ? 'text-white' : dc.text
                               }`}>
-                                <span className={`w-2 h-2 rounded-full ${bgImage? 'bg-white' : dc.dot}`} />
+                                <span className={`w-2 h-2 rounded-full ${bgImage ? 'bg-white' : dc.dot}`} />
                                 {ex.difficulty}
                               </span>
-                              <span className={`flex items-center gap-2 text-[10px] font-black uppercase tracking-widest ${
-                                bgImage? 'text-white/70' : 'text-gray-400'
+                              <span className={`flex items-center gap-2 text- font-black uppercase tracking-widest ${
+                                bgImage ? 'text-white/70' : 'text-gray-400'
                               }`}>
                                 <Layers size={14} />{ex.audience}
                               </span>
@@ -1042,13 +1012,13 @@ function Activities() {
 
                             <button
                               onClick={() => resetModal(ex)}
-                              className={`w-full py-5 rounded-2xl text-[11px] font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all active:scale-95 ${
+                              className={`w-full py-5 rounded-2xl text- font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all active:scale-95 ${
                                 bgImage
-                                ? 'bg-white text-slate-900 hover:bg-blue-100 hover:shadow-xl'
+                                  ? 'bg-white text-slate-900 hover:bg-blue-100 hover:shadow-xl'
                                   : 'bg-slate-900 text-white hover:bg-blue-600 hover:shadow-xl hover:shadow-blue-200'
                               }`}
                             >
-                              {ex.podcastId? "Listen & Solve" : "Begin Exercise"} <ArrowRight size={16} />
+                              {ex.podcastId ? "Listen & Solve" : "Begin Exercise"} <ArrowRight size={16} />
                             </button>
                           </div>
                         </div>
@@ -1064,18 +1034,17 @@ function Activities() {
       </section>
 
       {/* ══════════════════════════════════════
-          EXERCISE MODAL 
+          EXERCISE MODAL
       ══════════════════════════════════════ */}
       {selectedEx && (
         <div className="fixed inset-0 z-[999] bg-slate-900/90 backdrop-blur-xl flex justify-center items-center p-4 mt-5">
-          <div className="relative bg-white w-full max-w-4xl rounded-[4rem] shadow-2xl flex flex-col max-h-[92vh] overflow-hidden">
+          <div className="relative bg-white w-full max-w-4xl rounded- shadow-2xl flex flex-col max-h- overflow-hidden">
             {exerciseLoading && (
-                <div className="absolute inset-0 z-[60] bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center rounded-[4rem]">
-                  <Loader2 className="animate-spin text-blue-600 mb-4" size={48} />
-                  <p className="text-[11px] font-black uppercase tracking-widest text-slate-400">Loading Exercise...</p>
-                </div>
-              )
-            }
+              <div className="absolute inset-0 z-[60] bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center rounded-">
+                <Loader2 className="animate-spin text-blue-600 mb-4" size={48} />
+                <p className="text- font-black uppercase tracking-widest text-slate-400">Loading Exercise...</p>
+              </div>
+            )}
             <button aria-label="Close" onClick={() => setSelectedEx(null)} className="absolute top-10 right-10 z-50 p-5 bg-gray-50 rounded-full hover:bg-red-50 hover:text-red-500 transition-all shadow-sm"><X size={22} /></button>
 
             <div ref={modalScrollRef} className="overflow-y-auto p-10 md:p-14 custom-scrollbar">
@@ -1088,12 +1057,12 @@ function Activities() {
                   </div>
                   <h2 className="text-4xl font-black text-slate-900 mb-3 tracking-tight">{selectedEx.title}</h2>
                   <p className="text-slate-500 text-lg max-w-xl mx-auto mb-6 leading-relaxed font-medium">{selectedEx.description}</p>
-                  <div className="flex items-center justify-center gap-6 mb-14 text-[11px] font-black uppercase tracking-widest text-gray-400">
+                  <div className="flex items-center justify-center gap-6 mb-14 text- font-black uppercase tracking-widest text-gray-400">
                     <span>{selectedEx.content.length} question{selectedEx.content.length !== 1 ? "s" : ""}</span>
                     <span>·</span><span>{selectedEx.difficulty}</span>
                     <span>·</span><span>{selectedEx.exerciseType.replace(/_/g," ")}</span>
                   </div>
-                  <button onClick={() => setModalStage("test")} className="px-14 py-6 bg-blue-600 text-white rounded-3xl font-black uppercase tracking-[0.2em] text-[12px] shadow-2xl shadow-blue-200 hover:bg-blue-700 hover:scale-105 transition-all">
+                  <button onClick={() => setModalStage("test")} className="px-14 py-6 bg-blue-600 text-white rounded-3xl font-black uppercase tracking-[0.2em] text- shadow-2xl shadow-blue-200 hover:bg-blue-700 hover:scale-105 transition-all">
                     Launch Exercise
                   </button>
                 </div>
@@ -1104,19 +1073,19 @@ function Activities() {
                 <div className="space-y-8">
                   {/* Progress */}
                   <div className="flex items-center gap-4">
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 shrink-0">Page {testPage + 1} / {totalPgs}</span>
+                    <span className="text- font-black uppercase tracking-widest text-gray-400 shrink-0">Page {testPage + 1} / {totalPgs}</span>
                     <div className="flex-1 h-1.5 bg-gray-100 rounded-full overflow-hidden">
                       <div className="h-full bg-blue-600 rounded-full transition-all duration-500" style={{ width: `${((testPage + 1) / totalPgs) * 100}%` }} />
                     </div>
-                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-400 shrink-0">{selectedEx.content.length} Q</span>
+                    <span className="text- font-black uppercase tracking-widest text-gray-400 shrink-0">{selectedEx.content.length} Q</span>
                   </div>
 
-                  {/* Audio / Video Player (shown when podcastId exists) */}
-                  {podMedia &&!isVideoUrl(podMedia.mediaUrl) && (
+                  {/* Audio / Video Player */}
+                  {podMedia && !isVideoUrl(podMedia.mediaUrl) && (
                     <div className="bg-linear-to-br from-blue-700 to-indigo-800 p-10 rounded- text-white shadow-2xl shadow-blue-200 sticky top-0 z-10">
                       <div className="flex items-center gap-4 mb-5">
                         <div className="p-3 bg-white/20 rounded-2xl">
-                          <Volume2 className={audioPlaying? "animate-pulse" : ""} size={24} />
+                          <Volume2 className={audioPlaying ? "animate-pulse" : ""} size={24} />
                         </div>
                         <span className="font-black text- uppercase tracking-[0.35em] opacity-90">
                           Audio Context - Continues playing
@@ -1139,7 +1108,7 @@ function Activities() {
                     const gi = testPage * Q_PP + li;
                     const qt = getQType(q);
                     return (
-                      <div key={gi} className="p-8 md:p-10 rounded-[3rem] bg-gray-50 border border-gray-100">
+                      <div key={gi} className="p-8 md:p-10 rounded- bg-gray-50 border border-gray-100">
                         <h4 className="font-black text-lg text-slate-900 mb-7 flex gap-4 items-start">
                           <span className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center text-xs shrink-0 shadow-md">{gi + 1}</span>
                           <span className="pt-0.5">{q.question}</span>
@@ -1151,7 +1120,7 @@ function Activities() {
                             {(q as MCQQuestion).options.map((opt, i) => (
                               <button key={i} onClick={() => setChoiceAnswers(p => ({ ...p, [gi]: i }))}
                                 className={`p-5 rounded-2xl border-2 text-left font-bold text-sm transition-all flex items-center gap-4 ${choiceAnswers[gi] === i ? "bg-white border-blue-600 text-blue-700 shadow-lg" : "bg-white border-transparent hover:border-gray-200"}`}>
-                                <span className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-[11px] font-black shrink-0 ${choiceAnswers[gi] === i ? "border-blue-600 bg-blue-600 text-white" : "border-gray-200 text-gray-400"}`}>{String.fromCharCode(65+i)}</span>
+                                <span className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text- font-black shrink-0 ${choiceAnswers[gi] === i ? "border-blue-600 bg-blue-600 text-white" : "border-gray-200 text-gray-400"}`}>{String.fromCharCode(65+i)}</span>
                                 {opt}
                               </button>
                             ))}
@@ -1198,7 +1167,7 @@ function Activities() {
                           };
                           return (
                             <div className="grid gap-2">
-                              <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Use arrows to reorder</p>
+                              <p className="text- font-black text-gray-400 uppercase tracking-widest mb-1">Use arrows to reorder</p>
                               {cur.map((item, i) => (
                                 <div key={i} className="p-4 bg-white rounded-xl border border-gray-200 flex items-center justify-between font-bold text-sm text-slate-700">
                                   <span className="flex items-center gap-3">
@@ -1225,7 +1194,7 @@ function Activities() {
                           <div className="grid gap-3">
                             {(q as FillInBlankQuestion).blanks.map((_, bi) => (
                               <div key={bi}>
-                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1.5 block">Blank {bi+1}</label>
+                                <label className="text- font-black text-gray-400 uppercase tracking-widest mb-1.5 block">Blank {bi+1}</label>
                                 <input type="text" placeholder={`Answer for blank ${bi+1}…`} className="w-full p-5 rounded-2xl bg-white border-2 border-gray-100 font-bold text-sm text-slate-700 outline-none focus:border-blue-400"
                                   value={(fibAnswers[gi]||[])[bi] || ""}
                                   onChange={e => { const arr = [...(fibAnswers[gi]||[])]; arr[bi] = e.target.value; setFibAnswers(p => ({ ...p, [gi]: arr })); }} />
@@ -1245,7 +1214,7 @@ function Activities() {
                           <div>
                             <textarea rows={5} placeholder="Write your response here…" className="w-full p-5 rounded-2xl bg-white border-2 border-gray-100 font-medium text-sm text-slate-700 outline-none focus:border-blue-400 resize-none leading-relaxed"
                               value={textAnswers[gi] || ""} onChange={e => setTextAnswers(p => ({ ...p, [gi]: e.target.value }))} />
-                            <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest mt-2">Essay – not auto-graded</p>
+                            <p className="text- font-black text-amber-500 uppercase tracking-widest mt-2">Essay – not auto-graded</p>
                           </div>
                         )}
                       </div>
@@ -1255,12 +1224,12 @@ function Activities() {
                   {/* Nav */}
                   <div className="flex gap-4 pt-4">
                     {testPage > 0 && (
-                      <button onClick={() => { setTestPage(p => p-1); modalScrollRef.current?.scrollTo(0,0); }} className="flex-1 py-5 bg-gray-100 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-gray-200 transition-all">← Back</button>
+                      <button onClick={() => { setTestPage(p => p-1); modalScrollRef.current?.scrollTo(0,0); }} className="flex-1 py-5 bg-gray-100 rounded-2xl font-black uppercase text- tracking-widest hover:bg-gray-200 transition-all">← Back</button>
                     )}
                     {!isLastPg ? (
-                      <button onClick={() => { setTestPage(p => p+1); modalScrollRef.current?.scrollTo(0,0); }} className="flex-1 py-5 bg-blue-600 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all">Next →</button>
+                      <button onClick={() => { setTestPage(p => p+1); modalScrollRef.current?.scrollTo(0,0); }} className="flex-1 py-5 bg-blue-600 text-white rounded-2xl font-black uppercase text- tracking-widest shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all">Next →</button>
                     ) : (
-                      <button onClick={() => setModalStage("result")} className="flex-1 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text-[11px] tracking-widest shadow-xl hover:bg-black transition-all">Submit Answers</button>
+                      <button onClick={() => setModalStage("result")} className="flex-1 py-5 bg-slate-900 text-white rounded-2xl font-black uppercase text- tracking-widest shadow-xl hover:bg-black transition-all">Submit Answers</button>
                     )}
                   </div>
                 </div>
@@ -1269,23 +1238,21 @@ function Activities() {
               {/* ── RESULT ── */}
               {modalStage === "result" && (
                 <div className="space-y-10 py-4">
-                  {/* Score hero */}
                   <div className="text-center">
-                    <div className="w-32 h-32 bg-yellow-400 text-white rounded-[3rem] flex items-center justify-center mx-auto shadow-2xl shadow-yellow-200 mb-6">
+                    <div className="w-32 h-32 bg-yellow-400 text-white rounded- flex items-center justify-center mx-auto shadow-2xl shadow-yellow-200 mb-6">
                       <Trophy size={68} />
                     </div>
                     <h3 className="text-6xl font-black text-slate-900 mb-2">
                       {maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0}%
                     </h3>
-                    <p className="text-slate-400 font-bold uppercase tracking-[0.4em] text-[11px]">
+                    <p className="text-slate-400 font-bold uppercase tracking-[0.4em] text-">
                       {totalScore} / {maxScore} points
                       {selectedEx.content.some(q => getQType(q) === "essay") && " · Essays excluded"}
                     </p>
                   </div>
 
-                  {/* Full answer review */}
                   <div className="space-y-5">
-                    <h4 className="text-[11px] font-black text-slate-800 uppercase tracking-[0.25em] mb-4">Answer Review</h4>
+                    <h4 className="text- font-black text-slate-800 uppercase tracking-[0.25em] mb-4">Answer Review</h4>
                     {selectedEx.content.map((q, idx) => {
                       const qt = getQType(q);
                       const isEssay = qt === "essay";
@@ -1308,7 +1275,6 @@ function Activities() {
                             )}
                           </div>
 
-                          {/* MCQ / TF options with colour coding */}
                           {(qt === "mcq" || !q.type || qt === "true_false") && (() => {
                             const mq = q as MCQQuestion;
                             return (
@@ -1318,7 +1284,7 @@ function Activities() {
                                   const isUser    = i === choiceAnswers[idx];
                                   return (
                                     <div key={i} className={`p-3.5 rounded-xl flex items-center gap-3 text-sm font-bold ${isCorrect ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : isUser && !isCorrect ? "bg-rose-100 text-rose-700 border border-rose-200" : "bg-white/60 text-slate-400 border border-transparent"}`}>
-                                      <span className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black shrink-0 ${isCorrect ? "bg-emerald-500 text-white" : isUser ? "bg-rose-500 text-white" : "bg-gray-200 text-gray-500"}`}>{String.fromCharCode(65+i)}</span>
+                                      <span className={`w-7 h-7 rounded-full flex items-center justify-center text- font-black shrink-0 ${isCorrect ? "bg-emerald-500 text-white" : isUser ? "bg-rose-500 text-white" : "bg-gray-200 text-gray-500"}`}>{String.fromCharCode(65+i)}</span>
                                       <span className="flex-1">{opt}</span>
                                       {isCorrect && <CheckCircle2 size={14} className="text-emerald-500 shrink-0" />}
                                       {isUser && !isCorrect && <XCircle size={14} className="text-rose-500 shrink-0" />}
@@ -1329,20 +1295,19 @@ function Activities() {
                             );
                           })()}
 
-                          {/* Gap Filling / Short Answer */}
                           {(qt === "gap_filling" || qt === "short_answer") && (() => {
                             const correctAns = qt === "gap_filling" ? (q as GapFillingQuestion).correctAnswer : (q as ShortAnswerQuestion).correctAnswer;
                             const userAns = textAnswers[idx] || "(no answer)";
                             return (
                               <div className="grid gap-2 text-sm">
                                 <div className={`p-4 rounded-xl flex items-center gap-3 font-bold border ${ok ? "bg-emerald-100 border-emerald-200 text-emerald-700" : "bg-rose-100 border-rose-200 text-rose-700"}`}>
-                                  <span className="text-[10px] uppercase tracking-widest font-black shrink-0 w-16">Yours</span>
+                                  <span className="text- uppercase tracking-widest font-black shrink-0 w-16">Yours</span>
                                   <span>{userAns}</span>
                                   {ok ? <CheckCircle2 size={14} className="ml-auto" /> : <XCircle size={14} className="ml-auto" />}
                                 </div>
                                 {!ok && (
                                   <div className="p-4 rounded-xl flex items-center gap-3 font-bold bg-emerald-100 border border-emerald-200 text-emerald-700">
-                                    <span className="text-[10px] uppercase tracking-widest font-black shrink-0 w-16">Correct</span>
+                                    <span className="text- uppercase tracking-widest font-black shrink-0 w-16">Correct</span>
                                     <span>{correctAns}</span>
                                     <CheckCircle2 size={14} className="ml-auto" />
                                   </div>
@@ -1351,7 +1316,6 @@ function Activities() {
                             );
                           })()}
 
-                          {/* Sequencing / Ordering - show partial credit */}
                           {(qt === "sequencing" || qt === "ordering") && (() => {
                             const sq = q as SequencingQuestion;
                             const given = seqAnswers[idx] || [...(sq.sequence || sq.correctAnswer)];
@@ -1374,7 +1338,6 @@ function Activities() {
                             );
                           })()}
 
-                          {/* Matching - show partial credit */}
                           {qt === "matching" && (() => {
                             const mq = q as MatchingQuestion;
                             const given = matchAnswers[idx] || {};
@@ -1387,7 +1350,7 @@ function Activities() {
                                       <span>{pair.left}</span>
                                       <ArrowRight size={12} className="shrink-0" />
                                       <span className="flex-1">{given[pair.left] || "(no answer)"}</span>
-                                      {!right && <span className="text-emerald-700 text-[11px] font-black ml-auto">✓ {pair.right}</span>}
+                                      {!right && <span className="text-emerald-700 text- font-black ml-auto">✓ {pair.right}</span>}
                                       {right ? <CheckCircle2 size={14} className="ml-2" /> : <XCircle size={14} />}
                                     </div>
                                   );
@@ -1396,7 +1359,6 @@ function Activities() {
                             );
                           })()}
 
-                          {/* Fill in Blank - show partial credit */}
                           {qt === "fill_in_blank" && (() => {
                             const fq = q as FillInBlankQuestion;
                             const given = fibAnswers[idx] || [];
@@ -1406,9 +1368,9 @@ function Activities() {
                                   const right = (given[bi]||"").trim().toLowerCase() === blank.trim().toLowerCase();
                                   return (
                                     <div key={bi} className={`p-3.5 rounded-xl flex items-center gap-3 font-bold border ${right ? "bg-emerald-100 border-emerald-200 text-emerald-700" : "bg-rose-100 border-rose-200 text-rose-700"}`}>
-                                      <span className="text-[10px] uppercase tracking-widest font-black shrink-0 w-14">Blank {bi+1}</span>
+                                      <span className="text- uppercase tracking-widest font-black shrink-0 w-14">Blank {bi+1}</span>
                                       <span className="flex-1">{given[bi] || "(no answer)"}</span>
-                                      {!right && <span className="text-emerald-700 text-[11px] font-black ml-auto">✓ {blank}</span>}
+                                      {!right && <span className="text-emerald-700 text- font-black ml-auto">✓ {blank}</span>}
                                       {right ? <CheckCircle2 size={14} className="ml-2" /> : <XCircle size={14} />}
                                     </div>
                                   );
@@ -1417,10 +1379,9 @@ function Activities() {
                             );
                           })()}
 
-                          {/* Essay – sample answer */}
                           {qt === "essay" && (q as EssayQuestion).sampleAnswer && (
                             <div className="p-4 rounded-xl bg-amber-100 border border-amber-200 text-sm text-amber-800 font-medium leading-relaxed">
-                              <span className="font-black text-[10px] uppercase tracking-widest block mb-1.5">Sample Answer</span>
+                              <span className="font-black text- uppercase tracking-widest block mb-1.5">Sample Answer</span>
                               {(q as EssayQuestion).sampleAnswer}
                             </div>
                           )}
@@ -1429,7 +1390,7 @@ function Activities() {
                     })}
                   </div>
 
-                  <button onClick={() => setSelectedEx(null)} className="w-full py-6 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text-[12px] shadow-2xl shadow-blue-200 hover:bg-blue-700 transition-all">
+                  <button onClick={() => setSelectedEx(null)} className="w-full py-6 bg-blue-600 text-white rounded-2xl font-black uppercase tracking-widest text- shadow-2xl shadow-blue-200 hover:bg-blue-700 transition-all">
                     Return to Dashboard
                   </button>
                 </div>
@@ -1439,30 +1400,29 @@ function Activities() {
         </div>
       )}
 
-     {/* ══════════════════════════════════════
-          H5P MODAL - CONTAINER + IFRAME FULL HEIGHT
+      {/* ══════════════════════════════════════
+          H5P MODAL
       ══════════════════════════════════════ */}
       {selectedH5P && (
         <div className="fixed inset-0 z-[999] bg-slate-900/95 backdrop-blur-2xl flex justify-center items-center p-4 mt-5">
-          <div className="relative bg-white w-full max-w-6xl h-[92vh] rounded-[4rem] shadow-2xl flex flex-col overflow-hidden">
+          <div className="relative bg-white w-full max-w-6xl h- rounded- shadow-2xl flex flex-col overflow-hidden">
             <div className="flex items-center justify-between p-10 border-b border-gray-50 shrink-0">
               <div>
                 <h3 className="font-black text-2xl text-slate-900 tracking-tight">{selectedH5P.title}</h3>
                 <p className="text- font-black text-purple-600 uppercase tracking-[0.3em] mt-1">Interactive Module</p>
               </div>
-              <button 
-                aria-label="Close" 
+              <button
+                aria-label="Close"
                 onClick={() => {
                   setSelectedH5P(null);
                   setH5pIframeLoading(true);
-                }} 
+                }}
                 className="p-5 bg-gray-50 rounded-full hover:bg-red-50 hover:text-red-500 transition-all shadow-sm"
               >
                 <X size={24} />
               </button>
             </div>
-            
-            {/* Container: flex-1 + min-h-0 = fills all remaining space */}
+
             <div className="flex-1 bg-gray-100 relative min-h-0">
               {h5pIframeLoading && (
                 <div className="absolute inset-0 bg-white flex flex-col items-center justify-center z-10">
@@ -1472,13 +1432,11 @@ function Activities() {
                   </p>
                 </div>
               )}
-
-              {/* Iframe: w-full h-full = fills the container */}
-              <iframe 
-                src={selectedH5P.embedUrl} 
+              <iframe
+                src={selectedH5P.embedUrl}
                 title={selectedH5P.title}
-                className="w-full h-full border-none bg-white" 
-                allowFullScreen 
+                className="w-full h-full border-none bg-white"
+                allowFullScreen
                 loading="lazy"
                 allow="autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 onLoad={() => setH5pIframeLoading(false)}
@@ -1488,6 +1446,7 @@ function Activities() {
           </div>
         </div>
       )}
+
       <style>{`
         .custom-scrollbar::-webkit-scrollbar { width: 8px; }
         .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }

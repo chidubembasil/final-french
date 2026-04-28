@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import logo from '../assets/img/logo.png';
 import logo2 from '../assets/img/img2026.jpg'
-import { Instagram, Facebook, Youtube, Mail, MapPin, Linkedin, ArrowUp } from "lucide-react";
+import { Instagram, Facebook, Youtube, Mail, MapPin, ArrowUp } from "lucide-react";
 import { Link } from "react-router-dom";
 
 // ✅ Fix: Move XLogo outside of the Footer function to prevent re-creation during render
@@ -68,8 +68,8 @@ function Footer() {
                     <div className="flex flex-row gap-2.5">
                         {[
                             { icon: <Facebook size={18} />, link: "https://www.facebook.com/profile.php?id=100095181674120" },
-                            { icon: <Instagram size={18} />, link: "https://www.instagram.com/reel/DRR_PogEd-o/?igsh=MWFjd3g2cjcydm41bQ==" },
-                            { icon: <Linkedin size={18} />, link: "https://www.linkedin.com/company/embassy-of-france-in-nigeria/" },
+                            { icon: <Instagram size={18} />, link: "https://www.instagram.com/atlm_naija/" },
+                            
                             { icon: <XLogo className="w-4 h-4 text-gray-400" />, link: "https://x.com/ATLM_Naija" },
                             { icon: <Youtube size={18} />, link: "https://www.youtube.com/@ATLM_Naija" }
                         ].map((social, i) => (
@@ -104,10 +104,11 @@ function Footer() {
                 <div className="flex flex-col gap-6">
                     <h2 className="text-white font-bold text-sm uppercase tracking-widest">Resources</h2>
                     <div className="flex flex-col gap-3 text-sm">
-                        <a href="https://enseigner.tv5monde.com/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">TV5 Monde</a>
+                        <a href="https://langue-francaise.tv5monde.com/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">TV5 Monde</a>
                         <a href="https://savoirs.rfi.fr/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">RFI Savoirs</a>
                         <a href="https://www.ifprofs.org/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">IFprofs</a>
-                        <a href="https://www.afnigeria.org/lagos/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">Alliance Française</a>
+                        <a href="https://afnigeria.org/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">Alliance Française</a>
+                        <a href="https://ifclasse.institutfrancais.com/" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">IF Classe</a>
                     </div>
                 </div>
 
