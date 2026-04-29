@@ -14,7 +14,7 @@ function Header() {
         { path: "/bac", name: "Bilingual and Competitive" },
         { path: "/activities", name: "Learn French" },
         { path: "/podcast", name: "Podcasts" },
-        { path: "/resource", name: "Resources" },
+        { path: "/resource", name: "For Teachers" },
         { path: "/news&blog", name: "News & Blog" },
         { path: "/gallery", name: "Gallery" }
     ];

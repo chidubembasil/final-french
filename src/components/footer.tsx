@@ -94,7 +94,7 @@ function Footer() {
                         <Link to="/bac" className="hover:text-blue-400 transition-colors">Bilingual & Competitive</Link>
                         <Link to="/activities" className="hover:text-blue-400 transition-colors">Learn French</Link>
                         <Link to="/podcast" className="hover:text-blue-400 transition-colors">Podcasts</Link>
-                        <Link to="/resource" className="hover:text-blue-400 transition-colors">Resources</Link>
+                        <Link to="/resource" className="hover:text-blue-400 transition-colors">For Teachers</Link>
                         <Link to="/news&blog" className="hover:text-blue-400 transition-colors">News & Blog</Link>
                         <Link to="/gallery" className="hover:text-blue-400 transition-colors">Gallery</Link>
                     </nav>

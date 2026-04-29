@@ -588,7 +588,7 @@ function Activities() {
     <main className="pt-20 bg-[#fcfaf8] min-h-screen w-full overflow-y-auto">
 
       {/* HERO */}
-      <div className="relative w-full h- overflow-hidden bg-slate-900">
+      <div className="relative w-full h-[90dvh] md:h-[90dvh] overflow-hidden bg-slate-900">
         <img src={heroData?.mediaUrl || MOCK_HERO.mediaUrl} className="absolute inset-0 w-full h-full object-cover z-0 opacity-70" alt="Hero" />
         <div className="absolute inset-0 z-10 bg-linear-to-br from-red-600/80 via-transparent to-blue-900/90" />
         <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-16 gap-5">
