@@ -2,7 +2,7 @@ import { Clock, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export default function PrivacyPolicy() {
-  const lastUpdated = "February 11, 2026";
+  const lastUpdated = "29 April, 2026";
 
   return (
     <div className="min-h-screen bg-white pt-24 pb-24 font-sans text-slate-900">
@@ -113,7 +113,7 @@ export default function PrivacyPolicy() {
             {[
               { id: 5, title: "5. Your Choices", content: "You can disable or manage cookies through your browser settings, opt-out of marketing cookies at any time, or contact us with questions about how we use data." },
               { id: 6, title: "6. Data Security", content: "We implement reasonable measures to protect the information that we collect to ensure the security, integrity, confidentiality, and availability of such data. However, no method is completely secure, and we cannot guarantee absolute security." },
-              { id: 7, title: "7. Children’s Privacy", content: "Our website is not intended for children under 13. We do not knowingly collect personal information from children." },
+              { id: 7, title: "7. Children’s Privacy", content: "Our website is not intended for children under 7. We do not knowingly collect personal information from children." },
               { id: 8, title: "8. Updates to This Policy", content: "We may update this Privacy Policy from time to time. The latest version will always be available on this page with the date of the last update." },
             ].map((section) => (
               <section key={section.id} className="space-y-3">

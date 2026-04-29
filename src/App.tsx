@@ -19,7 +19,8 @@ import Activites from "./pages/Activity";
 import NewsDetail from "./pages/NewsDetail";
 import PrivacyPolicy from "./components/privacyPolicy";
 import CookiePolicy from "./components/CookiePolicy";
-
+import WorksheetPage from "./pages/Worksheet"
+import ExternalLinksPage from "./pages/ExternalLink"
 const App: React.FC = () => {
   return (
     <BrowserRouter>
@@ -38,6 +39,9 @@ const App: React.FC = () => {
             <Route path="/bac" element={<BAC />} />
             <Route path="/activities" element={<Activites />} />
             <Route path="*" element={<Home />} />
+            <Route path="/worksheet" element={<WorksheetPage />} />
+             <Route path="/worksheet/:slug" element={<WorksheetPage />} />
+            <Route path="/links" element={<ExternalLinksPage />} />
             <Route path="/news/:slug" element={<NewsDetail />} />
             <Route path="/privacy" element={<PrivacyPolicy />}/>
             <Route path="/cookies" element={<CookiePolicy />}/>

@@ -506,12 +506,13 @@ function Activities() {
   }, [exercisesList, searchQuery, selectedAudience, selectedDifficulty]);
 
   // H5P filtered by audience (shown in the difficulty view per category)
-  const filteredH5P = useMemo(() =>
-    h5pContents.filter(h =>
-      h.title?.toLowerCase().includes(searchQuery.toLowerCase()) &&
-      (selectedAudience ? h.audience?.toLowerCase() === selectedAudience.toLowerCase() : true)
-    ), [h5pContents, searchQuery, selectedAudience]);
-
+ const filteredH5P = useMemo(() =>
+  h5pContents.filter(h =>
+    h.title?.toLowerCase().includes(searchQuery.toLowerCase()) &&
+    (selectedAudience? h.audience?.toLowerCase() === selectedAudience.toLowerCase() : true) &&
+    (selectedDifficulty? h.difficulty === selectedDifficulty : true) // <-- ADD THIS
+  ), [h5pContents, searchQuery, selectedAudience, selectedDifficulty]);
+  
   const currentEx  = filteredEx.slice((mcqPage - 1) * ITEMS_PP, mcqPage * ITEMS_PP);
   const currentH5P = filteredH5P.slice((h5pPage - 1) * ITEMS_PP, h5pPage * ITEMS_PP);
   const totalMcqPg = Math.ceil(filteredEx.length  / ITEMS_PP);
@@ -809,7 +810,59 @@ function Activities() {
               })}
             </div>
 
-            {/* ── VIDEO BASED INTERACTIVE EXERCISES (H5P) — scoped to this audience ── */}
+            
+          </div>
+        )}
+
+        {searchQuery.trim().length > 0 && currentView === "exercises" && (
+          <div className="mb-6 px-6 py-3 bg-blue-50 border border-blue-200 rounded-2xl text-center">
+            <p className="text- font-black uppercase tracking-widest text-blue-700">
+              Searching all exercises · {filteredEx.length} result{filteredEx.length !== 1 ? "s" : ""}
+            </p>
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════════════════
+            VIEW 3: EXERCISES LIST
+        ════════════════════════════════════════════════════════ */}
+        {currentView === "exercises" && selectedAudience && selectedDifficulty && (
+          <div className="space-y-12">
+            {/* Back Button & Breadcrumb */}
+            <div className="flex flex-col gap-6">
+              <button
+                onClick={handleBackToDifficulty}
+                className="flex items-center gap-3 text-slate-500 hover:text-slate-900 font-bold text-sm uppercase tracking-widest transition-colors group w-fit"
+              >
+                <div className="p-3 rounded-2xl bg-gray-100 group-hover:bg-gray-200 transition-colors">
+                  <ArrowLeft size={20} />
+                </div>
+                <span>Back to Difficulty</span>
+              </button>
+
+              <div className="flex items-center gap-4 text- font-black uppercase tracking-widest">
+                <span className="text-slate-400">{selectedAudience}</span>
+                <ChevronRight size={14} className="text-slate-300" />
+                <span className="text-slate-400">{selectedDifficulty}</span>
+                <ChevronRight size={14} className="text-slate-300" />
+                <span className="text-blue-600">Exercises</span>
+              </div>
+            </div>
+
+            {/* Language Exercises Section */}
+            <div>
+              <div className="flex justify-between items-end mb-8">
+                <div>
+                  <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Language Exercises</h2>
+                  <p className="text-slate-400 font-bold uppercase text- tracking-[0.3em]">Skill Evaluation</p>
+                </div>
+                {totalMcqPg > 1 && (
+                  <div className="flex gap-3">
+                    <button aria-label="Prev" disabled={mcqPage === 1} onClick={() => setMcqPage(p => p - 1)} className="p-4 rounded-2xl bg-white border border-gray-100 disabled:opacity-20 hover:bg-gray-50"><ChevronLeft size={24} /></button>
+                    <button aria-label="Next" disabled={mcqPage === totalMcqPg} onClick={() => setMcqPage(p => p + 1)} className="p-4 rounded-2xl bg-white border border-gray-100 disabled:opacity-20 hover:bg-gray-50"><ChevronRight size={24} /></button>
+                  </div>
+                )}
+              </div>
+              {/* ── VIDEO BASED INTERACTIVE EXERCISES (H5P) — scoped to this audience ── */}
             <div className="pt-8 border-t border-gray-100">
               <div className="mb-10">
                 <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Video Based Interactive Exercises</h2>
@@ -892,57 +945,6 @@ function Activities() {
                 </>
               )}
             </div>
-          </div>
-        )}
-
-        {searchQuery.trim().length > 0 && currentView === "exercises" && (
-          <div className="mb-6 px-6 py-3 bg-blue-50 border border-blue-200 rounded-2xl text-center">
-            <p className="text- font-black uppercase tracking-widest text-blue-700">
-              Searching all exercises · {filteredEx.length} result{filteredEx.length !== 1 ? "s" : ""}
-            </p>
-          </div>
-        )}
-
-        {/* ════════════════════════════════════════════════════════
-            VIEW 3: EXERCISES LIST
-        ════════════════════════════════════════════════════════ */}
-        {currentView === "exercises" && selectedAudience && selectedDifficulty && (
-          <div className="space-y-12">
-            {/* Back Button & Breadcrumb */}
-            <div className="flex flex-col gap-6">
-              <button
-                onClick={handleBackToDifficulty}
-                className="flex items-center gap-3 text-slate-500 hover:text-slate-900 font-bold text-sm uppercase tracking-widest transition-colors group w-fit"
-              >
-                <div className="p-3 rounded-2xl bg-gray-100 group-hover:bg-gray-200 transition-colors">
-                  <ArrowLeft size={20} />
-                </div>
-                <span>Back to Difficulty</span>
-              </button>
-
-              <div className="flex items-center gap-4 text- font-black uppercase tracking-widest">
-                <span className="text-slate-400">{selectedAudience}</span>
-                <ChevronRight size={14} className="text-slate-300" />
-                <span className="text-slate-400">{selectedDifficulty}</span>
-                <ChevronRight size={14} className="text-slate-300" />
-                <span className="text-blue-600">Exercises</span>
-              </div>
-            </div>
-
-            {/* Language Exercises Section */}
-            <div>
-              <div className="flex justify-between items-end mb-8">
-                <div>
-                  <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Language Exercises</h2>
-                  <p className="text-slate-400 font-bold uppercase text- tracking-[0.3em]">Skill Evaluation</p>
-                </div>
-                {totalMcqPg > 1 && (
-                  <div className="flex gap-3">
-                    <button aria-label="Prev" disabled={mcqPage === 1} onClick={() => setMcqPage(p => p - 1)} className="p-4 rounded-2xl bg-white border border-gray-100 disabled:opacity-20 hover:bg-gray-50"><ChevronLeft size={24} /></button>
-                    <button aria-label="Next" disabled={mcqPage === totalMcqPg} onClick={() => setMcqPage(p => p + 1)} className="p-4 rounded-2xl bg-white border border-gray-100 disabled:opacity-20 hover:bg-gray-50"><ChevronRight size={24} /></button>
-                  </div>
-                )}
-              </div>
 
               {currentEx.length === 0 ? (
                 <EmptyState icon={<Book size={32} className="text-gray-300" />} msg="No exercises found for this criteria." />
@@ -1038,7 +1040,7 @@ function Activities() {
       ══════════════════════════════════════ */}
       {selectedEx && (
         <div className="fixed inset-0 z-[999] bg-slate-900/90 backdrop-blur-xl flex justify-center items-center p-4 mt-5">
-          <div className="relative bg-white w-full max-w-4xl rounded- shadow-2xl flex flex-col max-h- overflow-hidden">
+          <div className="relative bg-white w-full max-w-4xl rounded-3xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
             {exerciseLoading && (
               <div className="absolute inset-0 z-[60] bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center rounded-">
                 <Loader2 className="animate-spin text-blue-600 mb-4" size={48} />
@@ -1047,7 +1049,7 @@ function Activities() {
             )}
             <button aria-label="Close" onClick={() => setSelectedEx(null)} className="absolute top-10 right-10 z-50 p-5 bg-gray-50 rounded-full hover:bg-red-50 hover:text-red-500 transition-all shadow-sm"><X size={22} /></button>
 
-            <div ref={modalScrollRef} className="overflow-y-auto p-10 md:p-14 custom-scrollbar">
+            <div ref={modalScrollRef} className="overflow-y-auto flex-1 p-10 md:p-14 custom-scrollbar">
 
               {/* ── INFO ── */}
               {modalStage === "info" && (
@@ -1107,6 +1109,8 @@ function Activities() {
                   {pageQs.map((q, li) => {
                     const gi = testPage * Q_PP + li;
                     const qt = getQType(q);
+                    /* const prevQt = li > 0? getQType(pageQs[li-1]) : null; */
+                    /* const showSection = li === 0 || prevQt!== qt; */
                     return (
                       <div key={gi} className="p-8 md:p-10 rounded- bg-gray-50 border border-gray-100">
                         <h4 className="font-black text-lg text-slate-900 mb-7 flex gap-4 items-start">
@@ -1404,30 +1408,28 @@ function Activities() {
           H5P MODAL
       ══════════════════════════════════════ */}
       {selectedH5P && (
-        <div className="fixed inset-0 z-[999] bg-slate-900/95 backdrop-blur-2xl flex justify-center items-center p-4 mt-5">
-          <div className="relative bg-white w-full max-w-6xl h- rounded- shadow-2xl flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between p-10 border-b border-gray-50 shrink-0">
+        <div className="fixed inset-0 z-[999] bg-slate-900 flex-col">
+          <div className="relative bg-white w-screen h-screen flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0 bg-white">
               <div>
-                <h3 className="font-black text-2xl text-slate-900 tracking-tight">{selectedH5P.title}</h3>
-                <p className="text- font-black text-purple-600 uppercase tracking-[0.3em] mt-1">Interactive Module</p>
+                <h3 className="font-black text-xl text-slate-900">{selectedH5P.title}</h3>
+                <p className="text- font-black text-purple-600 uppercase tracking-[0.3em]">INTERACTIVE MODULE</p>
               </div>
               <button
                 aria-label="Close"
-                onClick={() => {
-                  setSelectedH5P(null);
-                  setH5pIframeLoading(true);
-                }}
-                className="p-5 bg-gray-50 rounded-full hover:bg-red-50 hover:text-red-500 transition-all shadow-sm"
+                onClick={() => { setSelectedH5P(null); setH5pIframeLoading(true); }}
+                className="w-12 h-12 rounded-full bg-gray-100 hover:bg-red-50 hover:text-red-600 flex items-center justify-center transition-all"
               >
-                <X size={24} />
+                <X size={22} />
               </button>
             </div>
 
-            <div className="flex-1 bg-gray-100 relative min-h-0">
+            <div className="w-full bg-gray-100 relative" style={{ height: '100dvh' }}>
+              {/* loader */}
               {h5pIframeLoading && (
                 <div className="absolute inset-0 bg-white flex flex-col items-center justify-center z-10">
                   <Loader2 className="animate-spin text-purple-600 mb-4" size={48} />
-                  <p className="text- font-black uppercase tracking-[0.3em] text-slate-400">
+                  <p className="text-xs font-black uppercase tracking-[0.3em] text-slate-400">
                     Loading Interactive Content...
                   </p>
                 </div>
@@ -1435,12 +1437,11 @@ function Activities() {
               <iframe
                 src={selectedH5P.embedUrl}
                 title={selectedH5P.title}
-                className="w-full h-full border-none bg-white"
+                className="w-full h-full border-0 bg-white"
                 allowFullScreen
                 loading="lazy"
                 allow="autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 onLoad={() => setH5pIframeLoading(false)}
-                onError={() => setH5pIframeLoading(false)}
               />
             </div>
           </div>
