@@ -688,7 +688,7 @@ function Activities() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-              {(["Children", "Adolescent", "Adult"] as const).map((audience) => {
+              {(["Children", "Adolescents", "Adult"] as const).map((audience) => {
                 const icons: Record<string, React.ReactNode> = {
                   Children:   <GraduationCap size={32} className="text-white" />,
                   Adolescents: <Users size={32} className="text-white" />,
