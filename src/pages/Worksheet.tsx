@@ -476,7 +476,7 @@ function WorksheetDetail({
               {[
                 { label: "Level", value: worksheet.level },
                 { label: "Audience", value: worksheet.audience },
-                { label: "Skill", value: worksheet.skillType },
+                /* { label: "Skill", value: worksheet.skillType }, */
                 { label: "Theme", value: worksheet.theme },
               ].map(({ label, value }) => (
                 <div key={label} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
@@ -668,33 +668,32 @@ useEffect(() => {
                   <button
                     key={level}
                     onClick={() => { setSelectedLevel(level); setView("cards"); }}
-                    className={`group relative bg-white rounded- p-7 border-2 ${lm.border} shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all text-left overflow-hidden`}
+                    className={`group relative h-64 rounded-2xl overflow-hidden shadow-md hover:shadow-xl hover:-translate-y-1 transition-all text-left border-2 ${lm.border}`}
                   >
-                    {/* Subtle background image - keeps it "plain white" */}
+                    {/* BACKGROUND IMAGE */}
                     <div
-                      className="absolute inset-0 opacity-[0.06] group-hover:opacity-10 transition-opacity"
-                      style={{
-                        backgroundImage: `url(${lm.image})`,
-                        backgroundSize: 'cover',
-                        backgroundPosition: 'center'
-                      }}
+                      className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
+                      style={{ backgroundImage: `url(${lm.image})` }}
                     />
-                    <div className="absolute inset-0 bg-white/80" />
+                    {/* white wash so text stays readable */}
+                    <div className="absolute inset-0 bg-white/85 group-hover:bg-white/70 backdrop-blur- transition-all" />
 
-                    <div className="relative z-10">
-                      <div className="flex items-start justify-between mb-6">
-                        <span className={`text-2xl font-black px-3 py-1.5 rounded-xl ${lm.badge}`}>{lm.badgeText}</span>
-                        <Layers size={18} className="text-gray-300 group-hover:text-gray-400 transition-colors" />
+                    <div className="relative z-10 p-7 h-full flex-col">
+                      <div className="flex items-start justify-between mb-4">
+                        <span className={`text-xl font-black px-3 py-1.5 rounded-xl ${lm.badge}`}>{lm.badgeText}</span>
+                        <Layers size={18} className="text-gray-400 group-hover:text-gray-600 transition-colors" />
                       </div>
-                      <h3 className="text-lg font-black text-slate-800 mb-2 leading-tight">
+
+                      <h3 className="text-lg font-black text-slate-800 mb-1 leading-tight">
                         {level.replace(/\s*\(.*?\)/, "")}
                       </h3>
-                      <p className="text-gray-500 text-sm font-medium mb-6">{lm.desc}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                      <p className="text-gray-600 text-sm font-medium mb-auto">{lm.desc}</p>
+
+                      <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200/50">
+                        <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">
                           {count} worksheet{count!== 1? "s" : ""}
                         </span>
-                        <ArrowRight size={14} className="text-gray-300 group-hover:text-gray-600 group-hover:translate-x-0.5 transition-all" />
+                        <ArrowRight size={14} className="text-gray-400 group-hover:text-slate-800 group-hover:translate-x-0.5 transition-all" />
                       </div>
                     </div>
                   </button>
