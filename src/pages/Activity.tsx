@@ -1185,7 +1185,7 @@ function Activities() {
                             <p className="font-bold text-slate-800 text-sm leading-relaxed flex-1">{q.question}</p>
                             {!isEssay && (
                               <div className="text-right">
-                                <span className={`text-xs font-black ${ok ? "text-emerald-600" : partial ? "text-amber-600" : "text-rose-600"}`}>{scoreResult.earned}/{scoreResult.max}</span>
+                                <span  className={`text-xs font-black ${ok ? "text-emerald-600" : partial ? "text-amber-600" : "text-rose-600"}`}>{scoreResult.earned}/{scoreResult.max}</span>
                                 {ok ? <CheckCircle2 size={20} className="text-emerald-500 shrink-0 ml-2 inline" /> : partial ? <span className="text-amber-500 ml-2">~</span> : <XCircle size={20} className="text-rose-500 shrink-0 ml-2 inline" />}
                               </div>
                             )}
