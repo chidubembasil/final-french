@@ -619,7 +619,7 @@ useEffect(() => {
                     }}
                   >
                     {/* Keep your solid gradient, now as overlay */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${meta.bg} opacity-85 group-hover:opacity-90 transition-opacity`} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent group-hover:from-black/80 transition-all" />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
                     <div className="relative z-10 h-full flex flex-col justify-end p-8">
@@ -676,21 +676,20 @@ useEffect(() => {
                       style={{ backgroundImage: `url(${lm.image})` }}
                     />
                     {/* white wash so text stays readable */}
-                    <div className="absolute inset-0 bg-white/85 group-hover:bg-white/70 backdrop-blur- transition-all" />
-
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/40 to-transparent" />
                     <div className="relative z-10 p-7 h-full flex-col">
                       <div className="flex items-start justify-between mb-4">
                         <span className={`text-xl font-black px-3 py-1.5 rounded-xl ${lm.badge}`}>{lm.badgeText}</span>
                         <Layers size={18} className="text-gray-400 group-hover:text-gray-600 transition-colors" />
                       </div>
 
-                      <h3 className="text-lg font-black text-slate-800 mb-1 leading-tight">
+                      <h3 className="text-lg font-black text-white mb-1 leading-tight">
                         {level.replace(/\s*\(.*?\)/, "")}
                       </h3>
-                      <p className="text-gray-600 text-sm font-medium mb-auto">{lm.desc}</p>
+                      <p className="text-white/80 text-sm font-medium mb-auto">{lm.desc}</p>
 
                       <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-200/50">
-                        <span className="text-xs font-bold text-gray-500 uppercase tracking-widest">
+                        <span className="text-xs font-bold text-white/70 uppercase tracking-widest">
                           {count} worksheet{count!== 1? "s" : ""}
                         </span>
                         <ArrowRight size={14} className="text-gray-400 group-hover:text-slate-800 group-hover:translate-x-0.5 transition-all" />
