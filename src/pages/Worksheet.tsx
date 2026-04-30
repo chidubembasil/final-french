@@ -18,6 +18,7 @@ import JSZip from "jszip";
 import { saveAs } from "file-saver";
 
 
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface WorksheetPdf {
   id: number;
@@ -232,17 +233,48 @@ const MOCK_WORKSHEETS: Worksheet[] = [
 const AUDIENCES = ["Children", "Adolescent", "Adult"] as const;
 const LEVELS = ["Beginner (A1)", "Elementary (A2)", "Intermediate (B1)", "Upper Intermediate (B2)"] as const;
 
-const AUDIENCE_META: Record<string, { icon: React.ReactNode; bg: string; desc: string }> = {
-  Children:   { icon: <GraduationCap size={32} className="text-white" />, bg: "from-[#002395] to-[#0035cc]",       desc: "Fun exercises for young learners" },
-  Adolescent: { icon: <Users size={32} className="text-white" />,          bg: "from-[#ED2939] to-[#b51f2b]",       desc: "Engaging content for teenagers" },
-  Adult:      { icon: <BookOpen size={32} className="text-white" />,       bg: "from-slate-700 to-slate-900",       desc: "Professional & academic content" },
+const AUDIENCE_META: Record<string, { icon: React.ReactNode; bg: string; desc: string; image: string }> = {
+  Children: {
+    icon: <GraduationCap size={32} className="text-white" />,
+    bg: "from-[#002395] to-[#0035cc]",
+    desc: "Fun exercises for young learners",
+    image: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800&q=80"
+  },
+  Adolescent: {
+    icon: <Users size={32} className="text-white" />,
+    bg: "from-[#ED2939] to-[#b51f2b]",
+    desc: "Engaging content for teenagers",
+    image: "https://images.unsplash.com/photo-1529070538774-1843cb3265df?w=800&q=80"
+  },
+  Adult: {
+    icon: <BookOpen size={32} className="text-white" />,
+    bg: "from-slate-700 to-slate-900",
+    desc: "Professional & academic content",
+    image: "https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=800&q=80"
+  },
 };
 
-const LEVEL_META: Record<string, { badge: string; badgeText: string; desc: string; border: string }> = {
-  "Beginner (A1)":           { badge: "bg-emerald-100 text-emerald-700",  badgeText: "A1", desc: "Start from the very basics",              border: "border-emerald-200" },
-  "Elementary (A2)":         { badge: "bg-sky-100 text-sky-700",          badgeText: "A2", desc: "Build everyday vocabulary",               border: "border-sky-200"     },
-  "Intermediate (B1)":       { badge: "bg-amber-100 text-amber-700",      badgeText: "B1", desc: "Express yourself with confidence",        border: "border-amber-200"   },
-  "Upper Intermediate (B2)": { badge: "bg-rose-100 text-rose-700",        badgeText: "B2", desc: "Master complex language skills",          border: "border-rose-200"    },
+const LEVEL_META: Record<string, { badge: string; badgeText: string; desc: string; border: string; image: string }> = {
+  "Beginner (A1)": {
+    badge: "bg-emerald-100 text-emerald-700", badgeText: "A1",
+    desc: "Start from the very basics", border: "border-emerald-200",
+    image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&q=80"
+  },
+  "Elementary (A2)": {
+    badge: "bg-sky-100 text-sky-700", badgeText: "A2",
+    desc: "Build everyday vocabulary", border: "border-sky-200",
+    image: "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=800&q=80"
+  },
+  "Intermediate (B1)": {
+    badge: "bg-amber-100 text-amber-700", badgeText: "B1",
+    desc: "Express yourself with confidence", border: "border-amber-200",
+    image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80"
+  },
+  "Upper Intermediate (B2)": {
+    badge: "bg-rose-100 text-rose-700", badgeText: "B2",
+    desc: "Master complex language skills", border: "border-rose-200",
+    image: "https://images.unsplash.com/photo-1535515384173-d74166f26820?w=800&q=80"
+  },
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -342,11 +374,11 @@ function WorksheetDetail({
                 {worksheet.audience}
               </span>
               <span className="text-xs font-black uppercase px-3 py-1.5 rounded-xl border bg-gray-100 text-gray-600 border-gray-200">
-                {worksheet.skillType}
+                {/* {worksheet.skillType} */}
               </span>
             </div>
             <h1 className="text-4xl md:text-5xl font-black text-slate-900 mb-4 leading-tight">{worksheet.title}</h1>
-            <p className="text-gray-500 text-lg leading-relaxed">{worksheet.description}</p>
+            
           </div>
         </div>
 
@@ -365,6 +397,11 @@ function WorksheetDetail({
                     allowFullScreen
                   />
                 </div>
+              </div>
+            )}
+            {worksheet.description &&(
+              <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
+                <p className="text-gray-500 text-lg leading-relaxed">{worksheet.description}</p>
               </div>
             )}
 
@@ -574,9 +611,17 @@ useEffect(() => {
                   <button
                     key={audience}
                     onClick={() => { setSelectedAudience(audience); setView("levels"); }}
-                    className={`group relative h-72 rounded-[2.5rem] overflow-hidden shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 text-left bg-gradient-to-br ${meta.bg}`}
+                    className="group relative h-72 rounded-[2.5rem] overflow-hidden shadow-lg hover:shadow-2xl hover:-translate-y-2 transition-all duration-300 text-left"
+                    style={{
+                      backgroundImage: `url(${meta.image})`,
+                      backgroundSize: 'cover',
+                      backgroundPosition: 'center'
+                    }}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent group-hover:from-black/70 transition-all" />
+                    {/* Keep your solid gradient, now as overlay */}
+                    <div className={`absolute inset-0 bg-gradient-to-br ${meta.bg} opacity-85 group-hover:opacity-90 transition-opacity`} />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+
                     <div className="relative z-10 h-full flex flex-col justify-end p-8">
                       <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-4 group-hover:bg-white/30 transition-all">
                         {meta.icon}
@@ -585,7 +630,7 @@ useEffect(() => {
                       <p className="text-white/70 text-sm font-medium mb-3">{meta.desc}</p>
                       <div className="flex items-center justify-between">
                         <span className="text-white/60 text-xs font-bold uppercase tracking-widest">
-                          {count} worksheet{count !== 1 ? "s" : ""}
+                          {count} worksheet{count!== 1? "s" : ""}
                         </span>
                         <ArrowRight size={16} className="text-white group-hover:translate-x-1 transition-transform" />
                       </div>
@@ -623,21 +668,34 @@ useEffect(() => {
                   <button
                     key={level}
                     onClick={() => { setSelectedLevel(level); setView("cards"); }}
-                    className={`group relative bg-white rounded-[2rem] p-7 border-2 ${lm.border} shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all text-left`}
+                    className={`group relative bg-white rounded- p-7 border-2 ${lm.border} shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all text-left overflow-hidden`}
                   >
-                    <div className="flex items-start justify-between mb-6">
-                      <span className={`text-2xl font-black px-3 py-1.5 rounded-xl ${lm.badge}`}>{lm.badgeText}</span>
-                      <Layers size={18} className="text-gray-300 group-hover:text-gray-400 transition-colors" />
-                    </div>
-                    <h3 className="text-lg font-black text-slate-800 mb-2 leading-tight">
-                      {level.replace(/\s*\(.*?\)/, "")}
-                    </h3>
-                    <p className="text-gray-400 text-sm font-medium mb-6">{lm.desc}</p>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                        {count} worksheet{count !== 1 ? "s" : ""}
-                      </span>
-                      <ArrowRight size={14} className="text-gray-300 group-hover:text-gray-600 group-hover:translate-x-0.5 transition-all" />
+                    {/* Subtle background image - keeps it "plain white" */}
+                    <div
+                      className="absolute inset-0 opacity-[0.06] group-hover:opacity-10 transition-opacity"
+                      style={{
+                        backgroundImage: `url(${lm.image})`,
+                        backgroundSize: 'cover',
+                        backgroundPosition: 'center'
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-white/80" />
+
+                    <div className="relative z-10">
+                      <div className="flex items-start justify-between mb-6">
+                        <span className={`text-2xl font-black px-3 py-1.5 rounded-xl ${lm.badge}`}>{lm.badgeText}</span>
+                        <Layers size={18} className="text-gray-300 group-hover:text-gray-400 transition-colors" />
+                      </div>
+                      <h3 className="text-lg font-black text-slate-800 mb-2 leading-tight">
+                        {level.replace(/\s*\(.*?\)/, "")}
+                      </h3>
+                      <p className="text-gray-500 text-sm font-medium mb-6">{lm.desc}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                          {count} worksheet{count!== 1? "s" : ""}
+                        </span>
+                        <ArrowRight size={14} className="text-gray-300 group-hover:text-gray-600 group-hover:translate-x-0.5 transition-all" />
+                      </div>
                     </div>
                   </button>
                 );
@@ -735,7 +793,7 @@ useEffect(() => {
                         <p className="text-gray-400 text-sm line-clamp-2 mb-6 leading-relaxed">{ws.description}</p>
                         <div className="mt-auto pt-5 border-t border-gray-50 flex items-center justify-between">
                           <div className="flex flex-wrap gap-2">
-                            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{ws.skillType}</span>
+                            {/* <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{ws.skillType}</span> */}
                             <span className="text-gray-200">·</span>
                             <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{ws.theme}</span>
                           </div>
