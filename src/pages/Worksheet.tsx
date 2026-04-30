@@ -426,7 +426,18 @@ function WorksheetDetail({
             {worksheet.content && (
               <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
                 <h3 className="text-xl font-black text-slate-800 mb-4 uppercase tracking-wide">Content</h3>
-                <div className="w-fit p-2 text-justify whitespace-pre prose prose-slate max-w-none text-gray-600 leading-relaxed" dangerouslySetInnerHTML={{ __html: worksheet.content }} />
+                
+                <div
+                  className="w-full h-auto
+                            prose prose-slate max-w-none
+                            text-gray-600 leading-relaxed
+                            whitespace-pre-wrap wrap-break-words
+                            prose-p:my-4
+                            prose-img:max-w-full prose-img:h-auto
+                            prose-table:overflow-x-auto
+                            prose-iframe:w-full"
+                  dangerouslySetInnerHTML={{ __html: worksheet.content }}
+                />
               </div>
             )}
           </div>
