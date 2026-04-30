@@ -163,7 +163,7 @@ const DIFF: Record<string, { bg: string; text: string; border: string; dot: stri
 
 const AUDIENCE_BACKGROUNDS: Record<string, string> = {
   "Children":   childrenBg,
-  "Adolescent": adolescentBg,
+  "Adolescents": adolescentBg,
   "Adult":      adultBg,
 };
 
@@ -186,14 +186,13 @@ const DIFFICULTY_GRADIENTS: Record<string, string> = {
 // ─────────────────────────────────────────────
 const normalizeAudience = (s?: string): string => {
   const v = (s || "").toLowerCase().trim();
-  if (v.includes("child") || v.includes("kid") || v.includes("enfant") || v.includes("junior")) return "Children";
-  if (v.includes("adolescent") || v.includes("teen") || v.includes("youth") || v.includes("young")) return "Adolescent";
+  if (v.includes("child") || v.includes("kid") || v.includes("enfant") || v.includes("junior") || v.includes("student") || v.includes("élève")) return "Children";
+  if (v.includes("adolescent") || v.includes("teen") || v.includes("youth") || v.includes("young")) return "Adolescents";
   if (v.includes("adult") || v.includes("adulte") || v.includes("teacher") || v.includes("professeur")) return "Adult";
-  // numeric/code fallbacks used by some CMS
+  // numeric fallbacks
   if (v === "1") return "Children";
-  if (v === "2") return "Adolescent";
+  if (v === "2") return "Adolescents";
   if (v === "3") return "Adult";
-  // default → Children (safest for language-learning platforms)
   return "Children";
 };
 
@@ -692,12 +691,12 @@ function Activities() {
               {(["Children", "Adolescent", "Adult"] as const).map((audience) => {
                 const icons: Record<string, React.ReactNode> = {
                   Children:   <GraduationCap size={32} className="text-white" />,
-                  Adolescent: <Users size={32} className="text-white" />,
+                  Adolescents: <Users size={32} className="text-white" />,
                   Adult:      <GraduationCap size={32} className="text-white" />,
                 };
                 const subtitles: Record<string, string> = {
                   Children:   "Fun exercises designed for young learners",
-                  Adolescent: "Exercises tailored for teens & youth",
+                  Adolescents: "Exercises tailored for teens & youth",
                   Adult:      "Advanced exercises for adult learners",
                 };
                 const count = exercisesList.filter(e => e.audience === audience).length;
@@ -1322,7 +1321,7 @@ function Activities() {
           H5P MODAL
       ══════════════════════════════════════ */}
       {selectedH5P && (
-        <div className="fixed inset-0 z-[999] bg-slate-900 flex-col">
+        <div className="fixed top-20 left-0 right-0 bottom-0 z-[999] bg-white flex flex-col">
         <div className="flex items-center justify-between px-6 py-4 border-b bg-white">
               <div className="flex items-center gap-4">
                 <button aria-label="left arrow" onClick={() => setSelectedH5P(null)} className="w-12 h-12 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center">
