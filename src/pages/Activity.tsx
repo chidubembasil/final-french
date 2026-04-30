@@ -40,14 +40,13 @@ interface MCQQuestion {
   type?: "mcq";
   question: string;
   options: string[];
-  correctAnswer: number;
+  correctAnswer: number[]; // was number
 }
 interface TrueFalseQuestion {
   type: "true_false";
   question: string;
   options: string[];
-  correctAnswer: number;
-}
+}  
 interface MatchingQuestion {
   type: "matching";
   question: string;
@@ -237,7 +236,7 @@ function EmptyState({ icon, msg }: { icon: React.ReactNode; msg: string }) {
 // ─────────────────────────────────────────────
 // SCORING
 // ─────────────────────────────────────────────
-type ChoiceMap  = Record<number, number>;
+type ChoiceMap  = Record<number, number[]>;
 type MatchMap   = Record<number, Record<string, string>>;
 type SeqMap     = Record<number, string[]>;
 type TextMap    = Record<number, string>;
@@ -250,8 +249,10 @@ function calculateQuestionScore(
   const t = getQType(q);
   if (t === "essay") return { earned: 0, max: 0 };
   if (t === "mcq" || t === "true_false") {
-    const correct = choice[idx] === (q as MCQQuestion).correctAnswer;
-    return { earned: correct ? 1 : 0, max: 1 };
+    const correct = (q as MCQQuestion).correctAnswer;
+    const user = choice[idx] || [];
+    const isExact = user.length === correct.length && user.every(v => correct.includes(v));
+    return { earned: isExact? 1 : 0, max: 1 };
   }
   if (t === "gap_filling") {
     const correct = (text[idx] || "").trim().toLowerCase() === (q as GapFillingQuestion).correctAnswer.trim().toLowerCase();
@@ -369,6 +370,9 @@ function Activities() {
     document.body.style.overflow = selectedEx || selectedH5P ? "hidden" : "unset";
     return () => { document.body.style.overflow = "unset"; };
   }, [selectedEx, selectedH5P]);
+  useEffect(() => {
+    modalScrollRef.current?.scrollTo({ top: 0, behavior: 'auto' });
+  }, [modalStage, selectedEx, testPage]);
 
   // ─── DATA FETCH ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -430,9 +434,10 @@ function Activities() {
           const normalised = parsed.map((q: any) => {
             const t = q.type || "mcq";
             if (t === "mcq" || t === "true_false") {
-              const ca = Number(q.correctAnswer);
-              const shift = !q.type && ca >= 1;
-              return { ...q, correctAnswer: shift ? ca - 1 : ca };
+              let ca = q.correctAnswer;
+              ca = Array.isArray(ca)? ca.map(Number) : [Number(ca)];
+              if (!q.type && ca[0] >= 1) ca = [ca[0]-1]; // legacy 1-based fix
+              return {...q, correctAnswer: ca };
             }
             return q;
           });
@@ -952,7 +957,7 @@ function Activities() {
 
               {/* INFO */}
               {modalStage === "info" && (
-                <div className="text-center py-10">
+                <div className="text-center py-6 max-h-[65vh] overflow-y-auto px-2">
                   <div className="w-28 h-28 bg-blue-50 text-blue-600 rounded-[2.5rem] flex items-center justify-center mx-auto mb-8 shadow-inner">
                     {podMedia ? (isVideoUrl(podMedia.mediaUrl) ? <Video size={52} /> : <Volume2 size={52} />) : <ExTypeIcon type={selectedEx.exerciseType} />}
                   </div>
@@ -1010,28 +1015,54 @@ function Activities() {
                           <span className="pt-0.5">{q.question}</span>
                         </h4>
 
-                        {(qt === "mcq" || !q.type) && (
-                          <div className="grid gap-3">
-                            {(q as MCQQuestion).options.map((opt, i) => (
-                              <button key={i} onClick={() => setChoiceAnswers(p => ({ ...p, [gi]: i }))}
-                                className={`p-5 rounded-2xl border-2 text-left font-bold text-sm transition-all flex items-center gap-4 ${choiceAnswers[gi] === i ? "bg-white border-blue-600 text-blue-700 shadow-lg" : "bg-white border-transparent hover:border-gray-200"}`}>
-                                <span className={`w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-black shrink-0 ${choiceAnswers[gi] === i ? "border-blue-600 bg-blue-600 text-white" : "border-gray-200 text-gray-400"}`}>{String.fromCharCode(65+i)}</span>
-                                {opt}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+                        {(qt === "mcq" ||!q.type) && (() => {
+                          const mq = q as MCQQuestion;
+                          const isMulti = mq.correctAnswer.length > 1;
+                          const selected = choiceAnswers[gi] || [];
+                          return (
+                            <div className="grid gap-3">
+                              {mq.options.map((opt, i) => {
+                                const isSel = selected.includes(i);
+                                return (
+                                  <button key={i} onClick={() => setChoiceAnswers(p => {
+                                    const prev = p[gi] || [];
+                                    return {...p, [gi]: isMulti? (isSel? prev.filter(x=>x!==i) : [...prev,i]) : [i] };
+                                  })}
+                                  className={`p-5 rounded-2xl border-2 text-left font-bold flex items-center gap-4 ${isSel? "border-blue-600 bg-white shadow" : "border-transparent bg-white hover:border-gray-200"}`}>
+                                    <span className={`w-8 h-8 rounded-lg border-2 flex items-center justify-center text-xs font-black ${isSel? "bg-blue-600 border-blue-600 text-white" : "border-gray-300 text-gray-400"}`}>
+                                      {isMulti? (isSel? "✓" : "") : String.fromCharCode(65+i)}
+                                    </span>
+                                    {opt}
+                                  </button>
+                                );
+                              })}
+                              {isMulti && <p className="text-xs font-bold text-blue-600 uppercase tracking-widest">Select all that apply</p>}
+                            </div>
+                          );
+                        })()}
 
-                        {qt === "true_false" && (
-                          <div className="flex gap-4">
-                            {(q as TrueFalseQuestion).options.map((opt, i) => (
-                              <button key={i} onClick={() => setChoiceAnswers(p => ({ ...p, [gi]: i }))}
-                                className={`flex-1 py-5 rounded-2xl border-2 font-black text-sm transition-all ${choiceAnswers[gi] === i ? (i === 0 ? "bg-emerald-600 border-emerald-600 text-white shadow-lg" : "bg-rose-600 border-rose-600 text-white shadow-lg") : "bg-white border-gray-200 hover:border-gray-300 text-slate-700"}`}>
-                                {opt}
-                              </button>
-                            ))}
-                          </div>
-                        )}
+                        {qt === "true_false" && (() => {
+                          const selected = choiceAnswers[gi] || [];
+                          return (
+                            <div className="flex gap-4">
+                              {(q as TrueFalseQuestion).options.map((opt, i) => {
+                                const isSel = selected.includes(i);
+                                return (
+                                  <button
+                                    key={i}
+                                    onClick={() => setChoiceAnswers(p => ({...p, [gi]: [i] }))} // <-- always array
+                                    className={`flex-1 py-5 rounded-2xl border-2 font-black text-sm transition-all ${
+                                      isSel
+                                      ? (i === 0? "bg-emerald-600 border-emerald-600 text-white shadow-lg" : "bg-rose-600 border-rose-600 text-white shadow-lg")
+                                        : "bg-white border-gray-200 hover:border-gray-300 text-slate-700"
+                                    }`}>
+                                    {opt}
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          );
+                        })()}
 
                         {qt === "matching" && (
                           <div className="grid gap-3">
@@ -1165,8 +1196,10 @@ function Activities() {
                             return (
                               <div className="grid gap-2">
                                 {mq.options.map((opt, i) => {
-                                  const isCorrect = i === mq.correctAnswer;
-                                  const isUser    = i === choiceAnswers[idx];
+                                  const correctArr = mq.correctAnswer;
+                                  const userArr = choiceAnswers[idx] || [];
+                                  const isCorrect = correctArr.includes(i);
+                                  const isUser = userArr.includes(i);
                                   return (
                                     <div key={i} className={`p-3.5 rounded-xl flex items-center gap-3 text-sm font-bold ${isCorrect ? "bg-emerald-100 text-emerald-700 border border-emerald-200" : isUser && !isCorrect ? "bg-rose-100 text-rose-700 border border-rose-200" : "bg-white/60 text-slate-400 border border-transparent"}`}>
                                       <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-black shrink-0 ${isCorrect ? "bg-emerald-500 text-white" : isUser ? "bg-rose-500 text-white" : "bg-gray-200 text-gray-500"}`}>{String.fromCharCode(65+i)}</span>
@@ -1290,14 +1323,17 @@ function Activities() {
       ══════════════════════════════════════ */}
       {selectedH5P && (
         <div className="fixed inset-0 z-[999] bg-slate-900 flex-col">
-          <div className="relative bg-white w-screen h-screen flex flex-col overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 shrink-0 bg-white">
-              <div>
-                <h3 className="font-black text-xl text-slate-900">{selectedH5P.title}</h3>
-                <p className="text-xs font-black text-purple-600 uppercase tracking-[0.3em]">INTERACTIVE MODULE</p>
+        <div className="flex items-center justify-between px-6 py-4 border-b bg-white">
+              <div className="flex items-center gap-4">
+                <button aria-label="left arrow" onClick={() => setSelectedH5P(null)} className="w-12 h-12 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center">
+                  <ArrowLeft size={22} />
+                </button>
+                <div>
+                  <h3 className="font-black text-xl">{selectedH5P.title}</h3>
+                  <p className="text-xs font-black text-purple-600 uppercase tracking-[0.3em]">INTERACTIVE</p>
+                </div>
               </div>
-              <button aria-label="Close" onClick={() => { setSelectedH5P(null); setH5pIframeLoading(true); }}
-                className="w-12 h-12 rounded-full bg-gray-100 hover:bg-red-50 hover:text-red-600 flex items-center justify-center transition-all">
+              <button aria-label="right arrow" onClick={() => setSelectedH5P(null)} className="w-12 h-12 rounded-full bg-gray-100 hover:bg-red-50 flex items-center justify-center">
                 <X size={22} />
               </button>
             </div>
@@ -1319,7 +1355,6 @@ function Activities() {
               />
             </div>
           </div>
-        </div>
       )}
 
       <style>{`
