@@ -667,7 +667,7 @@ function Activities() {
                           <span className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest"><Layers size={14} />{ex.audience}</span>
                         </div>
                         <button onClick={() => resetModal(ex)} className="w-full py-5 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-blue-600 hover:shadow-xl hover:shadow-blue-200 transition-all active:scale-95">
-                          {ex.podcastId ? "Listen & Solve" : "Start Exercise"} <ArrowRight size={16} />
+                          {ex.podcastId ? "Listen & Solve" : "Launch Exercise"} <ArrowRight size={16} />
                         </button>
                       </div>
                     </div>
@@ -866,7 +866,7 @@ function Activities() {
                               </span>
                             </div>
                             <button onClick={() => resetModal(ex)} className={`w-full py-5 rounded-2xl text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 transition-all active:scale-95 ${bgImage ? "bg-white text-slate-900 hover:bg-blue-100 hover:shadow-xl" : "bg-slate-900 text-white hover:bg-blue-600 hover:shadow-xl hover:shadow-blue-200"}`}>
-                              {ex.podcastId ? "Listen & Solve" : "Start Exercise"} <ArrowRight size={16} />
+                              {ex.podcastId ? "Listen & Solve" : "Launch Exercise"} <ArrowRight size={16} />
                             </button>
                           </div>
                         </div>

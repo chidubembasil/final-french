@@ -276,6 +276,23 @@ const LEVEL_META: Record<string, { badge: string; badgeText: string; desc: strin
     image: "https://images.unsplash.com/photo-1535515384173-d74166f26820?w=800&q=80"
   },
 };
+// ─── Normalizers (put here) ───────────────────────────────────────────────────
+const normalizeAudience = (s?: string) => {
+  const v = (s || "").toLowerCase();
+  if (v.includes("child")) return "Children";
+  if (v.includes("adolescent") || v.includes("teen") || v.includes("youth")) return "Adolescent";
+  if (v.includes("adult")) return "Adult";
+  return "Children";
+};
+
+const normalizeLevel = (s?: string) => {
+  const v = (s || "").toLowerCase();
+  if (v.includes("a1") || v.includes("beginner")) return "Beginner (A1)";
+  if (v.includes("a2") || v.includes("elementary")) return "Elementary (A2)";
+  if (v.includes("b2") || v.includes("upper")) return "Upper Intermediate (B2)";
+  if (v.includes("b1") || v.includes("intermediate")) return "Intermediate (B1)";
+  return "Beginner (A1)";
+};
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 const getYoutubeThumbnail = (embedUrl: string): string => {
@@ -518,7 +535,12 @@ function WorksheetPage() {
         const data = await res.json();
         const list = data.data || data;
         if (Array.isArray(list) && list.length > 0) {
-          setWorksheets(list);
+          const normalized = list.map((w: any) => ({
+            ...w,
+            audience: normalizeAudience(w.audience),
+            level: normalizeLevel(w.level),
+          }));
+          setWorksheets(normalized);
           setUsingMock(false);
         } else {
           setWorksheets(MOCK_WORKSHEETS);
@@ -553,13 +575,21 @@ useEffect(() => {
 
   // If showing detail page
   if (selectedWorksheet) {
-    return (
-      <WorksheetDetail
-        worksheet={selectedWorksheet}
-        onBack={() => navigate('/worksheet')} 
-      />
-    );
-  }
+  return (
+    <WorksheetDetail
+      worksheet={selectedWorksheet}
+      onBack={() => {
+        setSelectedWorksheet(null);          // <-- clears the detail view
+        navigate('/worksheet', { replace: true });
+        // go back to where you were
+        if (selectedLevel) setView("cards");
+        else if (selectedAudience) setView("levels");
+        else setView("audiences");
+      }} 
+    />
+  );
+}
+  
 
   if (loading) {
     return (
