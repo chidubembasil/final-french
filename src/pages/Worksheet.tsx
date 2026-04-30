@@ -408,7 +408,7 @@ function WorksheetDetail({
             {/* Content if any */}
             {worksheet.content && (
               <div className="bg-white rounded-3xl p-8 border border-gray-100 shadow-sm">
-                <h3 className="text-xl font-black text-slate-800 mb-4 uppercase tracking-wide">Course Content</h3>
+                <h3 className="text-xl font-black text-slate-800 mb-4 uppercase tracking-wide">Content</h3>
                 <div className="prose prose-slate max-w-none text-gray-600 leading-relaxed" dangerouslySetInnerHTML={{ __html: worksheet.content }} />
               </div>
             )}
