@@ -60,7 +60,7 @@ export default function PartnersSection() {
         <div className="mt-16 bg-blue-50/50 rounded-3xl p-8 border border-blue-100">
           <div className="flex flex-col md:flex-row gap-6 items-center">
             <div className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm shrink-0">
-              Project Funders
+              Project Funder
             </div>
             <img src={logo2} alt="" className='w-10 h-auto' />
             <p className="text-sm text-blue-900 leading-relaxed">
