@@ -321,7 +321,7 @@ function BAC() {
                 </div>
 
                 <div ref={galleryRef} className="w-[90%] max-w-7xl py-20 scroll-mt-24">
-                    <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
+                    <div className="flex flex-col justify-between items-start mb-12 gap-6">
                         <div className="space-y-4">
                             <div className="flex items-center gap-2 text-blue-600 font-black text-xs uppercase tracking-widest">
                                 <ImageIcon size={14} /> <span>Event Visuals</span>

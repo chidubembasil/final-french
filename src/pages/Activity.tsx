@@ -526,7 +526,10 @@ function Activities() {
   const filteredH5P = useMemo(() => {
     if (searchQuery.trim().length > 0) {
       const q = searchQuery.toLowerCase();
-      return h5pContents.filter(h => h.title?.toLowerCase().includes(q));
+      return h5pContents.filter(h => 
+        h.title?.toLowerCase().includes(q) || 
+        h.description?.toLowerCase().includes(q)
+      );
     }
     return h5pContents.filter(h =>
       (selectedAudience   ? h.audience   === selectedAudience   : true) &&
@@ -637,42 +640,95 @@ function Activities() {
           </div>
         </div>
 
+
         {/* ── SEARCH RESULTS ── */}
         {searchQuery.trim().length > 0 && (
           <div className="mb-20">
             <div className="text-center mb-10">
               <h2 className="text-3xl font-black text-slate-900 mb-2 tracking-tight">Search Results</h2>
-              <p className="text-slate-400 font-bold uppercase tracking-[0.3em]">{filteredEx.length} exercise{filteredEx.length !== 1 ? "s" : ""} found</p>
+              <p className="text-slate-400 font-bold uppercase tracking-[0.3em]">
+                {filteredEx.length + filteredH5P.length} result{filteredEx.length + filteredH5P.length !== 1 ? "s" : ""} found
+              </p>
             </div>
-            {filteredEx.length === 0 ? (
-              <EmptyState icon={<Book size={32} className="text-gray-300" />} msg="No exercises match your search." />
+            
+            {filteredEx.length === 0 && filteredH5P.length === 0 ? (
+              <EmptyState icon={<Book size={32} className="text-gray-300" />} msg="No exercises or interactive modules match your search." />
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredEx.map(ex => {
-                  const dc = DIFF[ex.difficulty] || DIFF["Beginner (A1)"];
-                  return (
-                    <div key={ex.id} className="group bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all overflow-hidden flex flex-col">
-                      <div className="flex justify-between items-start mb-6">
-                        <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all shadow-inner">
-                          {ex.podcastId ? <Volume2 size={28} /> : <ExTypeIcon type={ex.exerciseType} />}
-                        </div>
-                        <span className={`text-xs font-black uppercase px-3 py-1.5 rounded-xl border ${dc.bg} ${dc.text} ${dc.border}`}>{ex.exerciseType.replace(/_/g," ")}</span>
-                      </div>
-                      <h3 className="text-xl font-black text-slate-800 mb-3 group-hover:text-blue-600 transition-colors tracking-tight">{ex.title}</h3>
-                      <p className="text-gray-500 text-sm line-clamp-3 mb-8 leading-relaxed font-medium">{ex.description}</p>
-                      <div className="mt-auto">
-                        <div className="flex items-center justify-between pt-6 border-t border-gray-50 mb-6">
-                          <span className={`flex items-center gap-2 text-xs font-black uppercase tracking-widest ${dc.text}`}><span className={`w-2 h-2 rounded-full ${dc.dot}`} />{ex.difficulty}</span>
-                          <span className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest"><Layers size={14} />{ex.audience}</span>
-                        </div>
-                        <button onClick={() => resetModal(ex)} className="w-full py-5 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-blue-600 hover:shadow-xl hover:shadow-blue-200 transition-all active:scale-95">
-                          {ex.podcastId ? "Listen & Solve" : "Launch Exercise"} <ArrowRight size={16} />
-                        </button>
-                      </div>
+              <>
+                {/* Exercises */}
+                {filteredEx.length > 0 && (
+                  <div className="mb-16">
+                    <h3 className="text-xl font-black text-slate-800 mb-6">Language Exercises ({filteredEx.length})</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                      {filteredEx.map(ex => {
+                        const dc = DIFF[ex.difficulty] || DIFF["Beginner (A1)"];
+                        return (
+                          <div key={ex.id} className="group bg-white rounded-2xl p-8 border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all overflow-hidden flex flex-col">
+                            <div className="flex justify-between items-start mb-6">
+                              <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all shadow-inner">
+                                {ex.podcastId ? <Volume2 size={28} /> : <ExTypeIcon type={ex.exerciseType} />}
+                              </div>
+                              <span className={`text-xs font-black uppercase px-3 py-1.5 rounded-xl border ${dc.bg} ${dc.text} ${dc.border}`}>{ex.exerciseType.replace(/_/g," ")}</span>
+                            </div>
+                            <h3 className="text-xl font-black text-slate-800 mb-3 group-hover:text-blue-600 transition-colors tracking-tight">{ex.title}</h3>
+                            <p className="text-gray-500 text-sm line-clamp-3 mb-8 leading-relaxed font-medium">{ex.description}</p>
+                            <div className="mt-auto">
+                              <div className="flex items-center justify-between pt-6 border-t border-gray-50 mb-6">
+                                <span className={`flex items-center gap-2 text-xs font-black uppercase tracking-widest ${dc.text}`}><span className={`w-2 h-2 rounded-full ${dc.dot}`} />{ex.difficulty}</span>
+                                <span className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest"><Layers size={14} />{ex.audience}</span>
+                              </div>
+                              <button onClick={() => resetModal(ex)} className="w-full py-5 bg-slate-900 text-white rounded-2xl text-xs font-black uppercase tracking-[0.2em] flex items-center justify-center gap-3 hover:bg-blue-600 hover:shadow-xl hover:shadow-blue-200 transition-all active:scale-95">
+                                {ex.podcastId ? "Listen & Solve" : "Launch Exercise"} <ArrowRight size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                )}
+
+                {/* H5P Interactive Modules */}
+                {filteredH5P.length > 0 && (
+                  <div>
+                    <h3 className="text-xl font-black text-slate-800 mb-6">Interactive Modules ({filteredH5P.length})</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                      {filteredH5P.map(h5p => {
+                        const dc = DIFF[h5p.difficulty] || DIFF["Beginner (A1)"];
+                        const bgImage = getCardBackground(h5p.embedImage);
+                        return (
+                          <div key={h5p.id} className="group relative bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-2xl hover:-translate-y-2 transition-all cursor-pointer overflow-hidden flex flex-col" onClick={() => setSelectedH5P(h5p)}>
+                            {bgImage ? (
+                              <>
+                                <div className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110" style={{ backgroundImage: `url(${bgImage})` }} />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/50 to-black/20 group-hover:from-black/90 transition-all duration-300" />
+                              </>
+                            ) : (
+                              <div className="absolute inset-0 bg-gradient-to-br from-purple-50 to-purple-100" />
+                            )}
+                            <div className="relative z-10 p-8 flex flex-col h-full">
+                              <div className="flex justify-between items-start mb-6">
+                                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner transition-all ${bgImage ? "bg-white/20 backdrop-blur-md text-white group-hover:bg-white/30" : "bg-purple-50 text-purple-600 group-hover:bg-purple-600 group-hover:text-white"}`}>
+                                  <PlayCircle size={28} />
+                                </div>
+                                <span className={`text-xs font-black uppercase px-3 py-1.5 rounded-xl border ${bgImage ? "bg-white/20 backdrop-blur-md text-white border-white/30" : `${dc.bg} ${dc.text} ${dc.border}`}`}>Interactive</span>
+                              </div>
+                              <h3 className={`text-xl font-black mb-3 transition-colors tracking-tight ${bgImage ? "text-white group-hover:text-purple-200" : "text-slate-800 group-hover:text-purple-600"}`}>{h5p.title}</h3>
+                              <p className={`text-sm line-clamp-2 mb-6 leading-relaxed font-medium ${bgImage ? "text-white/80" : "text-gray-500"}`}>{h5p.description}</p>
+                              <div className={`mt-auto flex items-center gap-3 text-xs font-black uppercase tracking-widest pt-6 border-t ${bgImage ? "border-white/20" : "border-gray-50"}`}>
+                                <span className={`w-2 h-2 rounded-full ${bgImage ? "bg-white" : dc.dot}`} />
+                                <span className={bgImage ? "text-white" : dc.text}>{h5p.difficulty}</span>
+                                <span className={bgImage ? "text-white/50" : "text-gray-300"}>·</span>
+                                <span className={bgImage ? "text-white/70" : "text-gray-400"}>{h5p.audience}</span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
