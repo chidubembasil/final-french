@@ -16,6 +16,10 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
+import img2 from "../assets/img/surprised-schoolboy-with-book.jpg";
+import img3 from "../assets/img/smiling-schoolgirl-with-backpack.jpg";
+import img4 from "../assets/img/medium-shot-senior-man-education-concept.jpg";
+import img5 from "../assets/img/pexels-vizito-visitor-management-system-297236022-13323678.jpg"
 
 
 
@@ -238,19 +242,19 @@ const AUDIENCE_META: Record<string, { icon: React.ReactNode; bg: string; desc: s
     icon: <GraduationCap size={32} className="text-white" />,
     bg: "from-[#002395] to-[#0035cc]",
     desc: "Fun exercises for young learners",
-    image: "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800&q=80"
+    image: img2
   },
   Adolescent: {
     icon: <Users size={32} className="text-white" />,
     bg: "from-[#ED2939] to-[#b51f2b]",
     desc: "Engaging content for teenagers",
-    image: "https://images.unsplash.com/photo-1529070538774-1843cb3265df?w=800&q=80"
+    image: img3
   },
   Adult: {
     icon: <BookOpen size={32} className="text-white" />,
     bg: "from-slate-700 to-slate-900",
     desc: "Professional & academic content",
-    image: "https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=800&q=80"
+    image: img4
   },
 };
 
@@ -268,7 +272,7 @@ const LEVEL_META: Record<string, { badge: string; badgeText: string; desc: strin
   "Intermediate (B1)": {
     badge: "bg-amber-100 text-amber-700", badgeText: "B1",
     desc: "Express yourself with confidence", border: "border-amber-200",
-    image: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80"
+    image: img5
   },
   "Upper Intermediate (B2)": {
     badge: "bg-rose-100 text-rose-700", badgeText: "B2",

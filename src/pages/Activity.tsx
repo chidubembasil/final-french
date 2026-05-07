@@ -23,14 +23,18 @@ import {
   ArrowLeft,
 } from "lucide-react";
 import img1 from "../assets/img/_A1A4707.jpg";
+import img2 from "../assets/img/surprised-schoolboy-with-book.jpg";
+import img3 from "../assets/img/smiling-schoolgirl-with-backpack.jpg";
+import img4 from "../assets/img/medium-shot-senior-man-education-concept.jpg";
+import img5 from "../assets/img/pexels-vizito-visitor-management-system-297236022-13323678.jpg"
 
-const childrenBg   = "https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=800&q=80";
-const adolescentBg = "https://images.unsplash.com/photo-1529070538774-1843cb3265df?w=800&q=80";
-const adultBg      = "https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=800&q=80";
+const childrenBg   = img2;
+const adolescentBg = img3;
+const adultBg      = img4;
 
 const a1Bg = "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800&q=80";
 const a2Bg = "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?w=800&q=80";
-const b1Bg = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=800&q=80";
+const b1Bg = img5
 const b2Bg = "https://images.unsplash.com/photo-1535515384173-d74166f26820?w=800&q=80";
 
 // ─────────────────────────────────────────────
