@@ -11,7 +11,9 @@ import {
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import img1 from "../assets/img/_A1A4786.jpg"
-import img2 from "../assets/img/pexels-theo-decker-5955141.jpg"
+// import img2 from "../assets/img/pexels-theo-decker-5955141.jpg"
+
+// https://images.unsplash.com/photo-1516321318423-f06f85e504b3{background image for external links}
  
 // --- Interfaces ---
 interface Celebration {
@@ -315,7 +317,7 @@ function Pedagogies() {
           >
             {/* BACKGROUND IMAGE */}
             <img
-              src= {img2}
+              src= "https://images.unsplash.com/photo-1516321318423-f06f85e504b3"
               alt="External pedagogical resources"
               loading="lazy"
               className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
