@@ -320,6 +320,9 @@ function WorksheetDetail({
 }) {
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [downloadingAll, setDownloadingAll] = useState(false);
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, []);
 
   const handleDownloadSingle = async (pdf: WorksheetPdf) => {
     setDownloadingId(pdf.id);
@@ -570,6 +573,9 @@ function WorksheetPage() {
     };
     fetchWorksheets();
   }, [CLIENT_KEY]);
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [location.pathname, view]);
   // When URL has /worksheet/:slug, auto-open that worksheet
 useEffect(() => {
   if (slug && worksheets.length > 0) {

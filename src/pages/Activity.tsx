@@ -614,7 +614,7 @@ function Activities() {
 
       {/* HERO */}
       <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
-        <img src={heroData?.mediaUrl || MOCK_HERO.mediaUrl} className="absolute inset-0 w-full h-full object-cover z-0 opacity-70" alt="Hero" />
+        <img src={heroData?.mediaUrl || MOCK_HERO.mediaUrl}  className="absolute inset-0 w-full h-full object-cover z-0 opacity-70" alt="Hero" />
         <div className="absolute inset-0 z-10 bg-gradient-to-br from-red-600/80 via-transparent to-blue-900/90" />
         <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-16 gap-5">
           <div className="flex items-center gap-2 px-4 py-2 text-white bg-white/20 backdrop-blur-md border border-white/30 rounded-3xl">
