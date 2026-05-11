@@ -16,9 +16,9 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import JSZip from "jszip";
 import { saveAs } from "file-saver";
-import img2 from "../assets/img/surprised-schoolboy-with-book.jpg";
-import img3 from "../assets/img/smiling-schoolgirl-with-backpack.jpg";
-import img4 from "../assets/img/medium-shot-senior-man-education-concept.jpg";
+import img2 from "../assets/img/african-american-girl-comparing-course-notes-with-data-from-library-collection.jpg";
+import img3 from "../assets/img/boy-studying-university-library.jpg";
+import img4 from "../assets/img/handsome-sensitive-man-portrait.jpg";
 import img5 from "../assets/img/pexels-vizito-visitor-management-system-297236022-13323678.jpg"
 
 
