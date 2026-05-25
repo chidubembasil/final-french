@@ -565,7 +565,7 @@ function ExternalLinksPage() {
                             className="p-2.5 rounded-xl hover:bg-gray-100 text-slate-400 transition-colors"
                             title="Copy link"
                           >
-                            {copiedId === item.id ? (
+                             {copiedId === item.id ? (
                               <Check size={18} className="text-green-500" />
                             ) : (
                               <Copy size={18} />
