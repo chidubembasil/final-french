@@ -9,6 +9,7 @@ interface NewsItem {
     imageUrl?: string;
     coverImage?: string;
     publishedAt?: string;
+    updatedAt?: string;
 }
 
 export default function NewsHero() {
@@ -60,7 +61,7 @@ export default function NewsHero() {
             <div className="w-[90%] max-w-7xl grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                 {news.length > 0 ? (
                     news.map((item: NewsItem) => {
-                        const formattedDate = formatDate(item.publishedAt);
+                        const formattedDate = formatDate(item.updatedAt);
                         
                         return (
                             <div 

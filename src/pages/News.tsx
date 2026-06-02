@@ -74,6 +74,14 @@ function News() {
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY;
 
   const shareMenuRef = useRef<HTMLDivElement>(null);
+  const formatDate = (dateString?: string) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  const day = date.getDate();
+  const month = date.toLocaleString('en-GB', { month: 'long' }); // August, not 8
+  const year = date.getFullYear();
+  return `${day} ${month}, ${year}`;
+};
 
   const FILTER_OPTIONS = {
     categories: ['News', 'Announcement', 'Tutorial', 'Event', 'Update'],
@@ -272,7 +280,7 @@ function News() {
                   </div>
                   <div className="p-8">
                     <div className="flex items-center gap-4 text-gray-400 text-[10px] font-black uppercase mb-4">
-                      <span className="flex items-center gap-1"><Calendar size={12}/> {new Date(post.updatedAt).toLocaleDateString()}</span>
+                      <span className="flex items-center gap-1"><Calendar size={12}/> {formatDate(post.updatedAt)}</span>
                       <span className="flex items-center gap-1"><MapPin size={12}/> {post.state}</span>
                     </div>
                     <h3 className="text-xl font-bold mb-4 line-clamp-2 group-hover:text-blue-600 transition-colors leading-tight">{post.title}</h3>
@@ -281,6 +289,7 @@ function News() {
                 </article>
               ))}
             </div>
+            
 
             {totalPages > 1 && (
               <div className="flex justify-center items-center gap-4 mt-16">
