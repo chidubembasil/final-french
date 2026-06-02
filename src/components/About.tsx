@@ -55,7 +55,7 @@ export default function AboutUs() {
           </div>
 
           {/* Content Side */}
-          <div className="lg:w-1/2 space-y-8">
+          <div className="lg:w-1/2 space-y-8" id="about-text" >
             <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-black uppercase tracking-widest">
               Digital Initiative
             </div>

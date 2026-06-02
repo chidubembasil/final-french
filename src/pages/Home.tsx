@@ -207,7 +207,12 @@ export default function Home() {
                                                         
                                                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                                                             <button
-                                                                onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
+                                                                onClick={() => {
+                                                                    document.getElementById('about-text')?.scrollIntoView({ 
+                                                                        behavior: 'smooth', 
+                                                                        block: 'start' 
+                                                                    })
+                                                                }}
                                                                 className="inline-block bg-transparent border-2 border-white text-white hover:bg-white hover:text-blue-900 px-10 py-4 rounded-xl shadow-xl font-bold transition-all uppercase text-sm tracking-widest"
                                                             >
                                                                 Learn More
