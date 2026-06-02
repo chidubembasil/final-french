@@ -2,7 +2,6 @@ import { Newspaper, ArrowRight, Calendar } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-// Added this interface to fix the "any" errors
 interface NewsItem {
     id?: string | number;
     slug: string;
@@ -13,14 +12,11 @@ interface NewsItem {
 }
 
 export default function NewsHero() {
-    // Replaced any[] with NewsItem[]
     const [news, setNews] = useState<NewsItem[]>([]);
     const navigate = useNavigate();
     const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || "";
 
-    // Fetch initial news list (limited to 3 for the grid)
     useEffect(() => {
-        // FIX: Ensure no trailing slash on the key, then force the slash before 'api'
         const baseUrl = CLIENT_KEY.replace(/\/$/, "");
         const finalUrl = `${baseUrl}/api/news?limit=3`;
 
@@ -33,6 +29,19 @@ export default function NewsHero() {
             .catch(err => console.error("News Fetch Error:", err));
     }, [CLIENT_KEY]);
 
+    // Format: 2 August, 2026
+    const formatDate = (dateString?: string) => {
+        if (!dateString) return null;
+        const date = new Date(dateString);
+        if (isNaN(date.getTime())) return null;
+        
+        const day = date.getDate();
+        const month = date.toLocaleString('en-GB', { month: 'long' }); // August, not 8
+        const year = date.getFullYear();
+        
+        return `${day} ${month}, ${year}`;
+    };
+
     return (
         <main className="w-full py-16 flex flex-col items-center bg-[#f9f7f4]">
             {/* --- Section Header --- */}
@@ -42,38 +51,47 @@ export default function NewsHero() {
                 </span>
                 <h2 className='font-serif text-4xl font-bold text-center text-slate-900'>News & Blog</h2>
                 <div className='w-24 h-1 bg-blue-700 rounded-full'></div>
+                <p className="text-gray-500 text-lg leading-relaxed max-w-xl mb-10 text-center">
+                    Stay updated with the latest news, success stories, educational insights, cultural events, and articles related to French language and Francophone initiatives in Nigeria.
+                </p>
             </div>
 
             {/* --- News Grid --- */}
             <div className="w-[90%] max-w-7xl grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
                 {news.length > 0 ? (
-                    news.map((item: NewsItem) => (
-                        <div 
-                            key={item?.id || item?.slug} 
-                            onClick={() => navigate(`/news/${item.slug}`)}
-                            className="bg-white rounded-[2.5rem] overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all group cursor-pointer"
-                        >
-                            <div className="h-56 overflow-hidden">
-                                <img 
-                                    src={item?.imageUrl || item?.coverImage || "https://via.placeholder.com/400x300"} 
-                                    alt={item?.title} 
-                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                                />
-                            </div>
-                            <div className="p-8">
-                                <div className="flex items-center gap-2 text-gray-400 text-xs mb-4">
-                                    <Calendar size={14} />
-                                    {item?.publishedAt ? new Date(item.publishedAt).toLocaleDateString() : "Recent"}
+                    news.map((item: NewsItem) => {
+                        const formattedDate = formatDate(item.publishedAt);
+                        
+                        return (
+                            <div 
+                                key={item?.id || item?.slug} 
+                                onClick={() => navigate(`/news/${item.slug}`)}
+                                className="bg-white rounded-[2.5rem] overflow-hidden shadow-sm border border-gray-100 hover:shadow-xl transition-all group cursor-pointer"
+                            >
+                                <div className="h-56 overflow-hidden">
+                                    <img 
+                                        src={item?.imageUrl || item?.coverImage || "https://via.placeholder.com/400x300"} 
+                                        alt={item?.title} 
+                                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                                    />
                                 </div>
-                                <h3 className="font-bold text-xl text-slate-800 mb-3 line-clamp-2">
-                                    {item?.title}
-                                </h3>
-                                <button className="text-blue-700 font-bold text-sm flex items-center gap-1 group/btn">
-                                    Read Full Story <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform"/>
-                                </button>
+                                <div className="p-8">
+                                    {formattedDate && (
+                                        <div className="flex items-center gap-2 text-gray-400 text-xs mb-4">
+                                            <Calendar size={14} />
+                                            {formattedDate}
+                                        </div>
+                                    )}
+                                    <h3 className="font-bold text-xl text-slate-800 mb-3 line-clamp-2">
+                                        {item?.title}
+                                    </h3>
+                                    <button className="text-blue-700 font-bold text-sm flex items-center gap-1 group/btn">
+                                        Read Full Story <ArrowRight size={14} className="group-hover/btn:translate-x-1 transition-transform"/>
+                                    </button>
+                                </div>
                             </div>
-                        </div>
-                    ))
+                        );
+                    })
                 ) : (
                     <div className="col-span-full text-center py-10 text-gray-400 italic">
                         No articles found.
@@ -86,7 +104,7 @@ export default function NewsHero() {
                 onClick={() => navigate('/news&blog')}
                 className='text-white bg-blue-700 px-8 py-3 rounded-xl flex items-center gap-2 hover:bg-blue-800 transition-all shadow-lg shadow-blue-200'
             >
-                Explore All Content <ArrowRight size={18}/>
+                Explore <ArrowRight size={18}/>
             </button>
         </main>
     );

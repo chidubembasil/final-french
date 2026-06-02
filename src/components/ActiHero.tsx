@@ -28,7 +28,7 @@ export default function InteractiveActivities() {
             Explore All Exercises
           </h2>
           <p className="text-gray-500 text-lg leading-relaxed max-w-xl mb-10">
-            Access our full library of activities designed to improve your bilingual skills.
+            Access practical resources, language tips, exercises, videos, and learning tools to help you improve your French at every level.
           </p>
 
           <button 

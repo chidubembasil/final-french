@@ -65,10 +65,11 @@ export default function AboutUs() {
             <div className="w-20 h-1.5 bg-red-600 rounded-full"></div>
 
             <p className="text-lg text-slate-600 leading-relaxed text-justify">
-              Part of the broader French Education Fund (FEF) cooperation framework, this initiative
-              strengthens the learning and use of French among young Nigerians. We aim to improve the
-              professional relevance of language training and support teachers through innovative
-              pedagogical resources.
+              Welcome to À toi le micro, Naija!
+              À toi le micro, Naija! is a dynamic digital platform dedicated to promoting the French language, intercultural dialogue, and educational opportunities in Nigeria.
+              Created with the support of the French Embassy in Nigeria and its partners, the platform brings together learners, teachers, students, and French-language enthusiasts through engaging content, innovative resources, inspiring stories, and professional opportunities.
+              Whether you want to improve your French, discover new learning tools, explore podcasts, access teaching resources, or stay informed about Francophone events and projects such as FEF Bilingual and Competitive, À toi le micro, Naija! is your space to learn, share, and grow.
+              Because French is more than a language, it is a bridge to culture, creativity, education, mobility, and international opportunities.
             </p>
 
             <div className="space-y-4">

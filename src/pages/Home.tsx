@@ -1,7 +1,7 @@
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Navigation, Pagination } from "swiper/modules";
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from "react-router-dom";
+
 import { useState, useEffect } from "react";
 
 // Swiper Styles
@@ -111,17 +111,17 @@ export default function Home() {
         fetchSliderData();
     }, [CLIENT_KEY]);
 
-    const getNavLinks = (subPurpose: string) => {
+    /* const getNavLinks = (subPurpose: string) => {
         const lowerSub = subPurpose?.toLowerCase().trim();
         if (lowerSub === 'fef') {
-            return { page: "/resource", anchor: "#resource" };
+            return { page: "/resource", anchor: "#about" };
         } else if (lowerSub === 'atoile') {
-            return { page: "/activities", anchor: "#activities" };
+            return { page: "/activities", anchor: "#about" };
         } else if (lowerSub === 'bac') {
-            return { page: "/bac", anchor: "#bac" };
+            return { page: "/bac", anchor: "#about" };
         }
         return { page: "/", anchor: "#about" };
-    };
+    }; */
 
     const scrollToSection = (subPurpose: string) => {
         const lower = subPurpose?.toLowerCase().trim();
@@ -164,7 +164,7 @@ export default function Home() {
                             className="h-full w-full"
                         >
                             {sliderItems.map((item, index) => {
-                                const links = getNavLinks(item.subPurpose);
+                               /*  const links = getNavLinks(item.subPurpose); */
                                 const gradientClass = index % 2 === 0 
                                     ? "from-blue-900/80 via-blue-700/50 to-red-700/80" 
                                     : "from-red-800/80 via-red-600/50 to-blue-900/80";
@@ -206,12 +206,12 @@ export default function Home() {
                                                         </motion.div>
                                                         
                                                         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                                                            <Link
-                                                                to={links.page}
+                                                            <button
+                                                                onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}
                                                                 className="inline-block bg-transparent border-2 border-white text-white hover:bg-white hover:text-blue-900 px-10 py-4 rounded-xl shadow-xl font-bold transition-all uppercase text-sm tracking-widest"
                                                             >
                                                                 Learn More
-                                                            </Link>
+                                                            </button>
                                                         </motion.div>
                                                     </div>
                                                 </motion.div>

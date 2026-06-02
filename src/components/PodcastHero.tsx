@@ -74,8 +74,7 @@ export default function LatestPodcasts() {
         </h2>
 
         <p className="mt-5 text-slate-500 max-w-2xl mx-auto leading-relaxed">
-          Explore our newest podcast episodes covering language, culture,
-          and real-world francophone experiences.
+          Listen to inspiring podcasts, interviews, student voices, cultural discussions, and educational content created to make French learning engaging and accessible.
         </p>
 
         {/* French flag accent */}

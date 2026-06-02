@@ -48,8 +48,7 @@ export default function BACSection() {
               Bilingual & <span className="text-red-600">Competitive</span>
             </h2>
             <p className="text-gray-600 text-lg leading-relaxed text-justify">
-              Making Nigerian graduates bilingual in English and French to boost employability 
-              and global competitiveness. Positioning French as a professional asset for the 21st century.
+              Explore the FEF Bilingual and Competitive project and discover initiatives designed to strengthen employability, professional French skills, innovation, and academic opportunities for Nigerian students.
             </p>
           </div>
         </div>
