@@ -64,13 +64,27 @@ export default function AboutUs() {
             </h2>
             <div className="w-20 h-1.5 bg-red-600 rounded-full"></div>
 
-            <p className="text-lg text-slate-600 leading-relaxed text-justify">
-              Welcome to À toi le micro, Naija!
-              À toi le micro, Naija! is a dynamic digital platform dedicated to promoting the French language, intercultural dialogue, and educational opportunities in Nigeria.
-              Created with the support of the French Embassy in Nigeria and its partners, the platform brings together learners, teachers, students, and French-language enthusiasts through engaging content, innovative resources, inspiring stories, and professional opportunities.
-              Whether you want to improve your French, discover new learning tools, explore podcasts, access teaching resources, or stay informed about Francophone events and projects such as FEF Bilingual and Competitive, À toi le micro, Naija! is your space to learn, share, and grow.
-              Because French is more than a language, it is a bridge to culture, creativity, education, mobility, and international opportunities.
-            </p>
+            <div className="max-w-2xl text-slate-700 text- md:text-base leading-[1.7] text-justify hyphens-none break-normal space-y-4">
+              <p className="font-semibold text-slate-800">
+                Welcome to À toi le micro, Naija!
+              </p>
+
+              <p>
+                À toi le micro, Naija! is a dynamic digital platform dedicated to promoting the French language, intercultural dialogue, and educational opportunities in Nigeria.
+              </p>
+
+              <p>
+                Created with the support of the French Embassy in Nigeria and its partners, the platform brings together learners, teachers, students, and French-language enthusiasts through engaging content, innovative resources, inspiring stories, and professional opportunities.
+              </p>
+
+              <p>
+                Whether you want to improve your French, discover new learning tools, explore podcasts, access teaching resources, or stay informed about Francophone events and projects such as FEF Bilingual and Competitive, À toi le micro, Naija! is your space to learn, share, and grow.
+              </p>
+
+              <p>
+                Because French is more than a language, it is a bridge to culture, creativity, education, mobility, and international opportunities.
+              </p>
+            </div>
 
             <div className="space-y-4">
               <div className="flex gap-4 p-4 rounded-2xl hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100">
