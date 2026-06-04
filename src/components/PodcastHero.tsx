@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Headphones, Play, X } from "lucide-react";
+import { Headphones, Play, X, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface Podcast {
   id: number;
@@ -16,6 +17,8 @@ interface Podcast {
 const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || "";
 
 export default function LatestPodcasts() {
+  const navigate = useNavigate();
+
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
   const [loading, setLoading] = useState(true);
   const [activePlayer, setActivePlayer] = useState<number | null>(null);
@@ -182,6 +185,16 @@ export default function LatestPodcasts() {
             </article>
           );
         })}
+      </div>
+      <div  className="w-full flex justify-center items-center mt-3">
+        <button 
+          onClick={() => navigate('/podcast')}
+          className="group relative bg-red-600 hover:bg-red-700 text-white px-12 py-5 rounded-2xl font-bold text-lg shadow-xl shadow-red-100 transition-all active:scale-95 flex items-center gap-3"
+        >
+          Explore
+          <ArrowRight className="group-hover:translate-x-1 transition-transform" />
+        </button>
+        
       </div>
     </section>
   );

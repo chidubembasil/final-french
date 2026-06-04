@@ -1,7 +1,9 @@
-import { GraduationCap, Building2, Globe2 } from "lucide-react";
+import { GraduationCap, Building2, Globe2, ArrowRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 // import { Link } from "react-router-dom";
 
 export default function BACSection() {
+  const navigate = useNavigate();
   const pillars = [
     {
       title: "Master's Programme",
@@ -114,6 +116,16 @@ export default function BACSection() {
           
           <Building2 className="absolute -bottom-10 -right-10 w-64 h-64 text-white/5 rotate-12" />
         </div>
+      </div>
+      <div  className="w-full flex justify-center items-center mt-3">
+        <button 
+          onClick={() => navigate('/bac')}
+          className="group relative bg-blue-700 hover:bg-blue-800 text-white px-12 py-5 rounded-2xl font-bold text-lg shadow-xl shadow-red-100 transition-all active:scale-95 flex items-center gap-3"
+        >
+          Explore
+          <ArrowRight className="group-hover:translate-x-1 transition-transform" />
+        </button>
+        
       </div>
     </section>
   );
