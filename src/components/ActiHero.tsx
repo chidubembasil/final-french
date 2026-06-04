@@ -33,7 +33,7 @@ export default function InteractiveActivities() {
 
           <button 
             onClick={() => navigate('/activities')}
-            className="group relative bg-red-600 hover:bg-red-700 text-white px-12 py-5 rounded-2xl font-bold text-lg shadow-xl shadow-red-100 transition-all active:scale-95 flex items-center gap-3"
+            className="group relative bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-2xl font-bold text-lg shadow-xl shadow-red-100 transition-all active:scale-95 flex items-center gap-3"
           >
             Explore
             <ArrowRight className="group-hover:translate-x-1 transition-transform" />
