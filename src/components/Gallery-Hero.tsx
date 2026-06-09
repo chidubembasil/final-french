@@ -48,9 +48,6 @@ export default function GalleryHero() {
         </span>
         <h2 className="font-serif text-4xl font-bold text-center">Gallery Highlights</h2>
         <div className="w-24 h-1 bg-blue-700 rounded-full"></div>
-        <p className="text-gray-500 text-lg leading-relaxed max-w-xl mb-10">
-          Browse photos and moments captured during trainings, competitions, cultural events, workshops, partnerships, and community activities across Nigeria.
-        </p>  
       </div>
 
       <div className="w-[90%] max-w-7xl grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">

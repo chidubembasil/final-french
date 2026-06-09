@@ -416,7 +416,7 @@ function Podcast() {
               <div className="flex flex-wrap gap-6 py-4 border-b border-gray-100 text-[10px] font-black text-gray-400 uppercase tracking-widest">
                 <span className="flex items-center gap-2"><User size={14} className="text-blue-600"/> {activePodcast.audience || '—'}</span>
                 <span className="flex items-center gap-2"><Calendar size={14}/> {new Date(activePodcast.updatedAt).toLocaleDateString()}</span>
-                <span className="flex items-center gap-2"><Layers size={14}/> ID: {activePodcast.id}</span>
+                {/* <span className="flex items-center gap-2"><Layers size={14}/> ID: {activePodcast.id}</span> */}
               </div>
 
               {activePodcast.mediaType === 'audio' && activePodcast.audioUrl && (
