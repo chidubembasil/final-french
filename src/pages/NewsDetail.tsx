@@ -5,7 +5,6 @@ import {
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
-// --- Types & Interfaces ---
 interface BlogPost {
   id: number;
   title: string;
@@ -19,7 +18,6 @@ interface BlogPost {
   slug: string;
 }
 
-// Fixed: Declared outside of render to prevent state reset and linting errors
 const XLogo = ({ className = "w-4 h-4" }: { className?: string }) => (
   <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
     <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"></path>
@@ -29,7 +27,6 @@ const XLogo = ({ className = "w-4 h-4" }: { className?: string }) => (
 function NewsDetail() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
-  // Fixed: Replaced any with BlogPost | null
   const [post, setPost] = useState<BlogPost | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -40,7 +37,6 @@ function NewsDetail() {
     fetch(`${CLIENT_KEY}/api/news`)
       .then(res => res.json())
       .then(data => {
-        // Fixed: Replaced any in find loop
         const rawData: BlogPost[] = Array.isArray(data) ? data : (data.data || []);
         const found = rawData.find((b: BlogPost) => b.slug === slug);
         setPost(found || null);
@@ -61,7 +57,6 @@ function NewsDetail() {
       return;
     }
     
-    // Fixed: Replaced any with Record type
     const links: Record<string, string> = {
       whatsapp: `https://wa.me/?text=${encodeURIComponent(text + " " + url)}`,
       linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`,
@@ -92,10 +87,11 @@ function NewsDetail() {
           <span className="font-black uppercase tracking-widest text-[10px]">Back to News</span>
         </button>
 
-        <div className="space-y-6 text-justify mb-10">
+        <div className="space-y-6 mb-10">
           <div className="inline-flex items-center gap-2 px-4 py-1 bg-blue-50 text-blue-600 rounded-full text-[10px] font-black uppercase tracking-widest">
             <span>{post.category}</span>
           </div>
+          {/* Title left-aligned, NOT justified */}
           <h1 className="text-4xl md:text-6xl font-bold font-serif text-slate-900 text-left">{post.title}</h1>
           
           <div className="flex flex-col md:flex-row items-center justify-center gap-6 pt-6 border-t">
@@ -119,13 +115,30 @@ function NewsDetail() {
           <img src={post.coverImage} loading="eager" fetchPriority="high" className="w-full h-full object-cover" alt={post.title} />
         </div>
 
-        <div className="prose prose-lg prose-slate max-w-none prose-p:leading-relaxed prose-p:text-gray-700 prose-p:!mb-12 prose-p:text-justify [hyphens:auto]">
+        {/* 
+          FIX: Added text-justify and hyphens-auto directly on the paragraph elements.
+          Tailwind's `prose` plugin doesn't always cascade justify to <p> without explicit override.
+          Also added [word-break:break-word] to prevent long words from breaking justify on mobile.
+        */}
+        <div className="prose prose-lg prose-slate max-w-none prose-p:leading-relaxed prose-p:text-gray-700">
           <div className="text-lg">
             {post.content
               .split(/\n\s*\n/)
               .filter((p: string) => p.trim() !== '')
               .map((para: string, i: number) => (
-                <p key={i} className="mb-12!">{para.trim()}</p>
+                <p
+                  key={i}
+                  className="mb-12"
+                  style={{
+                    textAlign: 'justify',
+                    hyphens: 'auto',
+                    wordBreak: 'break-word',
+                    WebkitHyphens: 'auto',
+                    MozHyphens: 'auto',
+                  }}
+                >
+                  {para.trim()}
+                </p>
               ))
             }
           </div>

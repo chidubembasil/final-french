@@ -1,5 +1,5 @@
-import { Headphones, Search, X, PlayCircle, ChevronLeft, ChevronRight, ArrowLeft, Calendar, User, Layers, Download, Check, Loader2 } from "lucide-react";
-import { useState, useEffect, useMemo } from 'react';
+import { Headphones, Search, X, PlayCircle, ChevronLeft, ChevronRight, ArrowLeft, Calendar, User, Layers, Download, Check, Loader2, PauseCircle } from "lucide-react";
+import { useState, useEffect, useMemo, useRef } from 'react';
 import img1 from "../assets/img/_A1A4787.jpg"
 
 interface Podcast {
@@ -51,12 +51,72 @@ interface StrapiResponse {
   data: StrapiDataItem[];
 }
 
-// Mock data for the hero section fallback
 const DEFAULT_HERO: GalleryHero = {
   title: "À toi le micro",
   description: "Explore our collection of educational podcasts and videos designed for French language learners and teachers across Nigeria.",
-  mediaUrl: img1 
+  mediaUrl: img1
 };
+
+// ── Inline audio player card ──────────────────────────────────────────────────
+function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+
+  const toggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!audioRef.current) return;
+    if (playing) {
+      audioRef.current.pause();
+      setPlaying(false);
+    } else {
+      audioRef.current.play();
+      setPlaying(true);
+    }
+  };
+
+  // If audio ends naturally, reset icon
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    const onEnded = () => setPlaying(false);
+    el.addEventListener('ended', onEnded);
+    return () => el.removeEventListener('ended', onEnded);
+  }, []);
+
+  return (
+    <div className="relative aspect-video bg-slate-900 flex flex-col items-center justify-center gap-4">
+      {/* Hidden audio element */}
+      <audio ref={audioRef} src={item.audioUrl} preload="none" />
+
+      {/* Waveform / placeholder visual */}
+      <div className="flex items-end gap-[3px] h-10 opacity-30">
+        {[4,7,5,9,6,8,4,10,6,7,5,9,4,8,6].map((h, i) => (
+          <div key={i} className="w-1 rounded-sm bg-white" style={{ height: `${h * 3}px` }} />
+        ))}
+      </div>
+
+      {/* Play / Pause button */}
+      <button
+        aria-label={playing ? 'Pause audio' : 'Play audio'}
+        onClick={toggle}
+        className="text-white hover:scale-110 transition-transform focus:outline-none"
+      >
+        {playing
+          ? <PauseCircle size={56} className="fill-blue-600" />
+          : <PlayCircle size={56} className="fill-blue-600" />
+        }
+      </button>
+
+      {/* "View transcript" small link */}
+      <button
+        onClick={(e) => { e.stopPropagation(); onOpen(); }}
+        className="absolute bottom-3 right-4 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white transition-colors"
+      >
+        Full player & transcript →
+      </button>
+    </div>
+  );
+}
 
 function Podcast() {
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
@@ -108,13 +168,11 @@ function Podcast() {
             mediaUrl: attr.mediaUrl || DEFAULT_HERO.mediaUrl,
           });
         } else {
-          // If no specific hero found in the response, use mock data
           setHeroData(DEFAULT_HERO);
         }
       })
       .catch(err => {
         console.error("Hero fetch error:", err);
-        // Fallback to mock data on network error
         setHeroData(DEFAULT_HERO);
       })
       .finally(() => setLoadingHero(false));
@@ -191,6 +249,7 @@ function Podcast() {
 
   return (
     <main className="pt-20 bg-gray-50/50 min-h-screen relative">
+      {/* ── Hero ── */}
       <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
         {loadingHero ? (
           <div className="absolute inset-0 bg-slate-800 animate-pulse" />
@@ -221,6 +280,7 @@ function Podcast() {
         )}
       </div>
 
+      {/* ── Filters ── */}
       <div className="px-4 md:px-8 py-12 max-w-7xl mx-auto">
         <div className="flex flex-col gap-6 mb-12 bg-white p-6 rounded-[2.5rem] shadow-sm border border-gray-100">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -231,20 +291,14 @@ function Podcast() {
                 placeholder="Search podcasts..." 
                 className="w-full pl-11 pr-4 py-3 rounded-2xl border border-gray-200 bg-gray-50/50 outline-none focus:ring-2 focus:ring-blue-500" 
                 value={search} 
-                onChange={(e) => {
-                  setSearch(e.target.value);
-                  setCurrentPage(1);
-                }} 
+                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} 
               />
             </div>
             <select 
               aria-label="Filter by topic"
               className="px-4 py-3 rounded-2xl border border-gray-200 bg-gray-50/50 font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500" 
               value={topicFilter} 
-              onChange={(e) => {
-                setTopicFilter(e.target.value);
-                setCurrentPage(1);
-              }}
+              onChange={(e) => { setTopicFilter(e.target.value); setCurrentPage(1); }}
             >
               <option value="All">All Topics</option>
               {availableTopics.map(t => (
@@ -257,10 +311,7 @@ function Podcast() {
                   type="button"
                   key={m} 
                   aria-label={`Show ${m} podcasts`}
-                  onClick={() => {
-                    setMediaFilter(m);
-                    setCurrentPage(1);
-                  }} 
+                  onClick={() => { setMediaFilter(m); setCurrentPage(1); }} 
                   className={`flex-1 py-3 rounded-lg text-xs font-bold transition-all ${mediaFilter === m ? 'bg-white text-blue-800 shadow-sm' : 'text-gray-500'}`}
                 >
                   {m}
@@ -274,10 +325,7 @@ function Podcast() {
                 type="button"
                 key={lvl} 
                 aria-label={`Filter by level ${lvl}`}
-                onClick={() => {
-                  setLevelFilter(lvl);
-                  setCurrentPage(1);
-                }} 
+                onClick={() => { setLevelFilter(lvl); setCurrentPage(1); }} 
                 className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all shrink-0 ${levelFilter === lvl ? 'bg-blue-800 border-blue-800 text-white' : 'bg-white border-gray-200 text-gray-600'}`}
               >
                 {lvl}
@@ -286,6 +334,7 @@ function Podcast() {
           </div>
         </div>
 
+        {/* ── Grid ── */}
         {loadingPodcasts ? (
           <div className="flex justify-center py-24"><Loader2 className="animate-spin text-blue-600" size={48}/></div>
         ) : filteredPodcasts.length === 0 ? (
@@ -297,8 +346,10 @@ function Podcast() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {currentPodcasts.map((item) => (
                 <div key={item.id} className="group bg-white rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all flex flex-col h-full overflow-hidden">
-                  <div className="relative aspect-video bg-slate-900">
-                    {item.mediaType === 'video' && item.videoUrl ? (
+
+                  {/* ── Media area ── */}
+                  {item.mediaType === 'video' && item.videoUrl ? (
+                    <div className="relative aspect-video bg-slate-900">
                       <iframe 
                         className="w-full h-full" 
                         src={`https://www.youtube.com/embed/${getYouTubeID(item.videoUrl)}`} 
@@ -307,16 +358,12 @@ function Podcast() {
                         allowFullScreen 
                         loading="eager" 
                       />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-slate-900 relative">
-                        <PlayCircle 
-                          className="text-white fill-blue-600 cursor-pointer hover:scale-110 transition-transform" 
-                          size={50} 
-                          onClick={() => setActivePodcast(item)} 
-                        />
-                      </div>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    /* FIXED: inline audio player with play/pause on the card */
+                    <AudioCard item={item} onOpen={() => setActivePodcast(item)} />
+                  )}
+
                   <div className="p-8 flex flex-col flex-grow">
                     <div className="flex items-center gap-2 mb-3 flex-wrap">
                       {item.cefrLevel && (
@@ -342,7 +389,7 @@ function Podcast() {
                       onClick={() => setActivePodcast(item)} 
                       className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all"
                     >
-                      Play & View Transcript
+                      {item.mediaType === 'audio' ? 'Full Player & Transcript' : 'Play & View Transcript'}
                     </button>
                   </div>
                 </div>
@@ -376,6 +423,7 @@ function Podcast() {
         )}
       </div>
 
+      {/* ── Modal ── */}
       {activePodcast && (
         <div className="fixed inset-0 z-[9999] bg-white overflow-y-auto flex flex-col" onClick={() => setActivePodcast(null)}>
           <div className="sticky top-0 bg-white/80 backdrop-blur-xl border-b p-6 md:p-10 flex justify-between items-center z-50">
@@ -416,7 +464,6 @@ function Podcast() {
               <div className="flex flex-wrap gap-6 py-4 border-b border-gray-100 text-[10px] font-black text-gray-400 uppercase tracking-widest">
                 <span className="flex items-center gap-2"><User size={14} className="text-blue-600"/> {activePodcast.audience || '—'}</span>
                 <span className="flex items-center gap-2"><Calendar size={14}/> {new Date(activePodcast.updatedAt).toLocaleDateString()}</span>
-                {/* <span className="flex items-center gap-2"><Layers size={14}/> ID: {activePodcast.id}</span> */}
               </div>
 
               {activePodcast.mediaType === 'audio' && activePodcast.audioUrl && (
