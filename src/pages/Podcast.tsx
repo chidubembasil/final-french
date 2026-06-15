@@ -1,4 +1,4 @@
-import { Headphones, Search, X, PlayCircle, ChevronLeft, ChevronRight, ArrowLeft, Calendar, User, Layers, Download, Check, Loader2, PauseCircle } from "lucide-react";
+import { Headphones, Search, X, PlayCircle, ChevronLeft, ChevronRight, ArrowLeft, Calendar, User, Layers, Download, Check, Loader2, PauseCircle, Play } from "lucide-react";
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import img1 from "../assets/img/_A1A4787.jpg"
 
@@ -70,7 +70,7 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
   const toggle = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!audioRef.current || !hasValidAudio) return;
-    
+
     setError(null);
 
     if (playing) {
@@ -80,7 +80,7 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
       setIsLoading(true);
       try {
         const audio = audioRef.current;
-        
+
         // If not loaded enough, wait for canplay
         if (audio.readyState < 2) {
           await new Promise<void>((resolve, reject) => {
@@ -99,7 +99,7 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
             audio.load();
           });
         }
-        
+
         await audio.play();
         setPlaying(true);
       } catch (err) {
@@ -206,17 +206,23 @@ function Podcast() {
   const [heroData, setHeroData] = useState<GalleryHero | null>(null);
   const [loadingHero, setLoadingHero] = useState<boolean>(true);
   const [loadingPodcasts, setLoadingPodcasts] = useState<boolean>(true);
-  
+
   const [levelFilter, setLevelFilter] = useState<string>('All');
   const [mediaFilter, setMediaFilter] = useState<string>('All');
   const [topicFilter, setTopicFilter] = useState<string>('All');
   const [search, setSearch] = useState<string>('');
   const [copied, setCopied] = useState(false);
-  
+
   const [currentPage, setCurrentPage] = useState(1);
   const [activePodcast, setActivePodcast] = useState<Podcast | null>(null);
   const itemsPerPage = 6;
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || '';
+
+  // ── Modal audio player state ──
+  const modalAudioRef = useRef<HTMLAudioElement>(null);
+  const [modalPlaying, setModalPlaying] = useState(false);
+  const [modalLoading, setModalLoading] = useState(false);
+  const [modalError, setModalError] = useState<string | null>(null);
 
   const availableTopics = useMemo(() => {
     const topics = podcasts.map(p => p.topic).filter(Boolean) as string[];
@@ -242,7 +248,7 @@ function Podcast() {
           const attr = item.attributes || item;
           return attr.purpose === "Other Page" && attr.subPurpose === "Podcasts";
         });
-        
+
         if (hero) {
           const attr = hero.attributes || hero;
           setHeroData({
@@ -292,6 +298,37 @@ function Podcast() {
       .finally(() => setLoadingPodcasts(false));
   }, [CLIENT_KEY]);
 
+  // ── Modal audio event listeners ──
+  useEffect(() => {
+    const el = modalAudioRef.current;
+    if (!el) return;
+    const onEnded = () => setModalPlaying(false);
+    const onError = () => {
+      setModalPlaying(false);
+      setModalLoading(false);
+      setModalError("Load error");
+    };
+    el.addEventListener('ended', onEnded);
+    el.addEventListener('error', onError);
+    return () => {
+      el.removeEventListener('ended', onEnded);
+      el.removeEventListener('error', onError);
+    };
+  }, [activePodcast]);
+
+  // Reset modal player state when modal opens/closes
+  useEffect(() => {
+    if (!activePodcast) {
+      setModalPlaying(false);
+      setModalLoading(false);
+      setModalError(null);
+      if (modalAudioRef.current) {
+        modalAudioRef.current.pause();
+        modalAudioRef.current.currentTime = 0;
+      }
+    }
+  }, [activePodcast]);
+
   const filteredPodcasts = useMemo(() => {
     return podcasts.filter(item => {
       const matchesSearch = 
@@ -329,6 +366,51 @@ function Podcast() {
     document.body.style.overflow = activePodcast ? "hidden" : "unset";
     return () => { document.body.style.overflow = "unset"; };
   }, [activePodcast]);
+
+  // ── Modal play/pause toggle ──
+  const toggleModalAudio = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!modalAudioRef.current) return;
+
+    setModalError(null);
+
+    if (modalPlaying) {
+      modalAudioRef.current.pause();
+      setModalPlaying(false);
+    } else {
+      setModalLoading(true);
+      try {
+        const audio = modalAudioRef.current;
+
+        if (audio.readyState < 2) {
+          await new Promise<void>((resolve, reject) => {
+            const onCanPlay = () => {
+              audio.removeEventListener('canplaythrough', onCanPlay);
+              audio.removeEventListener('error', onError);
+              resolve();
+            };
+            const onError = () => {
+              audio.removeEventListener('canplaythrough', onCanPlay);
+              audio.removeEventListener('error', onError);
+              reject(new Error('Audio load failed'));
+            };
+            audio.addEventListener('canplaythrough', onCanPlay);
+            audio.addEventListener('error', onError);
+            audio.load();
+          });
+        }
+
+        await audio.play();
+        setModalPlaying(true);
+      } catch (err) {
+        console.error("Modal audio play error:", err);
+        setModalError("Playback failed");
+        setModalPlaying(false);
+      } finally {
+        setModalLoading(false);
+      }
+    }
+  }, [modalPlaying]);
 
   return (
     <main className="pt-20 bg-gray-50/50 min-h-screen relative">
@@ -461,7 +543,7 @@ function Podcast() {
                     </div>
                     <h3 className="text-xl font-bold text-slate-900 mb-2 line-clamp-1">{item.title}</h3>
                     <p className="text-gray-500 text-sm line-clamp-2 mb-6 flex-grow">{item.description}</p>
-                    
+
                     <div className="mb-6 py-4 border-y border-gray-50 flex items-center justify-between text-[10px] font-black text-gray-400 uppercase">
                       <span className="flex items-center gap-1"><Layers size={12} className="text-blue-500"/> {item.topic || '—'}</span>
                       <span className="flex items-center gap-1"><User size={12}/> {item.audience || '—'}</span>
@@ -555,12 +637,26 @@ function Podcast() {
                     <div className="p-4 bg-white/10 rounded-2xl"><Headphones className="text-white" size={30}/></div>
                     <p className="text-white font-bold">{activePodcast.title}</p>
                   </div>
-                  <audio 
-                    src={activePodcast.audioUrl} 
-                    controls 
-                    autoPlay 
-                    className="w-full md:w-auto flex-1" 
-                  />
+
+                  {/* Hidden audio element for modal */}
+                  <audio ref={modalAudioRef} src={activePodcast.audioUrl} preload="metadata" />
+
+                  {/* Play/Pause button for modal */}
+                  <button
+                    aria-label={modalPlaying ? 'Pause audio' : 'Play audio'}
+                    onClick={toggleModalAudio}
+                    disabled={modalLoading}
+                    className="text-white hover:scale-110 transition-transform focus:outline-none disabled:opacity-50 shrink-0"
+                  >
+                    {modalLoading ? (
+                      <Loader2 size={48} className="animate-spin text-blue-400" />
+                    ) : modalPlaying ? (
+                      <PauseCircle size={48} className="fill-blue-600" />
+                    ) : (
+                      <PlayCircle size={48} className="fill-blue-600" />
+                    )}
+                  </button>
+
                   <a 
                     href={activePodcast.audioUrl} 
                     download 
