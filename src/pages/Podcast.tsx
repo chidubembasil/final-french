@@ -73,6 +73,12 @@ function extractAudioUrl(input: string): string {
   return input.trim();
 }
 
+// ── Check if input is an iframe embed code ────────────────────────────────────
+function isIframeEmbed(input: string): boolean {
+  if (!input || input.trim() === '') return false;
+  return input.trim().startsWith('<iframe');
+}
+
 // ── Inline audio player card ──────────────────────────────────────────────────
 function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -82,6 +88,7 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
 
   // Extract actual audio URL (handles iframe embed codes too)
   const resolvedAudioUrl = extractAudioUrl(item.audioUrl);
+  const iframeEmbed = isIframeEmbed(item.audioUrl);
 
   // Validate audio URL
   const hasValidAudio = resolvedAudioUrl && resolvedAudioUrl !== '' && resolvedAudioUrl !== 'null' && resolvedAudioUrl !== 'undefined';
@@ -191,43 +198,55 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
         />
       )}
 
-      {/* Hidden audio element */}
-      <audio ref={audioRef} src={resolvedAudioUrl} preload="metadata" />
+      {/* Render iframe if admin pasted iframe embed code, otherwise native audio */}
+      {iframeEmbed ? (
+        <iframe 
+          src={resolvedAudioUrl}
+          title={item.title}
+          className="absolute inset-0 w-full h-full border-0"
+          allow="autoplay"
+        />
+      ) : (
+        <>
+          {/* Hidden audio element */}
+          <audio ref={audioRef} src={resolvedAudioUrl} preload="metadata" />
 
-      {/* Waveform / placeholder visual */}
-      <div className={`flex items-end gap-[3px] h-10 transition-opacity relative z-10 ${playing ? 'opacity-100' : 'opacity-30'}`}>
-        {[4,7,5,9,6,8,4,10,6,7,5,9,4,8,6].map((h, i) => (
-          <div 
-            key={i} 
-            className={`w-1 rounded-sm bg-white transition-all duration-300 ${playing ? 'animate-pulse' : ''}`} 
-            style={{ 
-              height: `${h * 3}px`,
-              animationDelay: `${i * 50}ms`
-            }} 
-          />
-        ))}
-      </div>
+          {/* Waveform / placeholder visual */}
+          <div className={`flex items-end gap-[3px] h-10 transition-opacity relative z-10 ${playing ? 'opacity-100' : 'opacity-30'}`}>
+            {[4,7,5,9,6,8,4,10,6,7,5,9,4,8,6].map((h, i) => (
+              <div 
+                key={i} 
+                className={`w-1 rounded-sm bg-white transition-all duration-300 ${playing ? 'animate-pulse' : ''}`} 
+                style={{ 
+                  height: `${h * 3}px`,
+                  animationDelay: `${i * 50}ms`
+                }} 
+              />
+            ))}
+          </div>
 
-      {/* Error message */}
-      {error && (
-        <p className="text-red-400 text-[10px] font-bold relative z-10">{error}</p>
+          {/* Error message */}
+          {error && (
+            <p className="text-red-400 text-[10px] font-bold relative z-10">{error}</p>
+          )}
+
+          {/* Play / Pause button */}
+          <button
+            aria-label={playing ? 'Pause audio' : 'Play audio'}
+            onClick={toggle}
+            disabled={isLoading}
+            className="text-white hover:scale-110 transition-transform focus:outline-none disabled:opacity-50 relative z-10"
+          >
+            {isLoading ? (
+              <Loader2 size={56} className="animate-spin text-blue-400" />
+            ) : playing ? (
+              <Pause size={56} color="white" />
+            ) : (
+              <Play size={56} color="white" />
+            )}
+          </button>
+        </>
       )}
-
-      {/* Play / Pause button */}
-      <button
-        aria-label={playing ? 'Pause audio' : 'Play audio'}
-        onClick={toggle}
-        disabled={isLoading}
-        className="text-white hover:scale-110 transition-transform focus:outline-none disabled:opacity-50 relative z-10"
-      >
-        {isLoading ? (
-          <Loader2 size={56} className="animate-spin text-blue-400" />
-        ) : playing ? (
-          <Pause size={56} color="white" />
-        ) : (
-          <Play size={56} color="white" />
-        )}
-      </button>
 
       {/* "View transcript" small link */}
       <button
@@ -675,24 +694,36 @@ function Podcast() {
                     <p className="text-white font-bold">{activePodcast.title}</p>
                   </div>
 
-                  {/* Hidden audio element for modal - resolve iframe if needed */}
-                  <audio ref={modalAudioRef} src={extractAudioUrl(activePodcast.audioUrl)} preload="metadata" />
+                  {/* Render iframe in modal if admin pasted iframe embed code */}
+                  {isIframeEmbed(activePodcast.audioUrl) ? (
+                    <iframe 
+                      src={extractAudioUrl(activePodcast.audioUrl)}
+                      title={activePodcast.title}
+                      className="w-full md:w-auto flex-1 h-20 border-0 rounded-xl"
+                      allow="autoplay"
+                    />
+                  ) : (
+                    <>
+                      {/* Hidden audio element for modal - resolve iframe if needed */}
+                      <audio ref={modalAudioRef} src={extractAudioUrl(activePodcast.audioUrl)} preload="metadata" />
 
-                  {/* Play/Pause button for modal */}
-                  <button
-                    aria-label={modalPlaying ? 'Pause audio' : 'Play audio'}
-                    onClick={toggleModalAudio}
-                    disabled={modalLoading}
-                    className="text-white hover:scale-110 transition-transform focus:outline-none disabled:opacity-50 shrink-0"
-                  >
-                    {modalLoading ? (
-                      <Loader2 size={48} className="animate-spin text-blue-400" />
-                    ) : modalPlaying ? (
-                      <Pause size={48} color="white" />
-                    ) : (
-                      <Play size={48} color="white" />
-                    )}
-                  </button>
+                      {/* Play/Pause button for modal */}
+                      <button
+                        aria-label={modalPlaying ? 'Pause audio' : 'Play audio'}
+                        onClick={toggleModalAudio}
+                        disabled={modalLoading}
+                        className="text-white hover:scale-110 transition-transform focus:outline-none disabled:opacity-50 shrink-0"
+                      >
+                        {modalLoading ? (
+                          <Loader2 size={48} className="animate-spin text-blue-400" />
+                        ) : modalPlaying ? (
+                          <Pause size={48} color="white" />
+                        ) : (
+                          <Play size={48} color="white" />
+                        )}
+                      </button>
+                    </>
+                  )}
 
                   <a 
                     href={extractAudioUrl(activePodcast.audioUrl)} 
