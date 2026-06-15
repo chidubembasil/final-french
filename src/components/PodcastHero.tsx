@@ -20,18 +20,52 @@ const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || "";
 function AudioPlayer({ src, title }: { src: string; title: string }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
-  const [progress, setProgress] = useState(0); // 0–100
+  const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const toggle = () => {
+  const toggle = async () => {
     if (!audioRef.current) return;
+    
+    setError(null);
+
     if (playing) {
       audioRef.current.pause();
       setPlaying(false);
     } else {
-      audioRef.current.play();
-      setPlaying(true);
+      setIsLoading(true);
+      try {
+        // Ensure audio is loaded before playing
+        if (audioRef.current.readyState < 2) {
+          await new Promise<void>((resolve, reject) => {
+            const audio = audioRef.current!;
+            const onCanPlay = () => {
+              audio.removeEventListener('canplaythrough', onCanPlay);
+              audio.removeEventListener('error', onError);
+              resolve();
+            };
+            const onError = () => {
+              audio.removeEventListener('canplaythrough', onCanPlay);
+              audio.removeEventListener('error', onError);
+              reject(new Error('Failed to load audio'));
+            };
+            audio.addEventListener('canplaythrough', onCanPlay);
+            audio.addEventListener('error', onError);
+            audio.load(); // Force reload if needed
+          });
+        }
+        
+        await audioRef.current.play();
+        setPlaying(true);
+      } catch (err) {
+        console.error("Audio play error:", err);
+        setError("Could not play audio. Please try again.");
+        setPlaying(false);
+      } finally {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -44,23 +78,45 @@ function AudioPlayer({ src, title }: { src: string; title: string }) {
   };
 
   const onLoadedMetadata = () => {
-    if (audioRef.current) setDuration(audioRef.current.duration);
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration);
+      setError(null);
+    }
   };
 
   const onEnded = () => setPlaying(false);
+  
+  const onError = () => {
+    setError("Failed to load audio file");
+    setPlaying(false);
+    setIsLoading(false);
+  };
 
   const seek = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!audioRef.current) return;
     const val = Number(e.target.value);
-    audioRef.current.currentTime = (val / 100) * (audioRef.current.duration || 0);
-    setProgress(val);
+    const dur = audioRef.current.duration || 0;
+    if (dur > 0) {
+      audioRef.current.currentTime = (val / 100) * dur;
+      setProgress(val);
+    }
   };
 
   const fmt = (s: number) => {
+    if (!isFinite(s) || s < 0) return "0:00";
     const m = Math.floor(s / 60);
     const sec = Math.floor(s % 60);
     return `${m}:${sec.toString().padStart(2, '0')}`;
   };
+
+  // Don't render player if no valid source
+  if (!src) {
+    return (
+      <div className="w-full mt-auto p-4 rounded-xl bg-slate-50 text-center text-slate-400 text-sm">
+        No audio available
+      </div>
+    );
+  }
 
   return (
     <div className="w-full mt-auto space-y-3">
@@ -71,7 +127,15 @@ function AudioPlayer({ src, title }: { src: string; title: string }) {
         onTimeUpdate={onTimeUpdate}
         onLoadedMetadata={onLoadedMetadata}
         onEnded={onEnded}
+        onError={onError}
       />
+
+      {/* Error message */}
+      {error && (
+        <div className="text-xs text-red-500 text-center bg-red-50 px-3 py-2 rounded-lg">
+          {error}
+        </div>
+      )}
 
       {/* Progress bar */}
       <div className="flex items-center gap-2">
@@ -92,11 +156,18 @@ function AudioPlayer({ src, title }: { src: string; title: string }) {
       {/* Play / Pause button */}
       <button
         onClick={toggle}
+        disabled={isLoading}
         aria-label={playing ? `Pause ${title}` : `Play ${title}`}
-        className="w-full flex items-center justify-center gap-3 py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-700 to-red-600 hover:opacity-90 transition"
+        className="w-full flex items-center justify-center gap-3 py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-700 to-red-600 hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {playing ? <Pause size={18} /> : <Play size={18} />}
-        {playing ? 'Pause Episode' : 'Play Episode'}
+        {isLoading ? (
+          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+        ) : playing ? (
+          <Pause size={18} />
+        ) : (
+          <Play size={18} />
+        )}
+        {isLoading ? 'Loading...' : playing ? 'Pause Episode' : 'Play Episode'}
       </button>
     </div>
   );
@@ -107,7 +178,6 @@ export default function LatestPodcasts() {
 
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
   const [loading, setLoading] = useState(true);
-  // For video cards only — track which video is active
   const [activeVideoId, setActiveVideoId] = useState<number | null>(null);
 
   const BASE_URL = CLIENT_KEY.endsWith("/")
@@ -210,8 +280,11 @@ export default function LatestPodcasts() {
                 </p>
 
                 {/* ── AUDIO: always-visible inline player ── */}
-                {podcast.mediaType === "audio" && podcast.audioUrl && (
-                  <AudioPlayer src={podcast.audioUrl} title={podcast.title} />
+                {podcast.mediaType === "audio" && (
+                  <AudioPlayer 
+                    src={podcast.audioUrl || ''} 
+                    title={podcast.title} 
+                  />
                 )}
 
                 {/* ── VIDEO: click to reveal iframe ── */}

@@ -1,5 +1,5 @@
 import { Headphones, Search, X, PlayCircle, ChevronLeft, ChevronRight, ArrowLeft, Calendar, User, Layers, Download, Check, Loader2, PauseCircle } from "lucide-react";
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import img1 from "../assets/img/_A1A4787.jpg"
 
 interface Podcast {
@@ -61,50 +61,133 @@ const DEFAULT_HERO: GalleryHero = {
 function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const toggle = (e: React.MouseEvent) => {
+  // Validate audio URL
+  const hasValidAudio = item.audioUrl && item.audioUrl.trim() !== '' && item.audioUrl !== 'null' && item.audioUrl !== 'undefined';
+
+  const toggle = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!audioRef.current) return;
+    if (!audioRef.current || !hasValidAudio) return;
+    
+    setError(null);
+
     if (playing) {
       audioRef.current.pause();
       setPlaying(false);
     } else {
-      audioRef.current.play();
-      setPlaying(true);
+      setIsLoading(true);
+      try {
+        const audio = audioRef.current;
+        
+        // If not loaded enough, wait for canplay
+        if (audio.readyState < 2) {
+          await new Promise<void>((resolve, reject) => {
+            const onCanPlay = () => {
+              audio.removeEventListener('canplaythrough', onCanPlay);
+              audio.removeEventListener('error', onError);
+              resolve();
+            };
+            const onError = () => {
+              audio.removeEventListener('canplaythrough', onCanPlay);
+              audio.removeEventListener('error', onError);
+              reject(new Error('Audio load failed'));
+            };
+            audio.addEventListener('canplaythrough', onCanPlay);
+            audio.addEventListener('error', onError);
+            audio.load();
+          });
+        }
+        
+        await audio.play();
+        setPlaying(true);
+      } catch (err) {
+        console.error("Audio play error:", err);
+        setError("Playback failed");
+        setPlaying(false);
+      } finally {
+        setIsLoading(false);
+      }
     }
-  };
+  }, [playing, hasValidAudio]);
 
   // If audio ends naturally, reset icon
   useEffect(() => {
     const el = audioRef.current;
     if (!el) return;
     const onEnded = () => setPlaying(false);
+    const onError = () => {
+      setPlaying(false);
+      setIsLoading(false);
+      setError("Load error");
+    };
     el.addEventListener('ended', onEnded);
-    return () => el.removeEventListener('ended', onEnded);
+    el.addEventListener('error', onError);
+    return () => {
+      el.removeEventListener('ended', onEnded);
+      el.removeEventListener('error', onError);
+    };
   }, []);
+
+  // Don't render interactive player if no audio URL
+  if (!hasValidAudio) {
+    return (
+      <div className="relative aspect-video bg-slate-900 flex flex-col items-center justify-center gap-4">
+        <div className="flex items-end gap-[3px] h-10 opacity-30">
+          {[4,7,5,9,6,8,4,10,6,7,5,9,4,8,6].map((h, i) => (
+            <div key={i} className="w-1 rounded-sm bg-white" style={{ height: `${h * 3}px` }} />
+          ))}
+        </div>
+        <p className="text-white/50 text-xs font-bold uppercase tracking-widest">No Audio</p>
+        <button
+          onClick={(e) => { e.stopPropagation(); onOpen(); }}
+          className="absolute bottom-3 right-4 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white transition-colors"
+        >
+          View Details →
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="relative aspect-video bg-slate-900 flex flex-col items-center justify-center gap-4">
-      {/* Hidden audio element */}
-      <audio ref={audioRef} src={item.audioUrl} preload="none" />
+      {/* Hidden audio element - use preload="metadata" instead of "none" */}
+      <audio ref={audioRef} src={item.audioUrl} preload="metadata" />
 
       {/* Waveform / placeholder visual */}
-      <div className="flex items-end gap-[3px] h-10 opacity-30">
+      <div className={`flex items-end gap-[3px] h-10 transition-opacity ${playing ? 'opacity-100' : 'opacity-30'}`}>
         {[4,7,5,9,6,8,4,10,6,7,5,9,4,8,6].map((h, i) => (
-          <div key={i} className="w-1 rounded-sm bg-white" style={{ height: `${h * 3}px` }} />
+          <div 
+            key={i} 
+            className={`w-1 rounded-sm bg-white transition-all duration-300 ${playing ? 'animate-pulse' : ''}`} 
+            style={{ 
+              height: `${h * 3}px`,
+              animationDelay: `${i * 50}ms`
+            }} 
+          />
         ))}
       </div>
+
+      {/* Error message */}
+      {error && (
+        <p className="text-red-400 text-[10px] font-bold">{error}</p>
+      )}
 
       {/* Play / Pause button */}
       <button
         aria-label={playing ? 'Pause audio' : 'Play audio'}
         onClick={toggle}
-        className="text-white hover:scale-110 transition-transform focus:outline-none"
+        disabled={isLoading}
+        className="text-white hover:scale-110 transition-transform focus:outline-none disabled:opacity-50"
       >
-        {playing
-          ? <PauseCircle size={56} className="fill-blue-600" />
-          : <PlayCircle size={56} className="fill-blue-600" />
-        }
+        {isLoading ? (
+          <Loader2 size={56} className="animate-spin text-blue-400" />
+        ) : playing ? (
+          <PauseCircle size={56} className="fill-blue-600" />
+        ) : (
+          <PlayCircle size={56} className="fill-blue-600" />
+        )}
       </button>
 
       {/* "View transcript" small link */}
