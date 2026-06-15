@@ -1,4 +1,4 @@
-import { Headphones, Search, X, PlayCircle, ChevronLeft, ChevronRight, ArrowLeft, Calendar, User, Layers, Download, Check, Loader2, PauseCircle, Play } from "lucide-react";
+import { Headphones, Search, X, PlayCircle, ChevronLeft, ChevronRight, ArrowLeft, Calendar, User, Layers, Download, Check, Loader2, PauseCircle } from "lucide-react";
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import img1 from "../assets/img/_A1A4787.jpg"
 
@@ -222,7 +222,6 @@ function Podcast() {
   const modalAudioRef = useRef<HTMLAudioElement>(null);
   const [modalPlaying, setModalPlaying] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
-  const [modalError, setModalError] = useState<string | null>(null);
 
   const availableTopics = useMemo(() => {
     const topics = podcasts.map(p => p.topic).filter(Boolean) as string[];
@@ -306,7 +305,6 @@ function Podcast() {
     const onError = () => {
       setModalPlaying(false);
       setModalLoading(false);
-      setModalError("Load error");
     };
     el.addEventListener('ended', onEnded);
     el.addEventListener('error', onError);
@@ -321,7 +319,6 @@ function Podcast() {
     if (!activePodcast) {
       setModalPlaying(false);
       setModalLoading(false);
-      setModalError(null);
       if (modalAudioRef.current) {
         modalAudioRef.current.pause();
         modalAudioRef.current.currentTime = 0;
@@ -372,8 +369,6 @@ function Podcast() {
     e.stopPropagation();
     if (!modalAudioRef.current) return;
 
-    setModalError(null);
-
     if (modalPlaying) {
       modalAudioRef.current.pause();
       setModalPlaying(false);
@@ -404,7 +399,6 @@ function Podcast() {
         setModalPlaying(true);
       } catch (err) {
         console.error("Modal audio play error:", err);
-        setModalError("Playback failed");
         setModalPlaying(false);
       } finally {
         setModalLoading(false);
