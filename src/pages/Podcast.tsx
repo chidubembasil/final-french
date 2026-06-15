@@ -59,6 +59,22 @@ const DEFAULT_HERO: GalleryHero = {
   mediaUrl: img1
 };
 
+// ── Supported direct audio file extensions ────────────────────────────────────
+const DIRECT_AUDIO_EXTENSIONS = [
+  '.mp3', '.aac', '.ogg', '.opus', '.wma', '.m4a', '.wav', '.flac',
+  '.alac', '.aiff', '.ape', '.mka', '.tta', '.wv', '.mid', '.midi',
+  '.mp4', '.webm', '.3gp'
+];
+
+// ── Check if URL is a direct audio file ─────────────────────────────────────
+function isDirectAudioFile(url: string): boolean {
+  if (!url || url.trim() === '') return false;
+  const lower = url.trim().toLowerCase();
+  // Remove query params for extension check
+  const cleanUrl = lower.split('?')[0];
+  return DIRECT_AUDIO_EXTENSIONS.some(ext => cleanUrl.endsWith(ext));
+}
+
 // ── Extract audio URL from iframe embed code or direct URL ───────────────────
 function extractAudioUrl(input: string): string {
   if (!input || input.trim() === '') return '';
@@ -73,12 +89,6 @@ function extractAudioUrl(input: string): string {
   return input.trim();
 }
 
-// ── Check if input is an iframe embed code ────────────────────────────────────
-function isIframeEmbed(input: string): boolean {
-  if (!input || input.trim() === '') return false;
-  return input.trim().startsWith('<iframe');
-}
-
 // ── Inline audio player card ──────────────────────────────────────────────────
 function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -88,7 +98,7 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
 
   // Extract actual audio URL (handles iframe embed codes too)
   const resolvedAudioUrl = extractAudioUrl(item.audioUrl);
-  const iframeEmbed = isIframeEmbed(item.audioUrl);
+  const directAudio = isDirectAudioFile(resolvedAudioUrl);
 
   // Validate audio URL
   const hasValidAudio = resolvedAudioUrl && resolvedAudioUrl !== '' && resolvedAudioUrl !== 'null' && resolvedAudioUrl !== 'undefined';
@@ -198,15 +208,9 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
         />
       )}
 
-      {/* Render iframe if admin pasted iframe embed code, otherwise native audio */}
-      {iframeEmbed ? (
-        <iframe 
-          src={resolvedAudioUrl}
-          title={item.title}
-          className="absolute inset-0 w-full h-full border-0"
-          allow="autoplay"
-        />
-      ) : (
+      {/* If direct audio file (mp3, wav, etc.) → native audio player with play/pause */}
+      {/* If NOT direct audio (iframe embed, RFI page URL, etc.) → render iframe */}
+      {directAudio ? (
         <>
           {/* Hidden audio element */}
           <audio ref={audioRef} src={resolvedAudioUrl} preload="metadata" />
@@ -246,6 +250,14 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
             )}
           </button>
         </>
+      ) : (
+        /* iframe for non-direct audio URLs (RFI embeds, webpage URLs, etc.) */
+        <iframe 
+          src={resolvedAudioUrl}
+          title={item.title}
+          className="absolute inset-0 w-full h-full border-0"
+          allow="autoplay"
+        />
       )}
 
       {/* "View transcript" small link */}
@@ -694,17 +706,11 @@ function Podcast() {
                     <p className="text-white font-bold">{activePodcast.title}</p>
                   </div>
 
-                  {/* Render iframe in modal if admin pasted iframe embed code */}
-                  {isIframeEmbed(activePodcast.audioUrl) ? (
-                    <iframe 
-                      src={extractAudioUrl(activePodcast.audioUrl)}
-                      title={activePodcast.title}
-                      className="w-full md:w-auto flex-1 h-20 border-0 rounded-xl"
-                      allow="autoplay"
-                    />
-                  ) : (
+                  {/* If direct audio file → native audio player with play/pause */}
+                  {/* If NOT direct audio → render iframe */}
+                  {isDirectAudioFile(extractAudioUrl(activePodcast.audioUrl)) ? (
                     <>
-                      {/* Hidden audio element for modal - resolve iframe if needed */}
+                      {/* Hidden audio element for modal */}
                       <audio ref={modalAudioRef} src={extractAudioUrl(activePodcast.audioUrl)} preload="metadata" />
 
                       {/* Play/Pause button for modal */}
@@ -723,6 +729,13 @@ function Podcast() {
                         )}
                       </button>
                     </>
+                  ) : (
+                    <iframe 
+                      src={extractAudioUrl(activePodcast.audioUrl)}
+                      title={activePodcast.title}
+                      className="w-full md:w-auto flex-1 h-20 border-0 rounded-xl"
+                      allow="autoplay"
+                    />
                   )}
 
                   <a 
