@@ -1,4 +1,5 @@
-import { Headphones, Search, X, PlayCircle, ChevronLeft, ChevronRight, ArrowLeft, Calendar, User, Layers, Download, Check, Loader2, PauseCircle } from "lucide-react";
+import { Headphones, Search, X, Play, Pause, ChevronLeft, ChevronRight, ArrowLeft, Calendar, User, Layers, Download, Check, Loader2 } from "lucide-react";
+
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import img1 from "../assets/img/_A1A4787.jpg"
 
@@ -184,9 +185,9 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
         {isLoading ? (
           <Loader2 size={56} className="animate-spin text-blue-400" />
         ) : playing ? (
-          <PauseCircle size={56} className="fill-blue-600" />
+          <Pause size={56} color="white" />
         ) : (
-          <PlayCircle size={56} className="fill-blue-600" />
+          <Play size={56} color="white" />
         )}
       </button>
 
@@ -645,9 +646,9 @@ function Podcast() {
                     {modalLoading ? (
                       <Loader2 size={48} className="animate-spin text-blue-400" />
                     ) : modalPlaying ? (
-                      <PauseCircle size={48} className="fill-blue-600" color="white" />
+                      <Pause size={48} color="white" />
                     ) : (
-                      <PlayCircle size={48} className="fill-blue-600" color="white"/>
+                      <Play size={48}  color="white"/>
                     )}
                   </button>
 
