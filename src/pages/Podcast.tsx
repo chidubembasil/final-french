@@ -645,9 +645,9 @@ function Podcast() {
                     {modalLoading ? (
                       <Loader2 size={48} className="animate-spin text-blue-400" />
                     ) : modalPlaying ? (
-                      <PauseCircle size={48} className="fill-blue-600" />
+                      <PauseCircle size={48} className="fill-blue-600" color="white" />
                     ) : (
-                      <PlayCircle size={48} className="fill-blue-600" />
+                      <PlayCircle size={48} className="fill-blue-600" color="white"/>
                     )}
                   </button>
 
