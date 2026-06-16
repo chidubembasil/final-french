@@ -281,7 +281,8 @@ function Podcast() {
 
     const podcastQuery = `${baseUrl}/api/podcasts?` +
       `filters[status][$eq]=published&` +
-      `filters[mediaType][$in]=audio&filters[mediaType][$in]=video&` +
+      `filters[mediaType][$in][0]=audio&` +
+      `filters[mediaType][$in][1]=video&` +
       `sort=publishedAt:desc&` +
       `pagination[page]=1&pagination[pageSize]=100`;
 
