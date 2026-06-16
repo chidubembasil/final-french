@@ -1,4 +1,4 @@
-import { Headphones, Search, X, Play, Pause, ChevronLeft, ChevronRight, ArrowLeft, Calendar, User, Layers, Download, Check, Loader2 } from "lucide-react";
+import { Headphones, Search, X, PlayCircle, ChevronLeft, ChevronRight, ArrowLeft, Calendar, User, Layers, Download, Check, Loader2, PauseCircle } from "lucide-react";
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import img1 from "../assets/img/_A1A4787.jpg"
 
@@ -22,7 +22,6 @@ interface Podcast {
   downloadable?: boolean;
   publishedAt?: string;
   createdAt?: string;
-  audioPodcastImage?: string | null;
 }
 
 interface GalleryHero {
@@ -46,7 +45,6 @@ interface StrapiDataItem {
   mediaUrl?: string;
   audioUrl?: string;
   videoUrl?: string;
-  audioPodcastImage?: string | null;
 }
 
 interface StrapiResponse {
@@ -59,36 +57,6 @@ const DEFAULT_HERO: GalleryHero = {
   mediaUrl: img1
 };
 
-// ── Supported direct audio file extensions ────────────────────────────────────
-const DIRECT_AUDIO_EXTENSIONS = [
-  '.mp3', '.aac', '.ogg', '.opus', '.wma', '.m4a', '.wav', '.flac',
-  '.alac', '.aiff', '.ape', '.mka', '.tta', '.wv', '.mid', '.midi',
-  '.mp4', '.webm', '.3gp'
-];
-
-// ── Check if URL is a direct audio file ─────────────────────────────────────
-function isDirectAudioFile(url: string): boolean {
-  if (!url || url.trim() === '') return false;
-  const lower = url.trim().toLowerCase();
-  // Remove query params for extension check
-  const cleanUrl = lower.split('?')[0];
-  return DIRECT_AUDIO_EXTENSIONS.some(ext => cleanUrl.endsWith(ext));
-}
-
-// ── Extract audio URL from iframe embed code or direct URL ───────────────────
-function extractAudioUrl(input: string): string {
-  if (!input || input.trim() === '') return '';
-
-  // Check if it's an iframe embed code
-  const iframeSrcMatch = input.match(/<iframe[^>]+src=["']([^"']+)["']/i);
-  if (iframeSrcMatch) {
-    return iframeSrcMatch[1];
-  }
-
-  // It's a direct URL
-  return input.trim();
-}
-
 // ── Inline audio player card ──────────────────────────────────────────────────
 function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
   const audioRef = useRef<HTMLAudioElement>(null);
@@ -96,20 +64,13 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Extract actual audio URL (handles iframe embed codes too)
-  const resolvedAudioUrl = extractAudioUrl(item.audioUrl);
-  const directAudio = isDirectAudioFile(resolvedAudioUrl);
-
   // Validate audio URL
-  const hasValidAudio = resolvedAudioUrl && resolvedAudioUrl !== '' && resolvedAudioUrl !== 'null' && resolvedAudioUrl !== 'undefined';
-
-  // Use audioPodcastImage as thumbnail if available
-  const thumbnailUrl = item.audioPodcastImage || null;
+  const hasValidAudio = item.audioUrl && item.audioUrl.trim() !== '' && item.audioUrl !== 'null' && item.audioUrl !== 'undefined';
 
   const toggle = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!audioRef.current || !hasValidAudio) return;
-
+    
     setError(null);
 
     if (playing) {
@@ -119,7 +80,7 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
       setIsLoading(true);
       try {
         const audio = audioRef.current;
-
+        
         // If not loaded enough, wait for canplay
         if (audio.readyState < 2) {
           await new Promise<void>((resolve, reject) => {
@@ -138,7 +99,7 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
             audio.load();
           });
         }
-
+        
         await audio.play();
         setPlaying(true);
       } catch (err) {
@@ -173,23 +134,15 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
   if (!hasValidAudio) {
     return (
       <div className="relative aspect-video bg-slate-900 flex flex-col items-center justify-center gap-4">
-        {thumbnailUrl ? (
-          <img 
-            src={thumbnailUrl} 
-            alt={item.title}
-            className="absolute inset-0 w-full h-full object-cover opacity-40"
-          />
-        ) : (
-          <div className="flex items-end gap-[3px] h-10 opacity-30">
-            {[4,7,5,9,6,8,4,10,6,7,5,9,4,8,6].map((h, i) => (
-              <div key={i} className="w-1 rounded-sm bg-white" style={{ height: `${h * 3}px` }} />
-            ))}
-          </div>
-        )}
-        <p className="text-white/50 text-xs font-bold uppercase tracking-widest relative z-10">No Audio</p>
+        <div className="flex items-end gap-[3px] h-10 opacity-30">
+          {[4,7,5,9,6,8,4,10,6,7,5,9,4,8,6].map((h, i) => (
+            <div key={i} className="w-1 rounded-sm bg-white" style={{ height: `${h * 3}px` }} />
+          ))}
+        </div>
+        <p className="text-white/50 text-xs font-bold uppercase tracking-widest">No Audio</p>
         <button
           onClick={(e) => { e.stopPropagation(); onOpen(); }}
-          className="absolute bottom-3 right-4 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white transition-colors z-10"
+          className="absolute bottom-3 right-4 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white transition-colors"
         >
           View Details →
         </button>
@@ -198,72 +151,49 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
   }
 
   return (
-    <div className="relative aspect-video bg-slate-900 flex flex-col items-center justify-center gap-4 overflow-hidden">
-      {/* Thumbnail background if available */}
-      {thumbnailUrl && (
-        <img 
-          src={thumbnailUrl} 
-          alt={item.title}
-          className="absolute inset-0 w-full h-full object-cover opacity-30"
-        />
+    <div className="relative aspect-video bg-slate-900 flex flex-col items-center justify-center gap-4">
+      {/* Hidden audio element - use preload="metadata" instead of "none" */}
+      <audio ref={audioRef} src={item.audioUrl} preload="metadata" />
+
+      {/* Waveform / placeholder visual */}
+      <div className={`flex items-end gap-[3px] h-10 transition-opacity ${playing ? 'opacity-100' : 'opacity-30'}`}>
+        {[4,7,5,9,6,8,4,10,6,7,5,9,4,8,6].map((h, i) => (
+          <div 
+            key={i} 
+            className={`w-1 rounded-sm bg-white transition-all duration-300 ${playing ? 'animate-pulse' : ''}`} 
+            style={{ 
+              height: `${h * 3}px`,
+              animationDelay: `${i * 50}ms`
+            }} 
+          />
+        ))}
+      </div>
+
+      {/* Error message */}
+      {error && (
+        <p className="text-red-400 text-[10px] font-bold">{error}</p>
       )}
 
-      {/* If direct audio file (mp3, wav, etc.) → native audio player with play/pause */}
-      {/* If NOT direct audio (iframe embed, RFI page URL, etc.) → render iframe */}
-      {directAudio ? (
-        <>
-          {/* Hidden audio element - preload="none" prevents auto-download on page load */}
-          <audio ref={audioRef} src={resolvedAudioUrl} preload="none" />
-
-          {/* Waveform / placeholder visual */}
-          <div className={`flex items-end gap-[3px] h-10 transition-opacity relative z-10 ${playing ? 'opacity-100' : 'opacity-30'}`}>
-            {[4,7,5,9,6,8,4,10,6,7,5,9,4,8,6].map((h, i) => (
-              <div 
-                key={i} 
-                className={`w-1 rounded-sm bg-white transition-all duration-300 ${playing ? 'animate-pulse' : ''}`} 
-                style={{ 
-                  height: `${h * 3}px`,
-                  animationDelay: `${i * 50}ms`
-                }} 
-              />
-            ))}
-          </div>
-
-          {/* Error message */}
-          {error && (
-            <p className="text-red-400 text-[10px] font-bold relative z-10">{error}</p>
-          )}
-
-          {/* Play / Pause button */}
-          <button
-            aria-label={playing ? 'Pause audio' : 'Play audio'}
-            onClick={toggle}
-            disabled={isLoading}
-            className="text-white hover:scale-110 transition-transform focus:outline-none disabled:opacity-50 relative z-10"
-          >
-            {isLoading ? (
-              <Loader2 size={56} className="animate-spin text-blue-400" />
-            ) : playing ? (
-              <Pause size={56} color="white" />
-            ) : (
-              <Play size={56} color="white" />
-            )}
-          </button>
-        </>
-      ) : (
-        /* iframe for non-direct audio URLs (RFI embeds, webpage URLs, etc.) */
-        <iframe 
-          src={resolvedAudioUrl}
-          title={item.title}
-          className="absolute inset-0 w-full h-full border-0"
-          allow="autoplay"
-        />
-      )}
+      {/* Play / Pause button */}
+      <button
+        aria-label={playing ? 'Pause audio' : 'Play audio'}
+        onClick={toggle}
+        disabled={isLoading}
+        className="text-white hover:scale-110 transition-transform focus:outline-none disabled:opacity-50"
+      >
+        {isLoading ? (
+          <Loader2 size={56} className="animate-spin text-blue-400" />
+        ) : playing ? (
+          <PauseCircle size={56} className="fill-blue-600" />
+        ) : (
+          <PlayCircle size={56} className="fill-blue-600" />
+        )}
+      </button>
 
       {/* "View transcript" small link */}
       <button
         onClick={(e) => { e.stopPropagation(); onOpen(); }}
-        className="absolute bottom-3 right-4 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white transition-colors z-10"
+        className="absolute bottom-3 right-4 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white transition-colors"
       >
         Full player & transcript →
       </button>
@@ -276,22 +206,17 @@ function Podcast() {
   const [heroData, setHeroData] = useState<GalleryHero | null>(null);
   const [loadingHero, setLoadingHero] = useState<boolean>(true);
   const [loadingPodcasts, setLoadingPodcasts] = useState<boolean>(true);
-
+  
   const [levelFilter, setLevelFilter] = useState<string>('All');
   const [mediaFilter, setMediaFilter] = useState<string>('All');
   const [topicFilter, setTopicFilter] = useState<string>('All');
   const [search, setSearch] = useState<string>('');
   const [copied, setCopied] = useState(false);
-
+  
   const [currentPage, setCurrentPage] = useState(1);
   const [activePodcast, setActivePodcast] = useState<Podcast | null>(null);
   const itemsPerPage = 6;
   const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || '';
-
-  // ── Modal audio player state ──
-  const modalAudioRef = useRef<HTMLAudioElement>(null);
-  const [modalPlaying, setModalPlaying] = useState(false);
-  const [modalLoading, setModalLoading] = useState(false);
 
   const availableTopics = useMemo(() => {
     const topics = podcasts.map(p => p.topic).filter(Boolean) as string[];
@@ -317,7 +242,7 @@ function Podcast() {
           const attr = item.attributes || item;
           return attr.purpose === "Other Page" && attr.subPurpose === "Podcasts";
         });
-
+        
         if (hero) {
           const attr = hero.attributes || hero;
           setHeroData({
@@ -359,7 +284,6 @@ function Podcast() {
             videoUrl: attrs.videoUrl?.startsWith('http') 
               ? attrs.videoUrl 
               : `${baseUrl}${attrs.videoUrl?.startsWith('/') ? '' : '/'}${attrs.videoUrl || ''}`,
-            audioPodcastImage: attrs.audioPodcastImage || null,
           } as Podcast;
         });
         setPodcasts(formatted);
@@ -367,35 +291,6 @@ function Podcast() {
       .catch(err => console.error("Podcasts fetch error:", err))
       .finally(() => setLoadingPodcasts(false));
   }, [CLIENT_KEY]);
-
-  // ── Modal audio event listeners ──
-  useEffect(() => {
-    const el = modalAudioRef.current;
-    if (!el) return;
-    const onEnded = () => setModalPlaying(false);
-    const onError = () => {
-      setModalPlaying(false);
-      setModalLoading(false);
-    };
-    el.addEventListener('ended', onEnded);
-    el.addEventListener('error', onError);
-    return () => {
-      el.removeEventListener('ended', onEnded);
-      el.removeEventListener('error', onError);
-    };
-  }, [activePodcast]);
-
-  // Reset modal player state when modal opens/closes
-  useEffect(() => {
-    if (!activePodcast) {
-      setModalPlaying(false);
-      setModalLoading(false);
-      if (modalAudioRef.current) {
-        modalAudioRef.current.pause();
-        modalAudioRef.current.currentTime = 0;
-      }
-    }
-  }, [activePodcast]);
 
   const filteredPodcasts = useMemo(() => {
     return podcasts.filter(item => {
@@ -434,51 +329,6 @@ function Podcast() {
     document.body.style.overflow = activePodcast ? "hidden" : "unset";
     return () => { document.body.style.overflow = "unset"; };
   }, [activePodcast]);
-
-  // ── Modal play/pause toggle ──
-  const toggleModalAudio = useCallback(async (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!modalAudioRef.current || !activePodcast) return;
-
-    const resolvedUrl = extractAudioUrl(activePodcast.audioUrl);
-    if (!resolvedUrl) return;
-
-    if (modalPlaying) {
-      modalAudioRef.current.pause();
-      setModalPlaying(false);
-    } else {
-      setModalLoading(true);
-      try {
-        const audio = modalAudioRef.current;
-
-        if (audio.readyState < 2) {
-          await new Promise<void>((resolve, reject) => {
-            const onCanPlay = () => {
-              audio.removeEventListener('canplaythrough', onCanPlay);
-              audio.removeEventListener('error', onError);
-              resolve();
-            };
-            const onError = () => {
-              audio.removeEventListener('canplaythrough', onCanPlay);
-              audio.removeEventListener('error', onError);
-              reject(new Error('Audio load failed'));
-            };
-            audio.addEventListener('canplaythrough', onCanPlay);
-            audio.addEventListener('error', onError);
-            audio.load();
-          });
-        }
-
-        await audio.play();
-        setModalPlaying(true);
-      } catch (err) {
-        console.error("Modal audio play error:", err);
-        setModalPlaying(false);
-      } finally {
-        setModalLoading(false);
-      }
-    }
-  }, [modalPlaying, activePodcast]);
 
   return (
     <main className="pt-20 bg-gray-50/50 min-h-screen relative">
@@ -593,7 +443,7 @@ function Podcast() {
                       />
                     </div>
                   ) : (
-                    /* Audio card with thumbnail and play/pause */
+                    /* FIXED: inline audio player with play/pause on the card */
                     <AudioCard item={item} onOpen={() => setActivePodcast(item)} />
                   )}
 
@@ -611,7 +461,7 @@ function Podcast() {
                     </div>
                     <h3 className="text-xl font-bold text-slate-900 mb-2 line-clamp-1">{item.title}</h3>
                     <p className="text-gray-500 text-sm line-clamp-2 mb-6 flex-grow">{item.description}</p>
-
+                    
                     <div className="mb-6 py-4 border-y border-gray-50 flex items-center justify-between text-[10px] font-black text-gray-400 uppercase">
                       <span className="flex items-center gap-1"><Layers size={12} className="text-blue-500"/> {item.topic || '—'}</span>
                       <span className="flex items-center gap-1"><User size={12}/> {item.audience || '—'}</span>
@@ -705,45 +555,16 @@ function Podcast() {
                     <div className="p-4 bg-white/10 rounded-2xl"><Headphones className="text-white" size={30}/></div>
                     <p className="text-white font-bold">{activePodcast.title}</p>
                   </div>
-
-                  {/* If direct audio file → native audio player with play/pause */}
-                  {/* If NOT direct audio → render iframe */}
-                  {isDirectAudioFile(extractAudioUrl(activePodcast.audioUrl)) ? (
-                    <>
-                      {/* Hidden audio element for modal - preload="none" prevents auto-download */}
-                      <audio ref={modalAudioRef} src={extractAudioUrl(activePodcast.audioUrl)} preload="none" />
-
-                      {/* Play/Pause button for modal */}
-                      <button
-                        aria-label={modalPlaying ? 'Pause audio' : 'Play audio'}
-                        onClick={toggleModalAudio}
-                        disabled={modalLoading}
-                        className="text-white hover:scale-110 transition-transform focus:outline-none disabled:opacity-50 shrink-0"
-                      >
-                        {modalLoading ? (
-                          <Loader2 size={48} className="animate-spin text-blue-400" />
-                        ) : modalPlaying ? (
-                          <Pause size={48} color="white" />
-                        ) : (
-                          <Play size={48} color="white" />
-                        )}
-                      </button>
-                    </>
-                  ) : (
-                    <iframe 
-                      src={extractAudioUrl(activePodcast.audioUrl)}
-                      title={activePodcast.title}
-                      className="w-full md:w-auto flex-1 h-20 border-0 rounded-xl"
-                      allow="autoplay"
-                    />
-                  )}
-
-                  {/* Manual download button - user must click to download */}
+                  <audio 
+                    src={activePodcast.audioUrl} 
+                    controls 
+                    autoPlay 
+                    className="w-full md:w-auto flex-1" 
+                  />
                   <a 
-                    href={extractAudioUrl(activePodcast.audioUrl)} 
+                    href={activePodcast.audioUrl} 
                     download 
                     className="p-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all shrink-0"
-                    title="Download audio"
                   >
                     <Download size={20}/>
                   </a>
