@@ -212,8 +212,8 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
       {/* If NOT direct audio (iframe embed, RFI page URL, etc.) → render iframe */}
       {directAudio ? (
         <>
-          {/* Hidden audio element */}
-          <audio ref={audioRef} src={resolvedAudioUrl} preload="metadata" />
+          {/* Hidden audio element - preload="none" prevents auto-download on page load */}
+          <audio ref={audioRef} src={resolvedAudioUrl} preload="none" />
 
           {/* Waveform / placeholder visual */}
           <div className={`flex items-end gap-[3px] h-10 transition-opacity relative z-10 ${playing ? 'opacity-100' : 'opacity-30'}`}>
@@ -710,8 +710,8 @@ function Podcast() {
                   {/* If NOT direct audio → render iframe */}
                   {isDirectAudioFile(extractAudioUrl(activePodcast.audioUrl)) ? (
                     <>
-                      {/* Hidden audio element for modal */}
-                      <audio ref={modalAudioRef} src={extractAudioUrl(activePodcast.audioUrl)} preload="metadata" />
+                      {/* Hidden audio element for modal - preload="none" prevents auto-download */}
+                      <audio ref={modalAudioRef} src={extractAudioUrl(activePodcast.audioUrl)} preload="none" />
 
                       {/* Play/Pause button for modal */}
                       <button
@@ -738,10 +738,12 @@ function Podcast() {
                     />
                   )}
 
+                  {/* Manual download button - user must click to download */}
                   <a 
                     href={extractAudioUrl(activePodcast.audioUrl)} 
                     download 
                     className="p-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all shrink-0"
+                    title="Download audio"
                   >
                     <Download size={20}/>
                   </a>
@@ -775,5 +777,4 @@ function Podcast() {
     </main>
   );
 }
-
 export default Podcast;

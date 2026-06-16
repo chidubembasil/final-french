@@ -9,6 +9,7 @@ interface Podcast {
   mediaType: "audio" | "video";
   audioUrl?: string;
   videoUrl?: string;
+  audioPodcastImage?: string | null;
   author?: string;
   createdAt: string;
   duration?: number;
@@ -16,8 +17,31 @@ interface Podcast {
 
 const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || "";
 
+// ── Supported direct audio file extensions ────────────────────────────────────
+const DIRECT_AUDIO_EXTENSIONS = [
+  '.mp3', '.aac', '.ogg', '.opus', '.wma', '.m4a', '.wav', '.flac',
+  '.alac', '.aiff', '.ape', '.mka', '.tta', '.wv', '.mid', '.midi',
+  '.mp4', '.webm', '.3gp'
+];
+
+// ── Check if URL is a direct audio file ─────────────────────────────────────
+function isDirectAudioFile(url: string): boolean {
+  if (!url || url.trim() === '') return false;
+  const lower = url.trim().toLowerCase();
+  const cleanUrl = lower.split('?')[0];
+  return DIRECT_AUDIO_EXTENSIONS.some(ext => cleanUrl.endsWith(ext));
+}
+
+// ── Extract audio URL from iframe embed code or direct URL ───────────────────
+function extractAudioUrl(input: string): string {
+  if (!input || input.trim() === '') return '';
+  const iframeSrcMatch = input.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+  if (iframeSrcMatch) return iframeSrcMatch[1];
+  return input.trim();
+}
+
 // ── Inline audio player with play/pause ──────────────────────────────────────
-function AudioPlayer({ src, title }: { src: string; title: string }) {
+function AudioPlayer({ src, title }: { src: string; title: string; thumbnailUrl?: string | null }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -26,9 +50,11 @@ function AudioPlayer({ src, title }: { src: string; title: string }) {
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
+  const resolvedSrc = extractAudioUrl(src);
+  const directAudio = isDirectAudioFile(resolvedSrc);
+
   const toggle = async () => {
     if (!audioRef.current) return;
-    
     setError(null);
 
     if (playing) {
@@ -37,7 +63,6 @@ function AudioPlayer({ src, title }: { src: string; title: string }) {
     } else {
       setIsLoading(true);
       try {
-        // Ensure audio is loaded before playing
         if (audioRef.current.readyState < 2) {
           await new Promise<void>((resolve, reject) => {
             const audio = audioRef.current!;
@@ -53,10 +78,9 @@ function AudioPlayer({ src, title }: { src: string; title: string }) {
             };
             audio.addEventListener('canplaythrough', onCanPlay);
             audio.addEventListener('error', onError);
-            audio.load(); // Force reload if needed
+            audio.load();
           });
         }
-        
         await audioRef.current.play();
         setPlaying(true);
       } catch (err) {
@@ -85,8 +109,7 @@ function AudioPlayer({ src, title }: { src: string; title: string }) {
   };
 
   const onEnded = () => setPlaying(false);
-  
-  const onError = () => {
+  const onAudioError = () => {
     setError("Failed to load audio file");
     setPlaying(false);
     setIsLoading(false);
@@ -109,7 +132,6 @@ function AudioPlayer({ src, title }: { src: string; title: string }) {
     return `${m}:${sec.toString().padStart(2, '0')}`;
   };
 
-  // Don't render player if no valid source
   if (!src) {
     return (
       <div className="w-full mt-auto p-4 rounded-xl bg-slate-50 text-center text-slate-400 text-sm">
@@ -119,56 +141,64 @@ function AudioPlayer({ src, title }: { src: string; title: string }) {
   }
 
   return (
-    <div className="w-full mt-auto space-y-3">
-      <audio
-        ref={audioRef}
-        src={src}
-        preload="metadata"
-        onTimeUpdate={onTimeUpdate}
-        onLoadedMetadata={onLoadedMetadata}
-        onEnded={onEnded}
-        onError={onError}
-      />
+    <div className="w-full mt-auto space-y-3 relative z-10">
+      {directAudio ? (
+        <>
+          <audio
+            ref={audioRef}
+            src={resolvedSrc}
+            preload="none"
+            onTimeUpdate={onTimeUpdate}
+            onLoadedMetadata={onLoadedMetadata}
+            onEnded={onEnded}
+            onError={onAudioError}
+          />
 
-      {/* Error message */}
-      {error && (
-        <div className="text-xs text-red-500 text-center bg-red-50 px-3 py-2 rounded-lg">
-          {error}
-        </div>
-      )}
+          {error && (
+            <div className="text-xs text-red-500 text-center bg-red-50 px-3 py-2 rounded-lg">
+              {error}
+            </div>
+          )}
 
-      {/* Progress bar */}
-      <div className="flex items-center gap-2">
-        <span className="text-[10px] text-slate-400 tabular-nums w-8">{fmt(currentTime)}</span>
-        <input
-          type="range"
-          min={0}
-          max={100}
-          step={0.1}
-          value={progress}
-          onChange={seek}
-          aria-label="Seek audio"
-          className="flex-1 h-1 accent-blue-700 cursor-pointer"
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-slate-400 tabular-nums w-8">{fmt(currentTime)}</span>
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={0.1}
+              value={progress}
+              onChange={seek}
+              aria-label="Seek audio"
+              className="flex-1 h-1 accent-blue-700 cursor-pointer"
+            />
+            <span className="text-[10px] text-slate-400 tabular-nums w-8 text-right">{fmt(duration)}</span>
+          </div>
+
+          <button
+            onClick={toggle}
+            disabled={isLoading}
+            aria-label={playing ? `Pause ${title}` : `Play ${title}`}
+            className="w-full flex items-center justify-center gap-3 py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-700 to-red-600 hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {isLoading ? (
+              <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : playing ? (
+              <Pause size={18} />
+            ) : (
+              <Play size={18} />
+            )}
+            {isLoading ? 'Loading...' : playing ? 'Pause Episode' : 'Play Episode'}
+          </button>
+        </>
+      ) : (
+        <iframe
+          src={resolvedSrc}
+          title={title}
+          className="w-full h-48 rounded-xl border-0"
+          allow="autoplay"
         />
-        <span className="text-[10px] text-slate-400 tabular-nums w-8 text-right">{fmt(duration)}</span>
-      </div>
-
-      {/* Play / Pause button */}
-      <button
-        onClick={toggle}
-        disabled={isLoading}
-        aria-label={playing ? `Pause ${title}` : `Play ${title}`}
-        className="w-full flex items-center justify-center gap-3 py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-700 to-red-600 hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {isLoading ? (
-          <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-        ) : playing ? (
-          <Pause size={18} />
-        ) : (
-          <Play size={18} />
-        )}
-        {isLoading ? 'Loading...' : playing ? 'Pause Episode' : 'Play Episode'}
-      </button>
+      )}
     </div>
   );
 }
@@ -248,6 +278,7 @@ export default function LatestPodcasts() {
       <div className="grid gap-12 md:grid-cols-3">
         {podcasts.map((podcast) => {
           const isVideoActive = activeVideoId === podcast.id;
+          const hasAudioThumbnail = podcast.mediaType === "audio" && podcast.audioPodcastImage;
 
           return (
             <article
@@ -257,10 +288,18 @@ export default function LatestPodcasts() {
               {/* Top accent bar */}
               <div className="h-1 w-full bg-gradient-to-r from-blue-700 via-white to-red-600" />
 
-              <div className="p-8 flex flex-col h-full">
+              {/* Audio thumbnail background - only for audio with image */}
+              {hasAudioThumbnail && (
+                <div 
+                  className="absolute inset-0 z-0 bg-cover bg-center opacity-20"
+                  style={{ backgroundImage: `url(${podcast.audioPodcastImage})` }}
+                />
+              )}
+
+              <div className="p-8 flex flex-col h-full relative z-10">
                 {/* Media badge */}
                 <span
-                  className={`inline-block mb-4 px-4 py-1 rounded-full text-xs font-bold tracking-wide
+                  className={`inline-block mb-4 px-4 py-1 rounded-full text-xs font-bold tracking-wide w-fit
                     ${podcast.mediaType === "audio"
                       ? "bg-blue-50 text-blue-700"
                       : "bg-red-50 text-red-700"
@@ -283,7 +322,8 @@ export default function LatestPodcasts() {
                 {podcast.mediaType === "audio" && (
                   <AudioPlayer 
                     src={podcast.audioUrl || ''} 
-                    title={podcast.title} 
+                    title={podcast.title}
+                    thumbnailUrl={podcast.audioPodcastImage}
                   />
                 )}
 
