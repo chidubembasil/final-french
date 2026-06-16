@@ -38,9 +38,12 @@ function isNativeAudioUrl(url: string): boolean {
   }
 }
 
+// Global registry for audio toggle functions by podcast id
+const audioControllers = new Map<number, () => void>();
+
 // ── Native <audio> player ────────────────────────────────────────────────────
-function NativeAudioPlayer({ src, title, autoPlay, onPlayingChange }: { src: string; title: string; autoPlay?: boolean; onPlayingChange?: (playing: boolean) => void }) {
-  const audioRef = useRef<<HTMLAudioElement>(null);
+function NativeAudioPlayer({ src, title, autoPlay, onPlayingChange, podcastId }: { src: string; title: string; autoPlay?: boolean; onPlayingChange?: (playing: boolean) => void; podcastId: number }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
@@ -53,6 +56,13 @@ function NativeAudioPlayer({ src, title, autoPlay, onPlayingChange }: { src: str
       toggle();
     }
   }, [autoPlay]);
+
+  useEffect(() => {
+    audioControllers.set(podcastId, toggle);
+    return () => {
+      audioControllers.delete(podcastId);
+    };
+  }, [podcastId]);
 
   const toggle = async () => {
     if (!audioRef.current) return;
@@ -123,7 +133,7 @@ function NativeAudioPlayer({ src, title, autoPlay, onPlayingChange }: { src: str
     onPlayingChange?.(false);
   };
 
-  const seek = (e: React.ChangeEvent<<HTMLInputElement>) => {
+  const seek = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!audioRef.current) return;
     const val = Number(e.target.value);
     const dur = audioRef.current.duration || 0;
@@ -264,16 +274,15 @@ function CoverImageWithPlayButton({
 
   if (!src || imgError) {
     return (
-      <div className="w-full h-48 flex items-center justify-center bg-gradient-to-br from-blue-700 to-red-600 rounded-t-[2rem] relative group cursor-pointer">
+      <div className="w-full h-48 flex items-center justify-center bg-gradient-to-br from-blue-700 to-red-600 rounded-t-[2rem] relative group">
         <Headphones size={40} className="text-white/70" />
-        <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-[2rem]">
-          {isPlaying ? (
-            <div onClick={(e) => { e.stopPropagation(); onPause(); }} className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg cursor-pointer">
+        <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-[2rem] gap-3">
+          <div onClick={(e) => { e.stopPropagation(); onPlay(); }} className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg cursor-pointer hover:scale-105 transition-transform">
+            <Play size={24} className="text-blue-700 ml-1" />
+          </div>
+          {isPlaying && (
+            <div onClick={(e) => { e.stopPropagation(); onPause(); }} className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg cursor-pointer hover:scale-105 transition-transform">
               <Pause size={24} className="text-blue-700" />
-            </div>
-          ) : (
-            <div onClick={(e) => { e.stopPropagation(); onPlay(); }} className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg cursor-pointer">
-              <Play size={24} className="text-blue-700 ml-1" />
             </div>
           )}
         </div>
@@ -282,7 +291,7 @@ function CoverImageWithPlayButton({
   }
 
   return (
-    <div className="w-full h-48 overflow-hidden rounded-t-[2rem] relative group cursor-pointer">
+    <div className="w-full h-48 overflow-hidden rounded-t-[2rem] relative group">
       <img
         src={src}
         alt={`Cover art for ${title}`}
@@ -290,14 +299,13 @@ function CoverImageWithPlayButton({
         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         draggable={false}
       />
-      <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity">
-        {isPlaying ? (
-          <div onClick={(e) => { e.stopPropagation(); onPause(); }} className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform cursor-pointer">
+      <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity gap-3">
+        <div onClick={(e) => { e.stopPropagation(); onPlay(); }} className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform cursor-pointer hover:scale-105">
+          <Play size={24} className="text-blue-700 ml-1" />
+        </div>
+        {isPlaying && (
+          <div onClick={(e) => { e.stopPropagation(); onPause(); }} className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform cursor-pointer hover:scale-105">
             <Pause size={24} className="text-blue-700" />
-          </div>
-        ) : (
-          <div onClick={(e) => { e.stopPropagation(); onPlay(); }} className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform cursor-pointer">
-            <Play size={24} className="text-blue-700 ml-1" />
           </div>
         )}
       </div>
@@ -309,7 +317,7 @@ function CoverImageWithPlayButton({
 export default function LatestPodcasts() {
   const navigate = useNavigate();
 
-  const [podcasts, setPodcasts] = useState<<Podcast[]>([]);
+  const [podcasts, setPodcasts] = useState<Podcast[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeIframeId, setActiveIframeId] = useState<number | null>(null);
   const [autoPlayAudioId, setAutoPlayAudioId] = useState<number | null>(null);
@@ -392,6 +400,10 @@ export default function LatestPodcasts() {
           };
 
           const handleCoverPause = () => {
+            const controller = audioControllers.get(podcast.id);
+            if (controller) {
+              controller();
+            }
             setPlayingAudioId(null);
             setAutoPlayAudioId(null);
           };
@@ -432,6 +444,7 @@ export default function LatestPodcasts() {
                       src={audioSrc}
                       title={podcast.title}
                       autoPlay={autoPlayAudioId === podcast.id}
+                      podcastId={podcast.id}
                       onPlayingChange={(playing) => {
                         if (playing) {
                           setPlayingAudioId(podcast.id);
