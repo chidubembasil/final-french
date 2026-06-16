@@ -59,104 +59,126 @@ const DEFAULT_HERO: GalleryHero = {
   mediaUrl: img1
 };
 
+// ── Supported direct audio file extensions ────────────────────────────────────
 const DIRECT_AUDIO_EXTENSIONS = [
   '.mp3', '.aac', '.ogg', '.opus', '.wma', '.m4a', '.wav', '.flac',
   '.alac', '.aiff', '.ape', '.mka', '.tta', '.wv', '.mid', '.midi',
   '.mp4', '.webm', '.3gp'
 ];
 
+// ── Check if URL is a direct audio file ─────────────────────────────────────
 function isDirectAudioFile(url: string): boolean {
   if (!url || url.trim() === '') return false;
-  const cleanUrl = url.trim().toLowerCase().split('?')[0];
+  const lower = url.trim().toLowerCase();
+  // Remove query params for extension check
+  const cleanUrl = lower.split('?')[0];
   return DIRECT_AUDIO_EXTENSIONS.some(ext => cleanUrl.endsWith(ext));
 }
 
+// ── Extract audio URL from iframe embed code or direct URL ───────────────────
 function extractAudioUrl(input: string): string {
   if (!input || input.trim() === '') return '';
+
+  // Check if it's an iframe embed code
   const iframeSrcMatch = input.match(/<iframe[^>]+src=["']([^"']+)["']/i);
-  if (iframeSrcMatch) return iframeSrcMatch[1];
+  if (iframeSrcMatch) {
+    return iframeSrcMatch[1];
+  }
+
+  // It's a direct URL
   return input.trim();
 }
 
 // ── Inline audio player card ──────────────────────────────────────────────────
-// Key fix: we never set `src` on the <audio> element until the user clicks play.
-// This prevents Cloudinary raw/upload URLs (which return Content-Disposition: attachment)
-// from triggering a browser download on mount.
 function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // Only inject src into <audio> after the user has clicked play at least once
-  const [srcInjected, setSrcInjected] = useState(false);
 
+  // Extract actual audio URL (handles iframe embed codes too)
   const resolvedAudioUrl = extractAudioUrl(item.audioUrl);
   const directAudio = isDirectAudioFile(resolvedAudioUrl);
-  const hasValidAudio = !!resolvedAudioUrl && resolvedAudioUrl !== 'null' && resolvedAudioUrl !== 'undefined';
+
+  // Validate audio URL
+  const hasValidAudio = resolvedAudioUrl && resolvedAudioUrl !== '' && resolvedAudioUrl !== 'null' && resolvedAudioUrl !== 'undefined';
+
+  // Use audioPodcastImage as thumbnail if available
   const thumbnailUrl = item.audioPodcastImage || null;
 
   const toggle = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!hasValidAudio) return;
+    if (!audioRef.current || !hasValidAudio) return;
 
     setError(null);
 
     if (playing) {
-      audioRef.current?.pause();
+      audioRef.current.pause();
       setPlaying(false);
-      return;
-    }
-
-    // First click: inject src now (deferred so browser never fetches on mount)
-    setSrcInjected(true);
-    setIsLoading(true);
-
-    // Wait for next tick so React has set the src attribute before we call play()
-    setTimeout(async () => {
+    } else {
+      setIsLoading(true);
       try {
         const audio = audioRef.current;
-        if (!audio) return;
 
-        await new Promise<void>((resolve, reject) => {
-          if (audio.readyState >= 2) { resolve(); return; }
-          const onCanPlay = () => { cleanup(); resolve(); };
-          const onErr = () => { cleanup(); reject(new Error('Audio load failed')); };
-          const cleanup = () => {
-            audio.removeEventListener('canplaythrough', onCanPlay);
-            audio.removeEventListener('error', onErr);
-          };
-          audio.addEventListener('canplaythrough', onCanPlay);
-          audio.addEventListener('error', onErr);
-          audio.load();
-        });
+        // If not loaded enough, wait for canplay
+        if (audio.readyState < 2) {
+          await new Promise<void>((resolve, reject) => {
+            const onCanPlay = () => {
+              audio.removeEventListener('canplaythrough', onCanPlay);
+              audio.removeEventListener('error', onError);
+              resolve();
+            };
+            const onError = () => {
+              audio.removeEventListener('canplaythrough', onCanPlay);
+              audio.removeEventListener('error', onError);
+              reject(new Error('Audio load failed'));
+            };
+            audio.addEventListener('canplaythrough', onCanPlay);
+            audio.addEventListener('error', onError);
+            audio.load();
+          });
+        }
 
         await audio.play();
         setPlaying(true);
       } catch (err) {
-        console.error('Audio play error:', err);
-        setError('Playback failed');
+        console.error("Audio play error:", err);
+        setError("Playback failed");
         setPlaying(false);
       } finally {
         setIsLoading(false);
       }
-    }, 0);
+    }
   }, [playing, hasValidAudio]);
 
+  // If audio ends naturally, reset icon
   useEffect(() => {
     const el = audioRef.current;
     if (!el) return;
     const onEnded = () => setPlaying(false);
-    const onError = () => { setPlaying(false); setIsLoading(false); setError('Load error'); };
+    const onError = () => {
+      setPlaying(false);
+      setIsLoading(false);
+      setError("Load error");
+    };
     el.addEventListener('ended', onEnded);
     el.addEventListener('error', onError);
-    return () => { el.removeEventListener('ended', onEnded); el.removeEventListener('error', onError); };
-  }, [srcInjected]); // re-attach when src is injected
+    return () => {
+      el.removeEventListener('ended', onEnded);
+      el.removeEventListener('error', onError);
+    };
+  }, []);
 
+  // Don't render interactive player if no audio URL
   if (!hasValidAudio) {
     return (
       <div className="relative aspect-video bg-slate-900 flex flex-col items-center justify-center gap-4">
         {thumbnailUrl ? (
-          <img src={thumbnailUrl} alt={item.title} className="absolute inset-0 w-full h-full object-cover opacity-40" />
+          <img 
+            src={thumbnailUrl} 
+            alt={item.title}
+            className="absolute inset-0 w-full h-full object-cover opacity-40"
+          />
         ) : (
           <div className="flex items-end gap-[3px] h-10 opacity-30">
             {[4,7,5,9,6,8,4,10,6,7,5,9,4,8,6].map((h, i) => (
@@ -165,7 +187,10 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
           </div>
         )}
         <p className="text-white/50 text-xs font-bold uppercase tracking-widest relative z-10">No Audio</p>
-        <button onClick={(e) => { e.stopPropagation(); onOpen(); }} className="absolute bottom-3 right-4 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white transition-colors z-10">
+        <button
+          onClick={(e) => { e.stopPropagation(); onOpen(); }}
+          className="absolute bottom-3 right-4 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white transition-colors z-10"
+        >
           View Details →
         </button>
       </div>
@@ -174,50 +199,72 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
 
   return (
     <div className="relative aspect-video bg-slate-900 flex flex-col items-center justify-center gap-4 overflow-hidden">
+      {/* Thumbnail background if available */}
       {thumbnailUrl && (
-        <img src={thumbnailUrl} alt={item.title} className="absolute inset-0 w-full h-full object-cover opacity-30" />
+        <img 
+          src={thumbnailUrl} 
+          alt={item.title}
+          className="absolute inset-0 w-full h-full object-cover opacity-30"
+        />
       )}
 
+      {/* If direct audio file (mp3, wav, etc.) → native audio player with play/pause */}
+      {/* If NOT direct audio (iframe embed, RFI page URL, etc.) → render iframe */}
       {directAudio ? (
         <>
-          {/*
-            CRITICAL: no src until srcInjected is true.
-            Setting src={undefined} means the browser makes zero network requests on mount.
-            src is only set after the user explicitly clicks the play button.
-          */}
-          <audio
-            ref={audioRef}
-            src={srcInjected ? resolvedAudioUrl : undefined}
-            preload="none"
-          />
+          {/* Hidden audio element - preload="none" prevents auto-download on page load */}
+          <audio ref={audioRef} src={resolvedAudioUrl} preload="none" />
 
+          {/* Waveform / placeholder visual */}
           <div className={`flex items-end gap-[3px] h-10 transition-opacity relative z-10 ${playing ? 'opacity-100' : 'opacity-30'}`}>
             {[4,7,5,9,6,8,4,10,6,7,5,9,4,8,6].map((h, i) => (
-              <div
-                key={i}
-                className={`w-1 rounded-sm bg-white transition-all duration-300 ${playing ? 'animate-pulse' : ''}`}
-                style={{ height: `${h * 3}px`, animationDelay: `${i * 50}ms` }}
+              <div 
+                key={i} 
+                className={`w-1 rounded-sm bg-white transition-all duration-300 ${playing ? 'animate-pulse' : ''}`} 
+                style={{ 
+                  height: `${h * 3}px`,
+                  animationDelay: `${i * 50}ms`
+                }} 
               />
             ))}
           </div>
 
-          {error && <p className="text-red-400 text-[10px] font-bold relative z-10">{error}</p>}
+          {/* Error message */}
+          {error && (
+            <p className="text-red-400 text-[10px] font-bold relative z-10">{error}</p>
+          )}
 
+          {/* Play / Pause button */}
           <button
             aria-label={playing ? 'Pause audio' : 'Play audio'}
             onClick={toggle}
             disabled={isLoading}
             className="text-white hover:scale-110 transition-transform focus:outline-none disabled:opacity-50 relative z-10"
           >
-            {isLoading ? <Loader2 size={56} className="animate-spin text-blue-400" /> : playing ? <Pause size={56} color="white" /> : <Play size={56} color="white" />}
+            {isLoading ? (
+              <Loader2 size={56} className="animate-spin text-blue-400" />
+            ) : playing ? (
+              <Pause size={56} color="white" />
+            ) : (
+              <Play size={56} color="white" />
+            )}
           </button>
         </>
       ) : (
-        // Non-direct URLs (Spotify embeds, RFI, etc.) — iframe is fine, no download risk
-        <iframe src={resolvedAudioUrl} title={item.title} className="absolute inset-0 w-full h-full border-0" allow="autoplay" />
+        /* iframe for non-direct audio URLs (RFI embeds, webpage URLs, etc.) */
+        <iframe 
+          src={resolvedAudioUrl}
+          title={item.title}
+          className="absolute inset-0 w-full h-full border-0"
+          allow="autoplay"
+        />
       )}
 
-      <button onClick={(e) => { e.stopPropagation(); onOpen(); }} className="absolute bottom-3 right-4 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white transition-colors z-10">
+      {/* "View transcript" small link */}
+      <button
+        onClick={(e) => { e.stopPropagation(); onOpen(); }}
+        className="absolute bottom-3 right-4 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white transition-colors z-10"
+      >
         Full player & transcript →
       </button>
     </div>
@@ -245,8 +292,6 @@ function Podcast() {
   const modalAudioRef = useRef<HTMLAudioElement>(null);
   const [modalPlaying, setModalPlaying] = useState(false);
   const [modalLoading, setModalLoading] = useState(false);
-  // Same deferred-src pattern for modal — no src until user clicks play in modal
-  const [modalSrcInjected, setModalSrcInjected] = useState(false);
 
   const availableTopics = useMemo(() => {
     const topics = podcasts.map(p => p.topic).filter(Boolean) as string[];
@@ -262,21 +307,32 @@ function Podcast() {
     const baseUrl = CLIENT_KEY.replace(/\/$/, '');
 
     fetch(`${baseUrl}/api/galleries`)
-      .then(res => { if (!res.ok) throw new Error('Hero fetch failed'); return res.json(); })
+      .then(res => {
+        if (!res.ok) throw new Error('Hero fetch failed');
+        return res.json();
+      })
       .then((data: StrapiResponse) => {
         const raw = Array.isArray(data) ? data : (data.data || []);
         const hero = raw.find((item: StrapiDataItem) => {
           const attr = item.attributes || item;
           return attr.purpose === "Other Page" && attr.subPurpose === "Podcasts";
         });
+
         if (hero) {
           const attr = hero.attributes || hero;
-          setHeroData({ title: attr.title || DEFAULT_HERO.title, description: attr.description || DEFAULT_HERO.description, mediaUrl: attr.mediaUrl || DEFAULT_HERO.mediaUrl });
+          setHeroData({
+            title: attr.title || DEFAULT_HERO.title,
+            description: attr.description || DEFAULT_HERO.description,
+            mediaUrl: attr.mediaUrl || DEFAULT_HERO.mediaUrl,
+          });
         } else {
           setHeroData(DEFAULT_HERO);
         }
       })
-      .catch(() => setHeroData(DEFAULT_HERO))
+      .catch(err => {
+        console.error("Hero fetch error:", err);
+        setHeroData(DEFAULT_HERO);
+      })
       .finally(() => setLoadingHero(false));
 
     const podcastQuery = `${baseUrl}/api/podcasts?` +
@@ -286,7 +342,10 @@ function Podcast() {
       `pagination[page]=1&pagination[pageSize]=100`;
 
     fetch(podcastQuery)
-      .then(res => { if (!res.ok) throw new Error(`Podcasts fetch failed: ${res.status}`); return res.json(); })
+      .then(res => {
+        if (!res.ok) throw new Error(`Podcasts fetch failed: ${res.status}`);
+        return res.json();
+      })
       .then((data: StrapiResponse) => {
         const raw = Array.isArray(data) ? data : (data.data || []);
         const formatted = raw.map((item: StrapiDataItem) => {
@@ -294,11 +353,11 @@ function Podcast() {
           return {
             id: item.id,
             ...attrs,
-            audioUrl: attrs.audioUrl?.startsWith('http')
-              ? attrs.audioUrl
+            audioUrl: attrs.audioUrl?.startsWith('http') 
+              ? attrs.audioUrl 
               : `${baseUrl}${attrs.audioUrl?.startsWith('/') ? '' : '/'}${attrs.audioUrl || ''}`,
-            videoUrl: attrs.videoUrl?.startsWith('http')
-              ? attrs.videoUrl
+            videoUrl: attrs.videoUrl?.startsWith('http') 
+              ? attrs.videoUrl 
               : `${baseUrl}${attrs.videoUrl?.startsWith('/') ? '' : '/'}${attrs.videoUrl || ''}`,
             audioPodcastImage: attrs.audioPodcastImage || null,
           } as Podcast;
@@ -314,18 +373,23 @@ function Podcast() {
     const el = modalAudioRef.current;
     if (!el) return;
     const onEnded = () => setModalPlaying(false);
-    const onError = () => { setModalPlaying(false); setModalLoading(false); };
+    const onError = () => {
+      setModalPlaying(false);
+      setModalLoading(false);
+    };
     el.addEventListener('ended', onEnded);
     el.addEventListener('error', onError);
-    return () => { el.removeEventListener('ended', onEnded); el.removeEventListener('error', onError); };
-  }, [activePodcast, modalSrcInjected]);
+    return () => {
+      el.removeEventListener('ended', onEnded);
+      el.removeEventListener('error', onError);
+    };
+  }, [activePodcast]);
 
-  // Reset modal state on open/close — critically also reset srcInjected
+  // Reset modal player state when modal opens/closes
   useEffect(() => {
     if (!activePodcast) {
       setModalPlaying(false);
       setModalLoading(false);
-      setModalSrcInjected(false); // wipe the src so next open starts clean
       if (modalAudioRef.current) {
         modalAudioRef.current.pause();
         modalAudioRef.current.currentTime = 0;
@@ -335,18 +399,23 @@ function Podcast() {
 
   const filteredPodcasts = useMemo(() => {
     return podcasts.filter(item => {
-      const matchesSearch =
-        item.title.toLowerCase().includes(search.toLowerCase()) ||
+      const matchesSearch = 
+        item.title.toLowerCase().includes(search.toLowerCase()) || 
         item.description.toLowerCase().includes(search.toLowerCase()) ||
         item.topic?.toLowerCase().includes(search.toLowerCase());
-      const matchesLevel = levelFilter === 'All' || item.cefrLevel === levelFilter;
-      const matchesMedia = mediaFilter === 'All' || item.mediaType.toLowerCase() === mediaFilter.toLowerCase();
-      const matchesTopic = topicFilter === 'All' || item.topic === topicFilter;
+
+      const matchesLevel  = levelFilter === 'All'  || item.cefrLevel === levelFilter;
+      const matchesMedia  = mediaFilter === 'All'  || item.mediaType.toLowerCase() === mediaFilter.toLowerCase();
+      const matchesTopic  = topicFilter === 'All'  || item.topic === topicFilter;
+
       return matchesSearch && matchesLevel && matchesMedia && matchesTopic;
     });
   }, [podcasts, search, levelFilter, mediaFilter, topicFilter]);
 
-  const currentPodcasts = filteredPodcasts.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+  const currentPodcasts = filteredPodcasts.slice(
+    (currentPage - 1) * itemsPerPage, 
+    currentPage * itemsPerPage
+  );
   const totalPages = Math.ceil(filteredPodcasts.length / itemsPerPage);
 
   const handleCopyTranscript = (text: string) => {
@@ -366,51 +435,49 @@ function Podcast() {
     return () => { document.body.style.overflow = "unset"; };
   }, [activePodcast]);
 
-  // ── Modal play/pause — deferred src injection ──
+  // ── Modal play/pause toggle ──
   const toggleModalAudio = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!activePodcast) return;
+    if (!modalAudioRef.current || !activePodcast) return;
 
     const resolvedUrl = extractAudioUrl(activePodcast.audioUrl);
     if (!resolvedUrl) return;
 
     if (modalPlaying) {
-      modalAudioRef.current?.pause();
+      modalAudioRef.current.pause();
       setModalPlaying(false);
-      return;
-    }
-
-    // Inject src on first play click
-    setModalSrcInjected(true);
-    setModalLoading(true);
-
-    setTimeout(async () => {
+    } else {
+      setModalLoading(true);
       try {
         const audio = modalAudioRef.current;
-        if (!audio) return;
 
-        await new Promise<void>((resolve, reject) => {
-          if (audio.readyState >= 2) { resolve(); return; }
-          const onCanPlay = () => { cleanup(); resolve(); };
-          const onErr = () => { cleanup(); reject(new Error('Audio load failed')); };
-          const cleanup = () => {
-            audio.removeEventListener('canplaythrough', onCanPlay);
-            audio.removeEventListener('error', onErr);
-          };
-          audio.addEventListener('canplaythrough', onCanPlay);
-          audio.addEventListener('error', onErr);
-          audio.load();
-        });
+        if (audio.readyState < 2) {
+          await new Promise<void>((resolve, reject) => {
+            const onCanPlay = () => {
+              audio.removeEventListener('canplaythrough', onCanPlay);
+              audio.removeEventListener('error', onError);
+              resolve();
+            };
+            const onError = () => {
+              audio.removeEventListener('canplaythrough', onCanPlay);
+              audio.removeEventListener('error', onError);
+              reject(new Error('Audio load failed'));
+            };
+            audio.addEventListener('canplaythrough', onCanPlay);
+            audio.addEventListener('error', onError);
+            audio.load();
+          });
+        }
 
         await audio.play();
         setModalPlaying(true);
       } catch (err) {
-        console.error('Modal audio play error:', err);
+        console.error("Modal audio play error:", err);
         setModalPlaying(false);
       } finally {
         setModalLoading(false);
       }
-    }, 0);
+    }
   }, [modalPlaying, activePodcast]);
 
   return (
@@ -421,15 +488,26 @@ function Podcast() {
           <div className="absolute inset-0 bg-slate-800 animate-pulse" />
         ) : (
           <>
-            <img src={heroData?.mediaUrl} className="absolute inset-0 w-full h-full object-cover z-0" alt="Podcast hero background" loading="eager" fetchPriority="high" decoding="async" />
+            <img
+              src={heroData?.mediaUrl}
+              className="absolute inset-0 w-full h-full object-cover z-0"
+              alt="Podcast hero background"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
+            />
             <div className="absolute inset-0 z-10 bg-gradient-to-br from-red-600/80 via-transparent to-blue-900/90" />
             <div className="relative z-20 w-full h-full flex flex-col items-start justify-center px-6 md:px-16 gap-5">
               <div className="flex items-center gap-2 px-4 py-2 text-white bg-white/20 backdrop-blur-md border border-white/30 rounded-3xl">
                 <Headphones size={17} />
                 <p className="text-sm font-medium uppercase tracking-widest">À toi le micro</p>
               </div>
-              <h1 className="text-white text-5xl md:text-7xl font-bold font-serif max-w-3xl leading-tight">{heroData?.title}</h1>
-              <p className="text-white/90 text-lg md:text-xl max-w-xl leading-relaxed">{heroData?.description}</p>
+              <h1 className="text-white text-5xl md:text-7xl font-bold font-serif max-w-3xl leading-tight">
+                {heroData?.title}
+              </h1>
+              <p className="text-white/90 text-lg md:text-xl max-w-xl leading-relaxed">
+                {heroData?.description}
+              </p>
             </div>
           </>
         )}
@@ -441,21 +519,50 @@ function Podcast() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="relative">
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-              <input type="text" placeholder="Search podcasts..." className="w-full pl-11 pr-4 py-3 rounded-2xl border border-gray-200 bg-gray-50/50 outline-none focus:ring-2 focus:ring-blue-500" value={search} onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} />
+              <input 
+                type="text" 
+                placeholder="Search podcasts..." 
+                className="w-full pl-11 pr-4 py-3 rounded-2xl border border-gray-200 bg-gray-50/50 outline-none focus:ring-2 focus:ring-blue-500" 
+                value={search} 
+                onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }} 
+              />
             </div>
-            <select aria-label="Filter by topic" className="px-4 py-3 rounded-2xl border border-gray-200 bg-gray-50/50 font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500" value={topicFilter} onChange={(e) => { setTopicFilter(e.target.value); setCurrentPage(1); }}>
+            <select 
+              aria-label="Filter by topic"
+              className="px-4 py-3 rounded-2xl border border-gray-200 bg-gray-50/50 font-bold text-sm outline-none focus:ring-2 focus:ring-blue-500" 
+              value={topicFilter} 
+              onChange={(e) => { setTopicFilter(e.target.value); setCurrentPage(1); }}
+            >
               <option value="All">All Topics</option>
-              {availableTopics.map(t => <option key={t} value={t}>{t}</option>)}
+              {availableTopics.map(t => (
+                <option key={t} value={t}>{t}</option>
+              ))}
             </select>
             <div className="flex bg-gray-100 p-1 rounded-xl">
               {['All', 'Audio', 'Video'].map(m => (
-                <button type="button" key={m} aria-label={`Show ${m} podcasts`} onClick={() => { setMediaFilter(m); setCurrentPage(1); }} className={`flex-1 py-3 rounded-lg text-xs font-bold transition-all ${mediaFilter === m ? 'bg-white text-blue-800 shadow-sm' : 'text-gray-500'}`}>{m}</button>
+                <button 
+                  type="button"
+                  key={m} 
+                  aria-label={`Show ${m} podcasts`}
+                  onClick={() => { setMediaFilter(m); setCurrentPage(1); }} 
+                  className={`flex-1 py-3 rounded-lg text-xs font-bold transition-all ${mediaFilter === m ? 'bg-white text-blue-800 shadow-sm' : 'text-gray-500'}`}
+                >
+                  {m}
+                </button>
               ))}
             </div>
           </div>
           <div className="flex gap-2 pt-4 border-t border-gray-100 overflow-x-auto no-scrollbar">
             {availableLevels.map(lvl => (
-              <button type="button" key={lvl} aria-label={`Filter by level ${lvl}`} onClick={() => { setLevelFilter(lvl); setCurrentPage(1); }} className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all shrink-0 ${levelFilter === lvl ? 'bg-blue-800 border-blue-800 text-white' : 'bg-white border-gray-200 text-gray-600'}`}>{lvl}</button>
+              <button 
+                type="button"
+                key={lvl} 
+                aria-label={`Filter by level ${lvl}`}
+                onClick={() => { setLevelFilter(lvl); setCurrentPage(1); }} 
+                className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all shrink-0 ${levelFilter === lvl ? 'bg-blue-800 border-blue-800 text-white' : 'bg-white border-gray-200 text-gray-600'}`}
+              >
+                {lvl}
+              </button>
             ))}
           </div>
         </div>
@@ -464,33 +571,57 @@ function Podcast() {
         {loadingPodcasts ? (
           <div className="flex justify-center py-24"><Loader2 className="animate-spin text-blue-600" size={48}/></div>
         ) : filteredPodcasts.length === 0 ? (
-          <div className="text-center py-24"><p className="text-gray-400 text-lg font-bold">No podcasts found matching your filters</p></div>
+          <div className="text-center py-24">
+            <p className="text-gray-400 text-lg font-bold">No podcasts found matching your filters</p>
+          </div>
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
               {currentPodcasts.map((item) => (
                 <div key={item.id} className="group bg-white rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all flex flex-col h-full overflow-hidden">
+
+                  {/* ── Media area ── */}
                   {item.mediaType === 'video' && item.videoUrl ? (
                     <div className="relative aspect-video bg-slate-900">
-                      <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${getYouTubeID(item.videoUrl)}`} title={item.title} frameBorder="0" allowFullScreen loading="eager" />
+                      <iframe 
+                        className="w-full h-full" 
+                        src={`https://www.youtube.com/embed/${getYouTubeID(item.videoUrl)}`} 
+                        title={item.title} 
+                        frameBorder="0" 
+                        allowFullScreen 
+                        loading="eager" 
+                      />
                     </div>
                   ) : (
+                    /* Audio card with thumbnail and play/pause */
                     <AudioCard item={item} onOpen={() => setActivePodcast(item)} />
                   )}
 
                   <div className="p-8 flex flex-col flex-grow">
                     <div className="flex items-center gap-2 mb-3 flex-wrap">
-                      {item.cefrLevel && <span className="px-2 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold uppercase rounded">{item.cefrLevel}</span>}
-                      {item.topic && <span className="text-[10px] text-gray-400 font-bold uppercase">{item.topic}</span>}
-                      <span className="px-2 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold uppercase rounded">{item.mediaType}</span>
+                      {item.cefrLevel && (
+                        <span className="px-2 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold uppercase rounded">{item.cefrLevel}</span>
+                      )}
+                      {item.topic && (
+                        <span className="text-[10px] text-gray-400 font-bold uppercase">{item.topic}</span>
+                      )}
+                      <span className="px-2 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold uppercase rounded">
+                        {item.mediaType}
+                      </span>
                     </div>
                     <h3 className="text-xl font-bold text-slate-900 mb-2 line-clamp-1">{item.title}</h3>
                     <p className="text-gray-500 text-sm line-clamp-2 mb-6 flex-grow">{item.description}</p>
+
                     <div className="mb-6 py-4 border-y border-gray-50 flex items-center justify-between text-[10px] font-black text-gray-400 uppercase">
                       <span className="flex items-center gap-1"><Layers size={12} className="text-blue-500"/> {item.topic || '—'}</span>
                       <span className="flex items-center gap-1"><User size={12}/> {item.audience || '—'}</span>
                     </div>
-                    <button type="button" onClick={() => setActivePodcast(item)} className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all">
+
+                    <button 
+                      type="button"
+                      onClick={() => setActivePodcast(item)} 
+                      className="w-full py-4 bg-slate-900 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all"
+                    >
                       {item.mediaType === 'audio' ? 'Full Player & Transcript' : 'Play & View Transcript'}
                     </button>
                   </div>
@@ -500,9 +631,25 @@ function Podcast() {
 
             {totalPages > 1 && (
               <div className="flex justify-center items-center gap-4 mt-12">
-                <button type="button" aria-label="Previous page" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)} className="p-4 bg-white border border-gray-100 rounded-2xl disabled:opacity-20 hover:bg-gray-50 transition-all shadow-sm"><ChevronLeft size={20} /></button>
+                <button 
+                  type="button"
+                  aria-label="Previous page"
+                  disabled={currentPage === 1} 
+                  onClick={() => setCurrentPage(p => p - 1)} 
+                  className="p-4 bg-white border border-gray-100 rounded-2xl disabled:opacity-20 hover:bg-gray-50 transition-all shadow-sm"
+                >
+                  <ChevronLeft size={20} />
+                </button>
                 <p className="text-xs font-black text-gray-400 uppercase">Page {currentPage} of {totalPages}</p>
-                <button type="button" aria-label="Next page" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)} className="p-4 bg-white border border-gray-100 rounded-2xl disabled:opacity-20 hover:bg-gray-50 transition-all shadow-sm"><ChevronRight size={20} /></button>
+                <button 
+                  type="button"
+                  aria-label="Next page"
+                  disabled={currentPage === totalPages} 
+                  onClick={() => setCurrentPage(p => p + 1)} 
+                  className="p-4 bg-white border border-gray-100 rounded-2xl disabled:opacity-20 hover:bg-gray-50 transition-all shadow-sm"
+                >
+                  <ChevronRight size={20} />
+                </button>
               </div>
             )}
           </>
@@ -518,19 +665,33 @@ function Podcast() {
               <span className="text-[10px] font-black uppercase">Back to Podcasts</span>
             </button>
             <div className="flex gap-3">
-              <button type="button" onClick={(e) => { e.stopPropagation(); if (activePodcast.transcript) handleCopyTranscript(activePodcast.transcript); }} disabled={!activePodcast.transcript} className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-[10px] font-black uppercase hover:bg-gray-200 disabled:opacity-50">
+              <button 
+                type="button"
+                onClick={(e) => { 
+                  e.stopPropagation(); 
+                  if (activePodcast.transcript) handleCopyTranscript(activePodcast.transcript); 
+                }}
+                disabled={!activePodcast.transcript}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-full text-[10px] font-black uppercase hover:bg-gray-200 disabled:opacity-50"
+              >
                 {copied ? <Check size={14} className="text-green-600" /> : <Check size={14} />}
                 {copied ? 'Copied' : 'Copy Transcript'}
               </button>
-              <button type="button" aria-label="Close modal" onClick={() => setActivePodcast(null)} className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-all"><X size={24} /></button>
+              <button type="button" aria-label="Close modal" onClick={() => setActivePodcast(null)} className="p-2 bg-red-50 text-red-600 rounded-full hover:bg-red-600 hover:text-white transition-all">
+                <X size={24} />
+              </button>
             </div>
           </div>
 
           <div className="flex-1 w-full max-w-4xl mx-auto px-6 py-12" onClick={e => e.stopPropagation()}>
             <div className="space-y-8">
               <div className="flex gap-2 flex-wrap">
-                {activePodcast.topic && <span className="px-3 py-1 bg-blue-600 text-white text-[10px] font-black uppercase rounded-lg">{activePodcast.topic}</span>}
-                {activePodcast.cefrLevel && <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-lg">{activePodcast.cefrLevel}</span>}
+                {activePodcast.topic && (
+                  <span className="px-3 py-1 bg-blue-600 text-white text-[10px] font-black uppercase rounded-lg">{activePodcast.topic}</span>
+                )}
+                {activePodcast.cefrLevel && (
+                  <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-lg">{activePodcast.cefrLevel}</span>
+                )}
               </div>
               <h2 className="text-4xl md:text-6xl font-bold font-serif text-slate-900 leading-tight">{activePodcast.title}</h2>
               <div className="flex flex-wrap gap-6 py-4 border-b border-gray-100 text-[10px] font-black text-gray-400 uppercase tracking-widest">
@@ -545,35 +706,42 @@ function Podcast() {
                     <p className="text-white font-bold">{activePodcast.title}</p>
                   </div>
 
+                  {/* If direct audio file → native audio player with play/pause */}
+                  {/* If NOT direct audio → render iframe */}
                   {isDirectAudioFile(extractAudioUrl(activePodcast.audioUrl)) ? (
                     <>
-                      {/*
-                        Modal audio: src is only set after user clicks play (modalSrcInjected).
-                        This prevents Cloudinary raw URLs from auto-downloading when the modal opens.
-                      */}
-                      <audio
-                        ref={modalAudioRef}
-                        src={modalSrcInjected ? extractAudioUrl(activePodcast.audioUrl) : undefined}
-                        preload="none"
-                      />
+                      {/* Hidden audio element for modal - preload="none" prevents auto-download */}
+                      <audio ref={modalAudioRef} src={extractAudioUrl(activePodcast.audioUrl)} preload="none" />
+
+                      {/* Play/Pause button for modal */}
                       <button
                         aria-label={modalPlaying ? 'Pause audio' : 'Play audio'}
                         onClick={toggleModalAudio}
                         disabled={modalLoading}
                         className="text-white hover:scale-110 transition-transform focus:outline-none disabled:opacity-50 shrink-0"
                       >
-                        {modalLoading ? <Loader2 size={48} className="animate-spin text-blue-400" /> : modalPlaying ? <Pause size={48} color="white" /> : <Play size={48} color="white" />}
+                        {modalLoading ? (
+                          <Loader2 size={48} className="animate-spin text-blue-400" />
+                        ) : modalPlaying ? (
+                          <Pause size={48} color="white" />
+                        ) : (
+                          <Play size={48} color="white" />
+                        )}
                       </button>
                     </>
                   ) : (
-                    <iframe src={extractAudioUrl(activePodcast.audioUrl)} title={activePodcast.title} className="w-full md:w-auto flex-1 h-20 border-0 rounded-xl" allow="autoplay" />
+                    <iframe 
+                      src={extractAudioUrl(activePodcast.audioUrl)}
+                      title={activePodcast.title}
+                      className="w-full md:w-auto flex-1 h-20 border-0 rounded-xl"
+                      allow="autoplay"
+                    />
                   )}
 
-                  {/* Download is intentional and user-initiated — href is fine here */}
-                  <a
-                    href={extractAudioUrl(activePodcast.audioUrl)}
-                    download
-                    onClick={(e) => e.stopPropagation()}
+                  {/* Manual download button - user must click to download */}
+                  <a 
+                    href={extractAudioUrl(activePodcast.audioUrl)} 
+                    download 
                     className="p-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all shrink-0"
                     title="Download audio"
                   >
@@ -584,7 +752,13 @@ function Podcast() {
 
               {activePodcast.mediaType === 'video' && activePodcast.videoUrl && getYouTubeID(activePodcast.videoUrl) && (
                 <div className="aspect-video rounded-[2.5rem] overflow-hidden shadow-2xl">
-                  <iframe className="w-full h-full" src={`https://www.youtube.com/embed/${getYouTubeID(activePodcast.videoUrl)}`} title={activePodcast.title} frameBorder="0" allowFullScreen />
+                  <iframe 
+                    className="w-full h-full" 
+                    src={`https://www.youtube.com/embed/${getYouTubeID(activePodcast.videoUrl)}`} 
+                    title={activePodcast.title} 
+                    frameBorder="0" 
+                    allowFullScreen 
+                  />
                 </div>
               )}
 
@@ -603,4 +777,5 @@ function Podcast() {
     </main>
   );
 }
+
 export default Podcast;
