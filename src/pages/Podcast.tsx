@@ -68,37 +68,14 @@ const DIRECT_AUDIO_EXTENSIONS = [
 function isDirectAudioFile(url: string): boolean {
   if (!url || url.trim() === '') return false;
   const cleanUrl = url.trim().toLowerCase().split('?')[0];
-
-  // Normal extensions
-  if (DIRECT_AUDIO_EXTENSIONS.some(ext => cleanUrl.endsWith(ext))) {
-    return true;
-  }
-
-  // Cloudinary video delivery (even without extension)
-  if (cleanUrl.includes('res.cloudinary.com') && cleanUrl.includes('/video/upload/')) {
-    return true;
-  }
-
-  return false;
+  return DIRECT_AUDIO_EXTENSIONS.some(ext => cleanUrl.endsWith(ext));
 }
-
 
 function extractAudioUrl(input: string): string {
   if (!input || input.trim() === '') return '';
   const iframeSrcMatch = input.match(/<iframe[^>]+src=["']([^"']+)["']/i);
   if (iframeSrcMatch) return iframeSrcMatch[1];
-
-  let url = input.trim();
-
-  // Fix Cloudinary raw → video (streams, no download)
-  if (url.includes('res.cloudinary.com') && url.includes('/raw/upload/')) {
-    url = url
-     .replace('/raw/upload/', '/video/upload/')
-      // add fl_inline BEFORE the version number
-     .replace('/video/upload/v', '/video/upload/fl_inline/v');
-  }
-
-  return url;
+  return input.trim();
 }
 
 // ── Inline audio player card ──────────────────────────────────────────────────
@@ -304,8 +281,7 @@ function Podcast() {
 
     const podcastQuery = `${baseUrl}/api/podcasts?` +
       `filters[status][$eq]=published&` +
-      `filters[mediaType][$in][0]=audio&` +
-      `filters[mediaType][$in][1]=video&` +
+      `filters[mediaType][$in]=audio&filters[mediaType][$in]=video&` +
       `sort=publishedAt:desc&` +
       `pagination[page]=1&pagination[pageSize]=100`;
 
