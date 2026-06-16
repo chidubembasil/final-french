@@ -9,7 +9,7 @@ interface Podcast {
   mediaType: "audio" | "video";
   audioUrl?: string;
   videoUrl?: string;
-  audioPodcastImage?: string;
+  coverImage?: string;
   author?: string;
   createdAt: string;
   duration?: number;
@@ -17,15 +17,26 @@ interface Podcast {
 
 const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || "";
 
-// ── Check if URL has a recognized audio extension ────────────────────────────
-function hasAudioExtension(url: string): boolean {
-  const audioExtensions = [".mp3", ".wav", ".ogg", ".aac", ".flac", ".m4a", ".opus", ".webm"];
-  const lower = url.toLowerCase().split("?")[0]; // strip query params
-  return audioExtensions.some((ext) => lower.endsWith(ext));
+// Supported native audio extensions
+const NATIVE_AUDIO_EXTENSIONS = [
+  ".mp3", ".aac", ".ogg", ".opus", ".wma", ".m4a", ".wav",
+  ".flac", ".alac", ".aiff", ".ape", ".mka", ".tta", ".wv",
+  ".mid", ".midi", ".mp4", ".webm", ".3gp",
+];
+
+function isNativeAudioUrl(url: string): boolean {
+  if (!url) return false;
+  try {
+    // Strip query params before checking extension
+    const clean = url.split("?")[0].toLowerCase();
+    return NATIVE_AUDIO_EXTENSIONS.some((ext) => clean.endsWith(ext));
+  } catch {
+    return false;
+  }
 }
 
-// ── Inline audio player with play/pause ──────────────────────────────────────
-function AudioPlayer({ src, title }: { src: string; title: string }) {
+// ── Native <audio> player ────────────────────────────────────────────────────
+function NativeAudioPlayer({ src, title }: { src: string; title: string }) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -36,7 +47,6 @@ function AudioPlayer({ src, title }: { src: string; title: string }) {
 
   const toggle = async () => {
     if (!audioRef.current) return;
-
     setError(null);
 
     if (playing) {
@@ -63,7 +73,6 @@ function AudioPlayer({ src, title }: { src: string; title: string }) {
             audio.load();
           });
         }
-
         await audioRef.current.play();
         setPlaying(true);
       } catch (err) {
@@ -116,20 +125,14 @@ function AudioPlayer({ src, title }: { src: string; title: string }) {
     return `${m}:${sec.toString().padStart(2, "0")}`;
   };
 
-  if (!src) {
-    return (
-      <div className="w-full mt-auto p-4 rounded-xl bg-slate-50 text-center text-slate-400 text-sm">
-        No audio available
-      </div>
-    );
-  }
-
   return (
     <div className="w-full mt-auto space-y-3">
+      {/* preload="none" prevents any auto-download/buffering */}
       <audio
         ref={audioRef}
         src={src}
-        preload="metadata"
+        preload="none"
+        controlsList="nodownload"
         onTimeUpdate={onTimeUpdate}
         onLoadedMetadata={onLoadedMetadata}
         onEnded={onEnded}
@@ -142,8 +145,11 @@ function AudioPlayer({ src, title }: { src: string; title: string }) {
         </div>
       )}
 
+      {/* Progress bar */}
       <div className="flex items-center gap-2">
-        <span className="text-[10px] text-slate-400 tabular-nums w-8">{fmt(currentTime)}</span>
+        <span className="text-[10px] text-slate-400 tabular-nums w-8">
+          {fmt(currentTime)}
+        </span>
         <input
           type="range"
           min={0}
@@ -154,9 +160,12 @@ function AudioPlayer({ src, title }: { src: string; title: string }) {
           aria-label="Seek audio"
           className="flex-1 h-1 accent-blue-700 cursor-pointer"
         />
-        <span className="text-[10px] text-slate-400 tabular-nums w-8 text-right">{fmt(duration)}</span>
+        <span className="text-[10px] text-slate-400 tabular-nums w-8 text-right">
+          {fmt(duration)}
+        </span>
       </div>
 
+      {/* Play / Pause */}
       <button
         onClick={toggle}
         disabled={isLoading}
@@ -170,50 +179,107 @@ function AudioPlayer({ src, title }: { src: string; title: string }) {
         ) : (
           <Play size={18} />
         )}
-        {isLoading ? "Loading..." : playing ? "Pause Episode" : "Play Episode"}
+        {isLoading ? "Loading…" : playing ? "Pause Episode" : "Play Episode"}
       </button>
     </div>
   );
 }
 
-// ── Iframe audio player for non-standard URLs (e.g. Cloudinary raw links) ────
-function IframeAudioPlayer({ src, title }: { src: string; title: string }) {
-  if (!src) {
+// ── Iframe audio player (for URLs without a recognized extension) ─────────────
+function IframeAudioPlayer({
+  src,
+  title,
+  active,
+  onActivate,
+}: {
+  src: string;
+  title: string;
+  active: boolean;
+  onActivate: () => void;
+}) {
+  // Build a sandboxed URL that disables download where possible
+  const safeUrl = (() => {
+    try {
+      const u = new URL(src);
+      // Cloudinary: force fl_attachment=false
+      if (u.hostname.includes("cloudinary.com")) {
+        u.searchParams.set("fl_attachment", "false");
+      }
+      return u.toString();
+    } catch {
+      return src;
+    }
+  })();
+
+  if (!active) {
     return (
-      <div className="w-full mt-auto p-4 rounded-xl bg-slate-50 text-center text-slate-400 text-sm">
-        No audio available
+      <button
+        onClick={onActivate}
+        className="w-full flex items-center justify-center gap-3 py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-700 to-red-600 hover:opacity-90 transition"
+      >
+        <Play size={18} />
+        Play Episode
+      </button>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      <iframe
+        src={safeUrl}
+        title={title}
+        /* allow-scripts lets the embedded player run; omit allow-downloads */
+        sandbox="allow-same-origin allow-scripts allow-presentation"
+        className="w-full h-20 rounded-xl border border-slate-200"
+        allow="autoplay"
+      />
+      <p className="text-[10px] text-slate-400 text-center">
+        Streaming — no download
+      </p>
+    </div>
+  );
+}
+
+// ── Cover image strip at the top of audio cards ───────────────────────────────
+function CoverImageStrip({
+  src,
+  title,
+}: {
+  src?: string;
+  title: string;
+}) {
+  const [imgError, setImgError] = useState(false);
+
+  if (!src || imgError) {
+    // Fallback: a gradient placeholder with a headphone icon
+    return (
+      <div className="w-full h-36 flex items-center justify-center bg-gradient-to-br from-blue-700 to-red-600 rounded-t-[2rem]">
+        <Headphones size={40} className="text-white/70" />
       </div>
     );
   }
 
   return (
-    <div className="w-full mt-auto space-y-3">
-      <iframe
+    <div className="w-full h-36 overflow-hidden rounded-t-[2rem]">
+      <img
         src={src}
-        title={title}
-        className="w-full h-20 rounded-xl border border-slate-200"
-        sandbox="allow-same-origin allow-scripts allow-downloads"
-        allow="autoplay"
+        alt={`Cover art for ${title}`}
+        onError={() => setImgError(true)}
+        className="w-full h-full object-cover"
+        draggable={false}
       />
-      <a
-        href={src}
-        download
-        target="_blank"
-        rel="noopener noreferrer"
-        className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-slate-500 hover:text-blue-700 transition"
-      >
-        Download Episode
-      </a>
     </div>
   );
 }
 
+// ── Main component ─────────────────────────────────────────────────────────────
 export default function LatestPodcasts() {
   const navigate = useNavigate();
 
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeVideoId, setActiveVideoId] = useState<number | null>(null);
+  // Tracks which card has its iframe-based player open (audio or video)
+  const [activeIframeId, setActiveIframeId] = useState<number | null>(null);
 
   const BASE_URL = CLIENT_KEY.endsWith("/")
     ? CLIENT_KEY.slice(0, -1)
@@ -267,7 +333,9 @@ export default function LatestPodcasts() {
         </h2>
 
         <p className="mt-5 text-slate-500 max-w-2xl mx-auto leading-relaxed">
-          Listen to inspiring podcasts, interviews, student voices, cultural discussions, and educational content created to make French learning engaging and accessible.
+          Listen to inspiring podcasts, interviews, student voices, cultural
+          discussions, and educational content created to make French learning
+          engaging and accessible.
         </p>
 
         {/* French flag accent */}
@@ -281,40 +349,39 @@ export default function LatestPodcasts() {
       {/* Cards */}
       <div className="grid gap-12 md:grid-cols-3">
         {podcasts.map((podcast) => {
-          const isVideoActive = activeVideoId === podcast.id;
+          const isAudio = podcast.mediaType === "audio";
+          const isVideo = podcast.mediaType === "video";
           const audioSrc = podcast.audioUrl || "";
-          const useNativePlayer = audioSrc && hasAudioExtension(audioSrc);
+          const useNativePlayer = isAudio && isNativeAudioUrl(audioSrc);
+          const useIframeAudio = isAudio && audioSrc && !useNativePlayer;
+          const isIframeActive = activeIframeId === podcast.id;
 
           return (
             <article
               key={podcast.id}
-              className="group relative rounded-[2rem] bg-white border border-slate-100 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden"
+              className="group relative rounded-[2rem] bg-white border border-slate-100 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col"
             >
-              {/* Top accent bar */}
-              <div className="h-1 w-full bg-gradient-to-r from-blue-700 via-white to-red-600" />
-
-              {/* Audio thumbnail image */}
-              {podcast.mediaType === "audio" && podcast.audioPodcastImage && (
-                <div className="w-full h-48 overflow-hidden">
-                  <img
-                    src={podcast.audioPodcastImage}
-                    alt={podcast.title}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+              {/* ── Cover image (audio only) ── */}
+              {isAudio && (
+                <CoverImageStrip src={podcast.coverImage} title={podcast.title} />
               )}
 
-              <div className="p-8 flex flex-col h-full">
+              {/* Top accent bar (video only — audio has the image instead) */}
+              {isVideo && (
+                <div className="h-1 w-full bg-gradient-to-r from-blue-700 via-white to-red-600" />
+              )}
+
+              <div className="p-8 flex flex-col flex-1">
                 {/* Media badge */}
                 <span
                   className={`inline-block mb-4 px-4 py-1 rounded-full text-xs font-bold tracking-wide
                     ${
-                      podcast.mediaType === "audio"
+                      isAudio
                         ? "bg-blue-50 text-blue-700"
                         : "bg-red-50 text-red-700"
                     }`}
                 >
-                  {podcast.mediaType === "audio" ? "Audio Podcast" : "Video Podcast"}
+                  {isAudio ? "Audio Podcast" : "Video Podcast"}
                 </span>
 
                 {/* Title */}
@@ -327,21 +394,47 @@ export default function LatestPodcasts() {
                   {podcast.description}
                 </p>
 
-                {/* ── AUDIO: native player or iframe fallback ── */}
-                {podcast.mediaType === "audio" && (
-                  useNativePlayer ? (
-                    <AudioPlayer src={audioSrc} title={podcast.title} />
-                  ) : (
-                    <IframeAudioPlayer src={audioSrc} title={podcast.title} />
-                  )
+                {/* ── AUDIO: native player ── */}
+                {useNativePlayer && (
+                  <div className="mt-auto">
+                    <NativeAudioPlayer src={audioSrc} title={podcast.title} />
+                  </div>
                 )}
 
-                {/* ── VIDEO: click to reveal iframe ── */}
-                {podcast.mediaType === "video" && podcast.videoUrl && (
-                  <div className="mt-auto space-y-4">
-                    {!isVideoActive && (
+                {/* ── AUDIO: iframe player (non-standard / Cloudinary / etc.) ── */}
+                {useIframeAudio && (
+                  <div className="mt-auto">
+                    <IframeAudioPlayer
+                      src={audioSrc}
+                      title={podcast.title}
+                      active={isIframeActive}
+                      onActivate={() => setActiveIframeId(podcast.id)}
+                    />
+                    {isIframeActive && (
                       <button
-                        onClick={() => setActiveVideoId(podcast.id)}
+                        onClick={() => setActiveIframeId(null)}
+                        className="w-full flex items-center justify-center gap-2 py-2 mt-1 text-sm font-semibold text-slate-400 hover:text-red-600 transition"
+                      >
+                        <X size={14} />
+                        Close player
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                {/* ── AUDIO: no URL at all ── */}
+                {isAudio && !audioSrc && (
+                  <div className="mt-auto p-4 rounded-xl bg-slate-50 text-center text-slate-400 text-sm">
+                    No audio available
+                  </div>
+                )}
+
+                {/* ── VIDEO ── */}
+                {isVideo && podcast.videoUrl && (
+                  <div className="mt-auto space-y-4">
+                    {!isIframeActive && (
+                      <button
+                        onClick={() => setActiveIframeId(podcast.id)}
                         className="w-full flex items-center justify-center gap-3 py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-700 to-red-600 hover:opacity-90 transition"
                       >
                         <Play size={18} />
@@ -349,7 +442,7 @@ export default function LatestPodcasts() {
                       </button>
                     )}
 
-                    {isVideoActive && (
+                    {isIframeActive && (
                       <>
                         <iframe
                           src={podcast.videoUrl}
@@ -358,7 +451,7 @@ export default function LatestPodcasts() {
                           className="w-full h-48 rounded-xl border border-slate-200"
                         />
                         <button
-                          onClick={() => setActiveVideoId(null)}
+                          onClick={() => setActiveIframeId(null)}
                           className="w-full flex items-center justify-center gap-2 py-2 text-sm font-semibold text-slate-500 hover:text-red-600 transition"
                         >
                           <X size={14} />
