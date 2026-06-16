@@ -1,4 +1,4 @@
-import { Headphones, Search, X, Play, ChevronLeft, ChevronRight, ArrowLeft, Calendar, User, Layers, Download, Check, Loader2, Pause } from "lucide-react";
+import { Headphones, Search, X, Play, ChevronLeft, ChevronRight, ArrowLeft, Calendar, User, Layers, Check, Loader2, Pause } from "lucide-react";
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import img1 from "../assets/img/_A1A4787.jpg"
 
@@ -70,8 +70,8 @@ const DIRECT_AUDIO_EXTENSIONS = [
 function isDirectAudioFile(url: string): boolean {
   if (!url || url.trim() === '') return false;
   const lower = url.trim().toLowerCase();
-  const cleanUrl = lower.split('?')[0];
-  return DIRECT_AUDIO_EXTENSIONS.some(ext => cleanUrl.endsWith(ext));
+  const pathOnly = lower.split('?')[0];
+  return DIRECT_AUDIO_EXTENSIONS.some(ext => pathOnly.includes(ext));
 }
 
 // ── Inline audio player card ──────────────────────────────────────────────────
@@ -602,19 +602,20 @@ function Podcast() {
                     <div className="p-4 bg-white/10 rounded-2xl"><Headphones className="text-white" size={30}/></div>
                     <p className="text-white font-bold text-sm">{activePodcast.title}</p>
                   </div>
-                  <audio
-                    src={activePodcast.audioUrl}
-                    controls
-                    autoPlay
-                    className="w-full md:w-auto flex-1"
-                  />
-                  <a
-                    href={activePodcast.audioUrl}
-                    download
-                    className="p-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all shrink-0"
-                  >
-                    <Download size={20}/>
-                  </a>
+                  {isDirectAudioFile(activePodcast.audioUrl) ? (
+                    <audio
+                      src={activePodcast.audioUrl}
+                      controls
+                      className="w-full md:w-auto flex-1"
+                    />
+                  ) : (
+                    <iframe
+                      src={activePodcast.audioUrl}
+                      title={activePodcast.title}
+                      className="w-full flex-1 h-24 border-0"
+                      allow="autoplay"
+                    />
+                  )}
                 </div>
               )}
 
