@@ -9,12 +9,20 @@ interface Podcast {
   mediaType: "audio" | "video";
   audioUrl?: string;
   videoUrl?: string;
+  audioPodcastImage?: string;
   author?: string;
   createdAt: string;
   duration?: number;
 }
 
 const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || "";
+
+// ── Check if URL has a recognized audio extension ────────────────────────────
+function hasAudioExtension(url: string): boolean {
+  const audioExtensions = [".mp3", ".wav", ".ogg", ".aac", ".flac", ".m4a", ".opus", ".webm"];
+  const lower = url.toLowerCase().split("?")[0]; // strip query params
+  return audioExtensions.some((ext) => lower.endsWith(ext));
+}
 
 // ── Inline audio player with play/pause ──────────────────────────────────────
 function AudioPlayer({ src, title }: { src: string; title: string }) {
@@ -28,7 +36,7 @@ function AudioPlayer({ src, title }: { src: string; title: string }) {
 
   const toggle = async () => {
     if (!audioRef.current) return;
-    
+
     setError(null);
 
     if (playing) {
@@ -37,26 +45,25 @@ function AudioPlayer({ src, title }: { src: string; title: string }) {
     } else {
       setIsLoading(true);
       try {
-        // Ensure audio is loaded before playing
         if (audioRef.current.readyState < 2) {
           await new Promise<void>((resolve, reject) => {
             const audio = audioRef.current!;
             const onCanPlay = () => {
-              audio.removeEventListener('canplaythrough', onCanPlay);
-              audio.removeEventListener('error', onError);
+              audio.removeEventListener("canplaythrough", onCanPlay);
+              audio.removeEventListener("error", onError);
               resolve();
             };
             const onError = () => {
-              audio.removeEventListener('canplaythrough', onCanPlay);
-              audio.removeEventListener('error', onError);
-              reject(new Error('Failed to load audio'));
+              audio.removeEventListener("canplaythrough", onCanPlay);
+              audio.removeEventListener("error", onError);
+              reject(new Error("Failed to load audio"));
             };
-            audio.addEventListener('canplaythrough', onCanPlay);
-            audio.addEventListener('error', onError);
-            audio.load(); // Force reload if needed
+            audio.addEventListener("canplaythrough", onCanPlay);
+            audio.addEventListener("error", onError);
+            audio.load();
           });
         }
-        
+
         await audioRef.current.play();
         setPlaying(true);
       } catch (err) {
@@ -85,7 +92,7 @@ function AudioPlayer({ src, title }: { src: string; title: string }) {
   };
 
   const onEnded = () => setPlaying(false);
-  
+
   const onError = () => {
     setError("Failed to load audio file");
     setPlaying(false);
@@ -106,10 +113,9 @@ function AudioPlayer({ src, title }: { src: string; title: string }) {
     if (!isFinite(s) || s < 0) return "0:00";
     const m = Math.floor(s / 60);
     const sec = Math.floor(s % 60);
-    return `${m}:${sec.toString().padStart(2, '0')}`;
+    return `${m}:${sec.toString().padStart(2, "0")}`;
   };
 
-  // Don't render player if no valid source
   if (!src) {
     return (
       <div className="w-full mt-auto p-4 rounded-xl bg-slate-50 text-center text-slate-400 text-sm">
@@ -130,14 +136,12 @@ function AudioPlayer({ src, title }: { src: string; title: string }) {
         onError={onError}
       />
 
-      {/* Error message */}
       {error && (
         <div className="text-xs text-red-500 text-center bg-red-50 px-3 py-2 rounded-lg">
           {error}
         </div>
       )}
 
-      {/* Progress bar */}
       <div className="flex items-center gap-2">
         <span className="text-[10px] text-slate-400 tabular-nums w-8">{fmt(currentTime)}</span>
         <input
@@ -153,7 +157,6 @@ function AudioPlayer({ src, title }: { src: string; title: string }) {
         <span className="text-[10px] text-slate-400 tabular-nums w-8 text-right">{fmt(duration)}</span>
       </div>
 
-      {/* Play / Pause button */}
       <button
         onClick={toggle}
         disabled={isLoading}
@@ -167,8 +170,40 @@ function AudioPlayer({ src, title }: { src: string; title: string }) {
         ) : (
           <Play size={18} />
         )}
-        {isLoading ? 'Loading...' : playing ? 'Pause Episode' : 'Play Episode'}
+        {isLoading ? "Loading..." : playing ? "Pause Episode" : "Play Episode"}
       </button>
+    </div>
+  );
+}
+
+// ── Iframe audio player for non-standard URLs (e.g. Cloudinary raw links) ────
+function IframeAudioPlayer({ src, title }: { src: string; title: string }) {
+  if (!src) {
+    return (
+      <div className="w-full mt-auto p-4 rounded-xl bg-slate-50 text-center text-slate-400 text-sm">
+        No audio available
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full mt-auto space-y-3">
+      <iframe
+        src={src}
+        title={title}
+        className="w-full h-20 rounded-xl border border-slate-200"
+        sandbox="allow-same-origin allow-scripts allow-downloads"
+        allow="autoplay"
+      />
+      <a
+        href={src}
+        download
+        target="_blank"
+        rel="noopener noreferrer"
+        className="w-full flex items-center justify-center gap-2 py-2 text-xs font-semibold text-slate-500 hover:text-blue-700 transition"
+      >
+        Download Episode
+      </a>
     </div>
   );
 }
@@ -195,8 +230,7 @@ export default function LatestPodcasts() {
         const latestThree = data
           .sort(
             (a, b) =>
-              new Date(b.createdAt).getTime() -
-              new Date(a.createdAt).getTime()
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           )
           .slice(0, 3);
 
@@ -248,6 +282,8 @@ export default function LatestPodcasts() {
       <div className="grid gap-12 md:grid-cols-3">
         {podcasts.map((podcast) => {
           const isVideoActive = activeVideoId === podcast.id;
+          const audioSrc = podcast.audioUrl || "";
+          const useNativePlayer = audioSrc && hasAudioExtension(audioSrc);
 
           return (
             <article
@@ -257,13 +293,25 @@ export default function LatestPodcasts() {
               {/* Top accent bar */}
               <div className="h-1 w-full bg-gradient-to-r from-blue-700 via-white to-red-600" />
 
+              {/* Audio thumbnail image */}
+              {podcast.mediaType === "audio" && podcast.audioPodcastImage && (
+                <div className="w-full h-48 overflow-hidden">
+                  <img
+                    src={podcast.audioPodcastImage}
+                    alt={podcast.title}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+
               <div className="p-8 flex flex-col h-full">
                 {/* Media badge */}
                 <span
                   className={`inline-block mb-4 px-4 py-1 rounded-full text-xs font-bold tracking-wide
-                    ${podcast.mediaType === "audio"
-                      ? "bg-blue-50 text-blue-700"
-                      : "bg-red-50 text-red-700"
+                    ${
+                      podcast.mediaType === "audio"
+                        ? "bg-blue-50 text-blue-700"
+                        : "bg-red-50 text-red-700"
                     }`}
                 >
                   {podcast.mediaType === "audio" ? "Audio Podcast" : "Video Podcast"}
@@ -279,12 +327,13 @@ export default function LatestPodcasts() {
                   {podcast.description}
                 </p>
 
-                {/* ── AUDIO: always-visible inline player ── */}
+                {/* ── AUDIO: native player or iframe fallback ── */}
                 {podcast.mediaType === "audio" && (
-                  <AudioPlayer 
-                    src={podcast.audioUrl || ''} 
-                    title={podcast.title} 
-                  />
+                  useNativePlayer ? (
+                    <AudioPlayer src={audioSrc} title={podcast.title} />
+                  ) : (
+                    <IframeAudioPlayer src={audioSrc} title={podcast.title} />
+                  )
                 )}
 
                 {/* ── VIDEO: click to reveal iframe ── */}
@@ -332,7 +381,7 @@ export default function LatestPodcasts() {
 
       <div className="w-full flex justify-center items-center mt-3">
         <button
-          onClick={() => navigate('/podcast')}
+          onClick={() => navigate("/podcast")}
           className="group relative bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-2xl font-bold text-lg shadow-xl shadow-red-100 transition-all active:scale-95 flex items-center gap-3"
         >
           Explore
