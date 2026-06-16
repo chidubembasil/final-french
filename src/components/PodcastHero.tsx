@@ -29,6 +29,11 @@ function isNativeAudioUrl(url: string): boolean {
   if (!url) return false;
   try {
     const clean = url.split("?")[0].toLowerCase();
+    // Cloudinary raw/upload URLs without extension should also try native player
+    // The browser can often figure out the format from Content-Type headers
+    if (clean.includes("cloudinary.com") && clean.includes("/raw/")) {
+      return true;
+    }
     return NATIVE_AUDIO_EXTENSIONS.some((ext) => clean.endsWith(ext));
   } catch {
     return false;
