@@ -68,29 +68,34 @@ const DIRECT_AUDIO_EXTENSIONS = [
 function isDirectAudioFile(url: string): boolean {
   if (!url || url.trim() === '') return false;
   const cleanUrl = url.trim().toLowerCase().split('?')[0];
-  return DIRECT_AUDIO_EXTENSIONS.some(ext => cleanUrl.endsWith(ext));
+
+  // Normal extensions
+  if (DIRECT_AUDIO_EXTENSIONS.some(ext => cleanUrl.endsWith(ext))) {
+    return true;
+  }
+
+  // Cloudinary video delivery (even without extension)
+  if (cleanUrl.includes('res.cloudinary.com') && cleanUrl.includes('/video/upload/')) {
+    return true;
+  }
+
+  return false;
 }
+
 
 function extractAudioUrl(input: string): string {
   if (!input || input.trim() === '') return '';
   const iframeSrcMatch = input.match(/<iframe[^>]+src=["']([^"']+)["']/i);
   if (iframeSrcMatch) return iframeSrcMatch[1];
+
   let url = input.trim();
 
-  // --- FIX CLOUDINARY RAW DOWNLOADS ---
+  // Fix Cloudinary raw → video (streams, no download)
   if (url.includes('res.cloudinary.com') && url.includes('/raw/upload/')) {
-    // 1. Switch to video delivery (streams inline)
-    url = url.replace('/raw/upload/', '/video/upload/');
-
-    // 2. Add fl_inline to force streaming, not download
-    if (!url.includes('/fl_')) {
-      url = url.replace('/video/upload/', '/video/upload/fl_inline/');
-    }
-
-    // 3. Add.mp3 extension if missing (so isDirectAudioFile works)
-    if (!/\.(mp3|m4a|wav|ogg|aac|mp4)(\?|$)/i.test(url)) {
-      url += '.mp3';
-    }
+    url = url
+     .replace('/raw/upload/', '/video/upload/')
+      // add fl_inline BEFORE the version number
+     .replace('/video/upload/v', '/video/upload/fl_inline/v');
   }
 
   return url;
