@@ -1,4 +1,4 @@
-import { Headphones, Search, X, Play, ChevronLeft, ChevronRight, ArrowLeft, Calendar, User, Layers, Check, Loader2, Pause } from "lucide-react";
+import { Headphones, Search, X, Play, ChevronLeft, ChevronRight, ArrowLeft, Calendar, User, Layers, Download, Check, Loader2, Pause } from "lucide-react";
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import img1 from "../assets/img/_A1A4787.jpg"
 
@@ -66,12 +66,27 @@ const DIRECT_AUDIO_EXTENSIONS = [
   '.mp4', '.webm', '.3gp'
 ];
 
+// ── Check if a URL is hosted on Cloudinary ───────────────────────────────────
+// Cloudinary-hosted media is always served directly by Cloudinary's CDN.
+// We never want to rewrite/alter this URL or route it through the iframe/
+// embed path — it should always be treated as a direct, playable file.
+function isCloudinaryUrl(url: string): boolean {
+  if (!url) return false;
+  const lower = url.toLowerCase();
+  return lower.includes('res.cloudinary.com') || lower.includes('cloudinary.com');
+}
+
 // ── Check if URL is a direct audio file ──────────────────────────────────────
 function isDirectAudioFile(url: string): boolean {
   if (!url || url.trim() === '') return false;
-  const lower = url.trim().toLowerCase();
-  const pathOnly = lower.split('?')[0];
-  return DIRECT_AUDIO_EXTENSIONS.some(ext => pathOnly.includes(ext));
+  const trimmed = url.trim();
+
+  // Cloudinary URLs are always treated as direct, untouched audio files.
+  if (isCloudinaryUrl(trimmed)) return true;
+
+  const lower = trimmed.toLowerCase();
+  const cleanUrl = lower.split('?')[0];
+  return DIRECT_AUDIO_EXTENSIONS.some(ext => cleanUrl.endsWith(ext));
 }
 
 // ── Inline audio player card ──────────────────────────────────────────────────
@@ -81,9 +96,16 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Lazy-load gate for third-party embeds (SoundCloud, Spotify, etc.).
+  // The iframe is never mounted on render — only after the user taps play —
+  // so nothing is fetched/downloaded just from landing on the podcasts page.
+  const [embedActivated, setEmbedActivated] = useState(false);
+
   // Validate audio URL
   const hasValidAudio = item.audioUrl && item.audioUrl.trim() !== '' && item.audioUrl !== 'null' && item.audioUrl !== 'undefined';
 
+  // Cloudinary URLs (and any URL with a recognized audio extension) are
+  // played directly — never altered, never routed through an iframe.
   const directAudio = hasValidAudio ? isDirectAudioFile(item.audioUrl) : false;
 
   const thumbnailUrl = item.audioPodcastImage || null;
@@ -192,7 +214,8 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
 
       {directAudio ? (
         <>
-          {/* preload="metadata" — does NOT auto-download the full file */}
+          {/* preload="metadata" — does NOT auto-download the full file.
+              Nothing plays or downloads until the user presses play below. */}
           <audio ref={audioRef} src={item.audioUrl} preload="metadata" />
 
           {/* Waveform / placeholder visual */}
@@ -228,13 +251,29 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
           </button>
         </>
       ) : (
-        /* iframe for embed URLs (e.g. Soundcloud, Spotify embeds) */
-        <iframe
-          src={item.audioUrl}
-          title={item.title}
-          className="absolute inset-0 w-full h-full border-0"
-          allow="autoplay"
-        />
+        /* Third-party embed (e.g. SoundCloud, Spotify embeds).
+           We never mount this iframe automatically — it only loads after
+           the user explicitly taps the play button below, so nothing is
+           fetched just from opening the podcasts page. */
+        <>
+          {!embedActivated ? (
+            <button
+              type="button"
+              aria-label="Load audio player"
+              onClick={(e) => { e.stopPropagation(); setEmbedActivated(true); }}
+              className="flex flex-col items-center gap-3 text-white relative z-10 hover:scale-110 transition-transform focus:outline-none"
+            >
+              <Play size={56} color="white" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-white/70">Tap to load player</span>
+            </button>
+          ) : (
+            <iframe
+              src={item.audioUrl}
+              title={item.title}
+              className="absolute inset-0 w-full h-full border-0"
+            />
+          )}
+        </>
       )}
 
       {/* "View transcript" small link */}
@@ -325,6 +364,8 @@ function Podcast() {
           return {
             id: item.id,
             ...attrs,
+            // If the URL already starts with http (e.g. a Cloudinary URL),
+            // it is used exactly as-is — never altered or rewritten.
             audioUrl: attrs.audioUrl?.startsWith('http')
               ? attrs.audioUrl
               : `${baseUrl}${attrs.audioUrl?.startsWith('/') ? '' : '/'}${attrs.audioUrl || ''}`,
@@ -377,6 +418,10 @@ function Podcast() {
     document.body.style.overflow = activePodcast ? "hidden" : "unset";
     return () => { document.body.style.overflow = "unset"; };
   }, [activePodcast]);
+
+  // Used by the modal to decide whether to show a native <audio> player
+  // or fall back to an iframe embed (e.g. SoundCloud/Spotify).
+  const activeAudioIsDirect = activePodcast?.audioUrl ? isDirectAudioFile(activePodcast.audioUrl) : false;
 
   return (
     <main className="pt-20 bg-gray-50/50 min-h-screen relative">
@@ -597,24 +642,42 @@ function Podcast() {
               </div>
 
               {activePodcast.mediaType === 'audio' && activePodcast.audioUrl && (
-                <div className="bg-slate-900 p-8 rounded-[2.5rem] shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6">
-                  <div className="flex items-center gap-4 flex-col">
+                <div className="bg-slate-900 p-8 rounded-[2.5rem] shadow-2xl flex flex-col gap-6">
+                  <div className="flex items-center gap-4">
                     <div className="p-4 bg-white/10 rounded-2xl"><Headphones className="text-white" size={30}/></div>
                     <p className="text-white font-bold text-sm">{activePodcast.title}</p>
                   </div>
-                  {isDirectAudioFile(activePodcast.audioUrl) ? (
-                    <audio
-                      src={activePodcast.audioUrl}
-                      controls
-                      className="w-full md:w-auto flex-1"
-                    />
+
+                  {activeAudioIsDirect ? (
+                    /* Direct file (incl. Cloudinary) — never altered, no autoplay,
+                       preload="metadata" only, so nothing downloads until the
+                       user presses play on the native controls. */
+                    <div className="flex flex-col md:flex-row items-center gap-6">
+                      <audio
+                        src={activePodcast.audioUrl}
+                        controls
+                        preload="metadata"
+                        className="w-full md:w-auto flex-1"
+                      />
+                      <a
+                        href={activePodcast.audioUrl}
+                        download
+                        className="p-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all shrink-0"
+                      >
+                        <Download size={20}/>
+                      </a>
+                    </div>
                   ) : (
-                    <iframe
-                      src={activePodcast.audioUrl}
-                      title={activePodcast.title}
-                      className="w-full flex-1 h-24 border-0"
-                      allow="autoplay"
-                    />
+                    /* Third-party embed (SoundCloud, Spotify, etc.) — now shown
+                       in the modal too. No autoplay permission is granted, so
+                       playback only starts if the user interacts with it. */
+                    <div className="aspect-video w-full rounded-2xl overflow-hidden">
+                      <iframe
+                        src={activePodcast.audioUrl}
+                        title={activePodcast.title}
+                        className="w-full h-full border-0"
+                      />
+                    </div>
                   )}
                 </div>
               )}
