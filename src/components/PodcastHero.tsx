@@ -256,42 +256,26 @@ function IframeAudioPlayer({
   );
 }
 
-// ── Cover image with play/pause button overlay ────────────────────────────────
-function CoverImageWithPlayButton({
+// ── Cover image (no play/pause overlay) ──────────────────────────────────────
+function CoverImage({
   src,
   title,
-  isPlaying,
-  onPlay,
-  onPause,
 }: {
   src?: string;
   title: string;
-  isPlaying: boolean;
-  onPlay: () => void;
-  onPause: () => void;
 }) {
   const [imgError, setImgError] = useState(false);
 
   if (!src || imgError) {
     return (
-      <div className="w-full h-48 flex items-center justify-center bg-gradient-to-br from-blue-700 to-red-600 rounded-t-[2rem] relative group">
+      <div className="w-full h-48 flex items-center justify-center bg-gradient-to-br from-blue-700 to-red-600 rounded-t-[2rem]">
         <Headphones size={40} className="text-white/70" />
-        <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-[2rem] gap-3">
-          <div onClick={(e) => { e.stopPropagation(); onPlay(); }} className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg cursor-pointer hover:scale-105 transition-transform">
-            <Play size={24} className="text-blue-700 ml-1" />
-          </div>
-          {isPlaying && (
-            <div onClick={(e) => { e.stopPropagation(); onPause(); }} className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg cursor-pointer hover:scale-105 transition-transform">
-              <Pause size={24} className="text-blue-700" />
-            </div>
-          )}
-        </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full h-48 overflow-hidden rounded-t-[2rem] relative group">
+    <div className="w-full h-48 overflow-hidden rounded-t-[2rem]">
       <img
         src={src}
         alt={`Cover art for ${title}`}
@@ -299,16 +283,6 @@ function CoverImageWithPlayButton({
         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
         draggable={false}
       />
-      <div className="absolute inset-0 flex items-center justify-center bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity gap-3">
-        <div onClick={(e) => { e.stopPropagation(); onPlay(); }} className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform cursor-pointer hover:scale-105">
-          <Play size={24} className="text-blue-700 ml-1" />
-        </div>
-        {isPlaying && (
-          <div onClick={(e) => { e.stopPropagation(); onPause(); }} className="w-14 h-14 rounded-full bg-white/90 flex items-center justify-center shadow-lg transform scale-90 group-hover:scale-100 transition-transform cursor-pointer hover:scale-105">
-            <Pause size={24} className="text-blue-700" />
-          </div>
-        )}
-      </div>
     </div>
   );
 }
@@ -385,40 +359,15 @@ export default function LatestPodcasts() {
           const useIframeAudio = isAudio && audioSrc && !useNativePlayer;
           const isIframeActive = activeIframeId === podcast.id;
           const coverImage = podcast.audioPodcastImage || podcast.coverImage;
-          const isPlaying = playingAudioId === podcast.id;
-
-          const handleCoverPlay = () => {
-            if (isAudio) {
-              if (useNativePlayer) {
-                setAutoPlayAudioId(podcast.id);
-              } else if (useIframeAudio) {
-                setActiveIframeId(podcast.id);
-              }
-            } else if (isVideo && podcast.videoUrl) {
-              setActiveIframeId(podcast.id);
-            }
-          };
-
-          const handleCoverPause = () => {
-            const controller = audioControllers.get(podcast.id);
-            if (controller) {
-              controller();
-            }
-            setPlayingAudioId(null);
-            setAutoPlayAudioId(null);
-          };
 
           return (
             <article
               key={podcast.id}
               className="group relative rounded-[2rem] bg-white border border-slate-100 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col"
             >
-              <CoverImageWithPlayButton
+              <CoverImage
                 src={coverImage}
                 title={podcast.title}
-                isPlaying={isPlaying}
-                onPlay={handleCoverPlay}
-                onPause={handleCoverPause}
               />
 
               <div className="p-8 flex flex-col flex-1">

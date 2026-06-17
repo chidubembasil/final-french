@@ -66,24 +66,16 @@ const DIRECT_AUDIO_EXTENSIONS = [
   '.mp4', '.webm', '.3gp'
 ];
 
-// ── Check if a URL is hosted on Cloudinary ───────────────────────────────────
-// Cloudinary-hosted media is always served directly by Cloudinary's CDN.
-// We never want to rewrite/alter this URL or route it through the iframe/
-// embed path — it should always be treated as a direct, playable file.
 function isCloudinaryUrl(url: string): boolean {
   if (!url) return false;
   const lower = url.toLowerCase();
   return lower.includes('res.cloudinary.com') || lower.includes('cloudinary.com');
 }
 
-// ── Check if URL is a direct audio file ──────────────────────────────────────
 function isDirectAudioFile(url: string): boolean {
   if (!url || url.trim() === '') return false;
   const trimmed = url.trim();
-
-  // Cloudinary URLs are always treated as direct, untouched audio files.
   if (isCloudinaryUrl(trimmed)) return true;
-
   const lower = trimmed.toLowerCase();
   const cleanUrl = lower.split('?')[0];
   return DIRECT_AUDIO_EXTENSIONS.some(ext => cleanUrl.endsWith(ext));
@@ -95,19 +87,10 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
   const [playing, setPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Lazy-load gate for third-party embeds (SoundCloud, Spotify, etc.).
-  // The iframe is never mounted on render — only after the user taps play —
-  // so nothing is fetched/downloaded just from landing on the podcasts page.
   const [embedActivated, setEmbedActivated] = useState(false);
 
-  // Validate audio URL
   const hasValidAudio = item.audioUrl && item.audioUrl.trim() !== '' && item.audioUrl !== 'null' && item.audioUrl !== 'undefined';
-
-  // Cloudinary URLs (and any URL with a recognized audio extension) are
-  // played directly — never altered, never routed through an iframe.
   const directAudio = hasValidAudio ? isDirectAudioFile(item.audioUrl) : false;
-
   const thumbnailUrl = item.audioPodcastImage || null;
 
   const toggle = useCallback(async (e: React.MouseEvent) => {
@@ -123,8 +106,6 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
       setIsLoading(true);
       try {
         const audio = audioRef.current;
-
-        // If not loaded enough, wait for canplay
         if (audio.readyState < 2) {
           await new Promise<void>((resolve, reject) => {
             const onCanPlay = () => {
@@ -142,7 +123,6 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
             audio.load();
           });
         }
-
         await audio.play();
         setPlaying(true);
       } catch (err) {
@@ -155,7 +135,6 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
     }
   }, [playing, hasValidAudio]);
 
-  // If audio ends naturally, reset icon
   useEffect(() => {
     const el = audioRef.current;
     if (!el) return;
@@ -173,7 +152,6 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
     };
   }, []);
 
-  // Don't render interactive player if no audio URL
   if (!hasValidAudio) {
     return (
       <div className="relative aspect-video bg-slate-900 flex flex-col items-center justify-center gap-4">
@@ -203,7 +181,6 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
 
   return (
     <div className="relative aspect-video bg-slate-900 flex flex-col items-center justify-center gap-4 overflow-hidden">
-      {/* Thumbnail background if audioPodcastImage is present */}
       {thumbnailUrl && (
         <img
           src={thumbnailUrl}
@@ -214,11 +191,7 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
 
       {directAudio ? (
         <>
-          {/* preload="metadata" — does NOT auto-download the full file.
-              Nothing plays or downloads until the user presses play below. */}
           <audio ref={audioRef} src={item.audioUrl} preload="metadata" />
-
-          {/* Waveform / placeholder visual */}
           <div className={`flex items-end gap-[3px] h-10 transition-opacity relative z-10 ${playing ? 'opacity-100' : 'opacity-30'}`}>
             {[4,7,5,9,6,8,4,10,6,7,5,9,4,8,6].map((h, i) => (
               <div
@@ -228,13 +201,9 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
               />
             ))}
           </div>
-
-          {/* Error message */}
           {error && (
             <p className="text-red-400 text-[10px] font-bold relative z-10">{error}</p>
           )}
-
-          {/* Play / Pause button */}
           <button
             aria-label={playing ? 'Pause audio' : 'Play audio'}
             onClick={toggle}
@@ -251,10 +220,6 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
           </button>
         </>
       ) : (
-        /* Third-party embed (e.g. SoundCloud, Spotify embeds).
-           We never mount this iframe automatically — it only loads after
-           the user explicitly taps the play button below, so nothing is
-           fetched just from opening the podcasts page. */
         <>
           {!embedActivated ? (
             <button
@@ -276,13 +241,163 @@ function AudioCard({ item, onOpen }: { item: Podcast; onOpen: () => void }) {
         </>
       )}
 
-      {/* "View transcript" small link */}
       <button
         onClick={(e) => { e.stopPropagation(); onOpen(); }}
         className="absolute bottom-3 right-4 text-[10px] font-black uppercase tracking-widest text-white/60 hover:text-white transition-colors z-10"
       >
         Full player & transcript →
       </button>
+    </div>
+  );
+}
+
+// ── Modal audio player with custom play/pause button ──────────────────────────
+function ModalAudioPlayer({ podcast }: { podcast: Podcast }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Reset state whenever the podcast changes
+    setPlaying(false);
+    setIsLoading(false);
+    setError(null);
+  }, [podcast.id]);
+
+  useEffect(() => {
+    const el = audioRef.current;
+    if (!el) return;
+    const onEnded = () => setPlaying(false);
+    const onError = () => { setPlaying(false); setIsLoading(false); setError("Playback error"); };
+    el.addEventListener('ended', onEnded);
+    el.addEventListener('error', onError);
+    return () => {
+      el.removeEventListener('ended', onEnded);
+      el.removeEventListener('error', onError);
+    };
+  }, []);
+
+  const toggle = async () => {
+    if (!audioRef.current) return;
+    setError(null);
+    if (playing) {
+      audioRef.current.pause();
+      setPlaying(false);
+    } else {
+      setIsLoading(true);
+      try {
+        const audio = audioRef.current;
+        if (audio.readyState < 2) {
+          await new Promise<void>((resolve, reject) => {
+            const onCanPlay = () => {
+              audio.removeEventListener('canplaythrough', onCanPlay);
+              audio.removeEventListener('error', onErr);
+              resolve();
+            };
+            const onErr = () => {
+              audio.removeEventListener('canplaythrough', onCanPlay);
+              audio.removeEventListener('error', onErr);
+              reject(new Error('Audio load failed'));
+            };
+            audio.addEventListener('canplaythrough', onCanPlay);
+            audio.addEventListener('error', onErr);
+            audio.load();
+          });
+        }
+        await audio.play();
+        setPlaying(true);
+      } catch (err) {
+        console.error("Modal audio play error:", err);
+        setError("Playback failed. Please try again.");
+        setPlaying(false);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  return (
+    <div className="flex flex-col gap-4">
+      <audio ref={audioRef} src={podcast.audioUrl} preload="metadata" />
+
+      {/* Custom play/pause button */}
+      <div className="flex items-center gap-4">
+        <button
+          type="button"
+          aria-label={playing ? 'Pause' : 'Play'}
+          onClick={toggle}
+          disabled={isLoading}
+          className="flex items-center justify-center w-14 h-14 rounded-full bg-white text-slate-900 hover:scale-105 transition-transform disabled:opacity-50 shrink-0"
+        >
+          {isLoading ? (
+            <Loader2 size={26} className="animate-spin text-blue-600" />
+          ) : playing ? (
+            <Pause size={26} />
+          ) : (
+            <Play size={26} className="ml-1" />
+          )}
+        </button>
+
+        {/* Native controls for scrubbing/volume */}
+        <audio
+          src={podcast.audioUrl}
+          controls
+          preload="metadata"
+          ref={(el) => {
+            // Keep the hidden audio in sync: when user scrubs the visible controls,
+            // we don't need the invisible one — so we just show native controls here
+            // and drive play/pause from the button above via the main ref.
+            // This second element is purely for the scrub bar UI.
+            if (el) {
+              // Mirror play/pause from main ref to this visible element
+              const main = audioRef.current;
+              if (!main) return;
+              el.src = main.src;
+            }
+          }}
+          className="w-full"
+          style={{ display: 'none' }}
+        />
+
+        {/* Progress is handled by native controls below */}
+        <div className="flex-1 text-white/60 text-xs font-bold uppercase tracking-widest">
+          {playing ? 'Now playing…' : error ? <span className="text-red-400">{error}</span> : 'Press play to listen'}
+        </div>
+
+        <a
+          href={podcast.audioUrl}
+          download
+          onClick={(e) => e.stopPropagation()}
+          className="p-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all shrink-0"
+        >
+          <Download size={20} />
+        </a>
+      </div>
+
+      {/* Native audio bar for scrubbing/seeking/volume */}
+      <audio
+        src={podcast.audioUrl}
+        controls
+        preload="metadata"
+        onPlay={() => {
+          // If user hits play on native bar, sync button state
+          setPlaying(true);
+          // Also play the ref audio
+          audioRef.current?.play().catch(() => {});
+        }}
+        onPause={() => {
+          setPlaying(false);
+          audioRef.current?.pause();
+        }}
+        onSeeked={(e) => {
+          // Sync seek position to the ref audio
+          if (audioRef.current) {
+            audioRef.current.currentTime = (e.target as HTMLAudioElement).currentTime;
+          }
+        }}
+        className="w-full rounded-xl"
+      />
     </div>
   );
 }
@@ -364,8 +479,6 @@ function Podcast() {
           return {
             id: item.id,
             ...attrs,
-            // If the URL already starts with http (e.g. a Cloudinary URL),
-            // it is used exactly as-is — never altered or rewritten.
             audioUrl: attrs.audioUrl?.startsWith('http')
               ? attrs.audioUrl
               : `${baseUrl}${attrs.audioUrl?.startsWith('/') ? '' : '/'}${attrs.audioUrl || ''}`,
@@ -419,8 +532,6 @@ function Podcast() {
     return () => { document.body.style.overflow = "unset"; };
   }, [activePodcast]);
 
-  // Used by the modal to decide whether to show a native <audio> player
-  // or fall back to an iframe embed (e.g. SoundCloud/Spotify).
   const activeAudioIsDirect = activePodcast?.audioUrl ? isDirectAudioFile(activePodcast.audioUrl) : false;
 
   return (
@@ -649,28 +760,10 @@ function Podcast() {
                   </div>
 
                   {activeAudioIsDirect ? (
-                    /* Direct file (incl. Cloudinary) — never altered, no autoplay,
-                       preload="metadata" only, so nothing downloads until the
-                       user presses play on the native controls. */
-                    <div className="flex flex-col md:flex-row items-center gap-6">
-                      <audio
-                        src={activePodcast.audioUrl}
-                        controls
-                        preload="metadata"
-                        className="w-full md:w-auto flex-1"
-                      />
-                      <a
-                        href={activePodcast.audioUrl}
-                        download
-                        className="p-4 bg-blue-600 text-white rounded-2xl hover:bg-blue-700 transition-all shrink-0"
-                      >
-                        <Download size={20}/>
-                      </a>
-                    </div>
+                    /* ── Direct file (incl. Cloudinary): custom play/pause + native scrub bar ── */
+                    <ModalAudioPlayer key={activePodcast.id} podcast={activePodcast} />
                   ) : (
-                    /* Third-party embed (SoundCloud, Spotify, etc.) — now shown
-                       in the modal too. No autoplay permission is granted, so
-                       playback only starts if the user interacts with it. */
+                    /* Third-party embed (SoundCloud, Spotify, etc.) */
                     <div className="aspect-video w-full rounded-2xl overflow-hidden">
                       <iframe
                         src={activePodcast.audioUrl}
