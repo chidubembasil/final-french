@@ -652,9 +652,11 @@ function Podcast() {
 
                   <div className="p-8 flex flex-col flex-grow">
                     <div className="flex items-center gap-2 mb-3 flex-wrap">
+                      {/* cefrLevel badge commented out
                       {item.cefrLevel && (
                         <span className="px-2 py-1 bg-blue-50 text-blue-700 text-[10px] font-bold uppercase rounded">{item.cefrLevel}</span>
                       )}
+                      */}
                       {item.topic && (
                         <span className="text-[10px] text-gray-400 font-bold uppercase">{item.topic}</span>
                       )}
@@ -742,9 +744,11 @@ function Podcast() {
                 {activePodcast.topic && (
                   <span className="px-3 py-1 bg-blue-600 text-white text-[10px] font-black uppercase rounded-lg">{activePodcast.topic}</span>
                 )}
+                {/* cefrLevel badge in modal commented out
                 {activePodcast.cefrLevel && (
                   <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-black uppercase rounded-lg">{activePodcast.cefrLevel}</span>
                 )}
+                */}
               </div>
               <h2 className="text-4xl md:text-6xl font-bold font-serif text-slate-900 leading-tight">{activePodcast.title}</h2>
               <div className="flex flex-wrap gap-6 py-4 border-b border-gray-100 text-[10px] font-black text-gray-400 uppercase tracking-widest">
@@ -753,25 +757,38 @@ function Podcast() {
               </div>
 
               {activePodcast.mediaType === 'audio' && activePodcast.audioUrl && (
-                <div className="bg-slate-900 p-8 rounded-[2.5rem] shadow-2xl flex flex-col gap-6">
-                  <div className="flex items-center gap-4">
-                    <div className="p-4 bg-white/10 rounded-2xl"><Headphones className="text-white" size={30}/></div>
-                    <p className="text-white font-bold text-sm">{activePodcast.title}</p>
-                  </div>
-
-                  {activeAudioIsDirect ? (
-                    /* ── Direct file (incl. Cloudinary): custom play/pause + native scrub bar ── */
-                    <ModalAudioPlayer key={activePodcast.id} podcast={activePodcast} />
-                  ) : (
-                    /* Third-party embed (SoundCloud, Spotify, etc.) */
-                    <div className="aspect-video w-full rounded-2xl overflow-hidden">
-                      <iframe
-                        src={activePodcast.audioUrl}
-                        title={activePodcast.title}
-                        className="w-full h-full border-0"
+                <div className="bg-slate-900 rounded-[2.5rem] shadow-2xl overflow-hidden flex flex-col">
+                  {/* ── Thumbnail / banner image inside the dark player card ── */}
+                  {activePodcast.audioPodcastImage && (
+                    <div className="w-full h-48 md:h-64 overflow-hidden">
+                      <img
+                        src={activePodcast.audioPodcastImage}
+                        alt={activePodcast.title}
+                        className="w-full h-full object-cover"
                       />
                     </div>
                   )}
+
+                  <div className="p-8 flex flex-col gap-6">
+                    <div className="flex items-center gap-4">
+                      <div className="p-4 bg-white/10 rounded-2xl"><Headphones className="text-white" size={30}/></div>
+                      <p className="text-white font-bold text-sm">{activePodcast.title}</p>
+                    </div>
+
+                    {activeAudioIsDirect ? (
+                      /* ── Direct file (incl. Cloudinary): custom play/pause + native scrub bar ── */
+                      <ModalAudioPlayer key={activePodcast.id} podcast={activePodcast} />
+                    ) : (
+                      /* Third-party embed (SoundCloud, Spotify, etc.) */
+                      <div className="aspect-video w-full rounded-2xl overflow-hidden">
+                        <iframe
+                          src={activePodcast.audioUrl}
+                          title={activePodcast.title}
+                          className="w-full h-full border-0"
+                        />
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
