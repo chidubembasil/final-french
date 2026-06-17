@@ -242,13 +242,15 @@ function IframeAudioPlayer({
 
   return (
     <div className="space-y-2">
-      <iframe
-        src={safeUrl}
-        title={title}
-        sandbox="allow-same-origin allow-scripts allow-presentation"
-        className="w-full h-20 rounded-xl border border-slate-200"
-        allow="autoplay"
-      />
+      <div className="w-full overflow-hidden rounded-xl border border-slate-200">
+        <iframe
+          src={safeUrl}
+          title={title}
+          sandbox="allow-same-origin allow-scripts allow-presentation"
+          style={{ width: "100%", height: "152px", display: "block", border: "none" }}
+          allow="autoplay"
+        />
+      </div>
       <p className="text-[10px] text-slate-400 text-center">
         Streaming — no download
       </p>
