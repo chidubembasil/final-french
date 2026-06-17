@@ -18,7 +18,6 @@ interface Podcast {
 
 const CLIENT_KEY = import.meta.env.VITE_CLIENT_KEY || "";
 
-// Supported native audio extensions
 const NATIVE_AUDIO_EXTENSIONS = [
   ".mp3", ".aac", ".ogg", ".opus", ".wma", ".m4a", ".wav",
   ".flac", ".alac", ".aiff", ".ape", ".mka", ".tta", ".wv",
@@ -38,11 +37,21 @@ function isNativeAudioUrl(url: string): boolean {
   }
 }
 
-// Global registry for audio toggle functions by podcast id
 const audioControllers = new Map<number, () => void>();
 
-// ── Native <audio> player ────────────────────────────────────────────────────
-function NativeAudioPlayer({ src, title, autoPlay, onPlayingChange, podcastId }: { src: string; title: string; autoPlay?: boolean; onPlayingChange?: (playing: boolean) => void; podcastId: number }) {
+function NativeAudioPlayer({
+  src,
+  title,
+  autoPlay,
+  onPlayingChange,
+  podcastId,
+}: {
+  src: string;
+  title: string;
+  autoPlay?: boolean;
+  onPlayingChange?: (playing: boolean) => void;
+  podcastId: number;
+}) {
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -242,7 +251,11 @@ function IframeAudioPlayer({
 
   return (
     <div className="space-y-2">
-      <div className="w-full overflow-hidden rounded-xl border border-slate-200">
+      {/* Negative margin breaks out of the p-8 card padding so iframe is full-bleed */}
+      <div
+        className="overflow-hidden rounded-xl border border-slate-200"
+        style={{ marginLeft: "-2rem", marginRight: "-2rem" }}
+      >
         <iframe
           src={safeUrl}
           title={title}
@@ -258,14 +271,8 @@ function IframeAudioPlayer({
   );
 }
 
-// ── Cover image (no play/pause overlay) ──────────────────────────────────────
-function CoverImage({
-  src,
-  title,
-}: {
-  src?: string;
-  title: string;
-}) {
+// ── Cover image ───────────────────────────────────────────────────────────────
+function CoverImage({ src, title }: { src?: string; title: string }) {
   const [imgError, setImgError] = useState(false);
 
   if (!src || imgError) {
@@ -289,7 +296,7 @@ function CoverImage({
   );
 }
 
-// ── Main component ───────────────────────────────────────────────────────────
+// ── Main component ────────────────────────────────────────────────────────────
 export default function LatestPodcasts() {
   const navigate = useNavigate();
 
@@ -310,7 +317,10 @@ export default function LatestPodcasts() {
         if (!res.ok) throw new Error("Failed to fetch podcasts");
         const data: Podcast[] = await res.json();
         const latestThree = data
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )
           .slice(0, 3);
         setPodcasts(latestThree);
       } catch (err) {
@@ -367,15 +377,14 @@ export default function LatestPodcasts() {
               key={podcast.id}
               className="group relative rounded-[2rem] bg-white border border-slate-100 shadow-lg hover:shadow-2xl transition-all duration-500 overflow-hidden flex flex-col"
             >
-              <CoverImage
-                src={coverImage}
-                title={podcast.title}
-              />
+              <CoverImage src={coverImage} title={podcast.title} />
 
               <div className="p-8 flex flex-col flex-1">
                 <span
                   className={`inline-block mb-4 px-4 py-1 rounded-full text-xs font-bold tracking-wide ${
-                    isAudio ? "bg-blue-50 text-blue-700" : "bg-red-50 text-red-700"
+                    isAudio
+                      ? "bg-blue-50 text-blue-700"
+                      : "bg-red-50 text-red-700"
                   }`}
                 >
                   {isAudio ? "Audio Podcast" : "Video Podcast"}
