@@ -376,7 +376,7 @@ function ModalAudioPlayer({ podcast }: { podcast: Podcast }) {
       </div>
 
       {/* Native audio bar for scrubbing/seeking/volume */}
-      <audio
+      {/* <audio
         src={podcast.audioUrl}
         controls
         preload="metadata"
@@ -397,7 +397,7 @@ function ModalAudioPlayer({ podcast }: { podcast: Podcast }) {
           }
         }}
         className="w-full rounded-xl"
-      />
+      /> */}
     </div>
   );
 }
