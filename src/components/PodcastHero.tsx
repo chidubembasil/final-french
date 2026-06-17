@@ -294,7 +294,7 @@ export default function LatestPodcasts() {
   const [podcasts, setPodcasts] = useState<Podcast[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeIframeId, setActiveIframeId] = useState<number | null>(null);
-  const [autoPlayAudioId, setAutoPlayAudioId] = useState<number | null>(null);
+  const [autoPlayAudioId] = useState<number | null>(null);
   const [playingAudioId, setPlayingAudioId] = useState<number | null>(null);
 
   const BASE_URL = CLIENT_KEY.endsWith("/")
