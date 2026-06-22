@@ -44,7 +44,7 @@ export default function NewsHero() {
     };
 
     return (
-        <main className="w-full py-12 flex flex-col items-center bg-[#f9f7f4]">
+        <main className="w-full py-10 flex flex-col items-center bg-[#f9f7f4]">
             {/* --- Section Header --- */}
             <div className="flex flex-col items-center gap-3 mb-12">
                 <span className='px-4 py-1.5 rounded-full flex items-center gap-2 bg-blue-100 text-blue-600 text-sm font-medium'>

@@ -32,7 +32,7 @@ export default function AboutUs() {
   }, []);
 
   return (
-    <section className="py-15 bg-white overflow-hidden">
+    <section className="py-10 bg-white overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex flex-col lg:flex-row gap-16 items-center">
           {/* Visual Side */}

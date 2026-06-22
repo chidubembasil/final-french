@@ -147,7 +147,7 @@ function BAC() {
     ];
 
     return (
-        <main className="pt-20 bg-white">
+        <main className="pt-10 bg-white">
             {selectedImg && (
                 <div className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center p-4 md:p-10" onClick={() => setSelectedImg(null)}>
                     <button className="absolute top-10 right-10 text-white hover:rotate-90 transition-transform" aria-label="cancel" title="cancel">
@@ -188,7 +188,7 @@ function BAC() {
                 )}
             </div>
 
-            <div ref={projectGoalsRef} className="w-full flex flex-col justify-center items-center py-20 gap-16 bg-gray-50/50 scroll-mt-24">
+            <div ref={projectGoalsRef} className="w-full flex flex-col justify-center items-center py-10 gap-10 bg-gray-50/50 scroll-mt-24">
                 <div className="w-[90%] flex justify-center items-center flex-col gap-4 text-center">
                     <div className="w-12 h-1 bg-blue-600 rounded-full mb-2"></div>
                     <h1 className="text-4xl md:text-5xl font-serif font-bold text-slate-900">Project Goals</h1>
@@ -320,7 +320,7 @@ function BAC() {
                     </div>
                 </div>
 
-                <div ref={galleryRef} className="w-[90%] max-w-7xl py-12 scroll-mt-24">
+                <div ref={galleryRef} className="w-[90%] max-w-7xl py-7 scroll-mt-24">
                     <div className="flex flex-col justify-between items-start mb-12 gap-6">
                         <div className="space-y-4">
                             <div className="flex items-center gap-2 text-blue-600 font-black text-xs uppercase tracking-widest">
@@ -361,7 +361,7 @@ function BAC() {
                             </div>
 
                             {totalPages > 1 && (
-                                <div className="flex justify-center items-center gap-4 mt-16">
+                                <div className="flex justify-center items-center gap-4 mt-12">
                                     <button  aria-label="prev page"
                                         onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
                                         disabled={currentPage === 1}
