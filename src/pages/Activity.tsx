@@ -626,10 +626,10 @@ function Activities() {
         </div>
       </div>
 
-      <section className="py-14 px-6 md:px-12 max-w-7xl mx-auto" ref={exercisesTopRef}>
+      <section className="py-10 px-6 md:px-12 max-w-7xl mx-auto" ref={exercisesTopRef}>
 
         {/* GLOBAL SEARCH */}
-        <div className="mb-10">
+        <div className="mb-7">
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 max-w-3xl mx-auto">
             <div className="relative">
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400" size={22} />
