@@ -7,7 +7,7 @@ export default function InteractiveActivities() {
   return (
     <main className="min-h-screen bg-[#fcfaf8] pt-10 pb-10 px-6" id="activities">
       {/* Header Section */}
-      <div className="max-w-7xl mx-auto text-center mb-16">
+      <div className="max-w-7xl mx-auto text-center mb-7">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-50 text-orange-600 text-sm font-bold mb-6">
           <Sparkles size={16} /> Practice with our exercises
         </div>
@@ -27,7 +27,7 @@ export default function InteractiveActivities() {
           <h2 className="text-3xl font-bold text-slate-800 mb-4">
             Explore All Exercises
           </h2>
-          <p className="text-gray-500 text-lg leading-relaxed max-w-xl mb-10">
+          <p className="text-gray-500 text-lg leading-relaxed max-w-xl mb-7">
             Access practical resources, language tips, exercises, videos, and learning tools to help you improve your French at every level.
           </p>
 

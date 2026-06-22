@@ -46,7 +46,7 @@ export default function NewsHero() {
     return (
         <main className="w-full py-10 flex flex-col items-center bg-[#f9f7f4]">
             {/* --- Section Header --- */}
-            <div className="flex flex-col items-center gap-3 mb-12">
+            <div className="flex flex-col items-center gap-3 mb-7">
                 <span className='px-4 py-1.5 rounded-full flex items-center gap-2 bg-blue-100 text-blue-600 text-sm font-medium'>
                     <Newspaper size={18}/> Stay Informed
                 </span>
@@ -58,7 +58,7 @@ export default function NewsHero() {
             </div>
 
             {/* --- News Grid --- */}
-            <div className="w-[90%] max-w-7xl grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
+            <div className="w-[90%] max-w-7xl grid grid-cols-1 md:grid-cols-3 gap-8 mb-9">
                 {news.length > 0 ? (
                     news.map((item: NewsItem) => {
                         const formattedDate = formatDate(item.updatedAt);

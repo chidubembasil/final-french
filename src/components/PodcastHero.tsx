@@ -341,7 +341,7 @@ export default function LatestPodcasts() {
   }
 
   return (
-    <section className="relative max-w-7xl mx-auto px-6 py-20">
+    <section className="relative max-w-7xl mx-auto px-6 py-10">
       <div className="text-center mb-20">
         <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-blue-50 text-blue-700 font-semibold text-sm mb-6">
           <Headphones size={16} />

@@ -41,7 +41,7 @@ export default function BACSection() {
     <section className="py-10 bg-[#fcfaf8]" id="bac">
       <div className="max-w-7xl mx-auto px-6">
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start mb-16 gap-8">
+        <div className="flex flex-col md:flex-row justify-between items-start mb-10 gap-8">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 text-red-600 text-xs font-bold uppercase mb-4">
               FEF Initiative • Embassy of France

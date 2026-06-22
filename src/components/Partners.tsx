@@ -25,9 +25,9 @@ const partners = [
 
 export default function PartnersSection() {
   return (
-    <section className="py-15 bg-white border-t border-gray-50">
+    <section className="py-10 bg-white border-t border-gray-50">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-12">
+        <div className="text-center mb-9">
           <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 mb-4">
             Our Strategic <span className="text-red-600">Partners</span>
           </h2>
@@ -57,7 +57,7 @@ export default function PartnersSection() {
         </div>
         
         {/* Supporting text for ToR compliance */}
-        <div className="mt-16 bg-blue-50/50 rounded-3xl p-8 border border-blue-100">
+        <div className="mt-10 bg-blue-50/50 rounded-3xl p-8 border border-blue-100">
           <div className="flex flex-col md:flex-row gap-6 items-center">
             <div className="bg-blue-600 text-white px-4 py-2 rounded-lg font-bold text-sm shrink-0">
               Project Funder
