@@ -25,7 +25,7 @@ const partners = [
 
 export default function PartnersSection() {
   return (
-    <section className="py-20 bg-white border-t border-gray-50">
+    <section className="py-15 bg-white border-t border-gray-50">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900 mb-4">

@@ -243,9 +243,9 @@ function News() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-16">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-13">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-24 gap-4">
+          <div className="flex flex-col items-center justify-center py-20 gap-4">
             <Loader2 className="animate-spin text-blue-600" size={48}/>
             <p className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Fetching latest news...</p>
           </div>

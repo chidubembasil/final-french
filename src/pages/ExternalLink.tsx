@@ -367,7 +367,7 @@ function ExternalLinksPage() {
 
         {/* Table */}
         {filteredLinks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-32 text-center">
+          <div className="flex flex-col items-center justify-center py-28 text-center">
             <div className="w-20 h-20 rounded-3xl bg-gray-100 flex items-center justify-center mb-6">
               <Link2 size={32} className="text-gray-300" />
             </div>

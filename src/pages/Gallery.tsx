@@ -227,14 +227,14 @@ function Gallery() {
       </div>
 
       {/* Gallery Grid */}
-      <div id="gallery-grid" className="max-w-7xl mx-auto px-4 md:px-8 py-12">
+      <div id="gallery-grid" className="max-w-7xl mx-auto px-4 md:px-8 py-10">
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <div className="flex flex-col items-center justify-center py-17 gap-4">
             <Loader2 className="animate-spin text-blue-600" size={40} />
             <p className="text-[10px] font-black uppercase text-gray-400 tracking-tighter">Syncing Gallery...</p>
           </div>
         ) : filteredImages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 gap-4">
+          <div className="flex flex-col items-center justify-center py-17 gap-4">
             <Image className="text-gray-300" size={60} />
             <p className="text-gray-400 text-lg font-medium">No items match your filters</p>
             <button 

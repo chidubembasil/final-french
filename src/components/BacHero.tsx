@@ -38,7 +38,7 @@ export default function BACSection() {
   };
 
   return (
-    <section className="py-24 bg-[#fcfaf8]" id="bac">
+    <section className="py-20 bg-[#fcfaf8]" id="bac">
       <div className="max-w-7xl mx-auto px-6">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-start mb-16 gap-8">

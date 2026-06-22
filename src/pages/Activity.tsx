@@ -229,7 +229,7 @@ function ExTypeIcon({ type }: { type: string }) {
 
 function EmptyState({ icon, msg }: { icon: React.ReactNode; msg: string }) {
   return (
-    <div className="flex flex-col items-center justify-center py-24 text-center">
+    <div className="flex flex-col items-center justify-center py-18 text-center">
       <div className="w-20 h-20 rounded-2xl bg-gray-100 flex items-center justify-center mb-6">{icon}</div>
       <p className="text-slate-400 font-bold text-sm">{msg}</p>
     </div>
@@ -626,7 +626,7 @@ function Activities() {
         </div>
       </div>
 
-      <section className="py-24 px-6 md:px-12 max-w-7xl mx-auto" ref={exercisesTopRef}>
+      <section className="py-18 px-6 md:px-12 max-w-7xl mx-auto" ref={exercisesTopRef}>
 
         {/* GLOBAL SEARCH */}
         <div className="mb-16">

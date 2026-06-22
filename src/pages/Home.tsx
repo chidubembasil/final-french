@@ -235,21 +235,21 @@ export default function Home() {
             </div>
 
             <div className="flex flex-col gap-0 overflow-hidden w-full">
-                <section id="about" className="scroll-mt-20">
+                <section id="about" className="scroll-mt-18">
                     <AboutUs />
                 </section>
                 
-                <section id="bac" className="scroll-mt-20">
+                <section id="bac" className="scroll-mt-18">
                     <BACSection />
                 </section>
 
-                <section id="activities" className="scroll-mt-20">
+                <section id="activities" className="scroll-mt-18">
                     <InteractiveActivities />
                 </section>
 
                 <PodcastHero />
 
-                <section id="resource" className="scroll-mt-20">
+                <section id="resource" className="scroll-mt-18">
                     <ResourceHero />
                 </section>
 

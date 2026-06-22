@@ -188,7 +188,7 @@ function BAC() {
                 )}
             </div>
 
-            <div ref={projectGoalsRef} className="w-full flex flex-col justify-center items-center py-24 gap-16 bg-gray-50/50 scroll-mt-24">
+            <div ref={projectGoalsRef} className="w-full flex flex-col justify-center items-center py-20 gap-16 bg-gray-50/50 scroll-mt-24">
                 <div className="w-[90%] flex justify-center items-center flex-col gap-4 text-center">
                     <div className="w-12 h-1 bg-blue-600 rounded-full mb-2"></div>
                     <h1 className="text-4xl md:text-5xl font-serif font-bold text-slate-900">Project Goals</h1>
@@ -293,7 +293,7 @@ function BAC() {
                     </div> */}
                 </div>
 
-                <div className="w-[90%] max-w-7xl flex flex-col gap-8 py-10">
+                <div className="w-[90%] max-w-7xl flex flex-col gap-8 py-7">
                     <div className="space-y-2">
                         <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900">Partner Universities</h2>
                         <p className="text-gray-500 ">Explore the network of institutions participating in the French Embassy Fund project across Nigeria.</p>
@@ -320,7 +320,7 @@ function BAC() {
                     </div>
                 </div>
 
-                <div ref={galleryRef} className="w-[90%] max-w-7xl py-20 scroll-mt-24">
+                <div ref={galleryRef} className="w-[90%] max-w-7xl py-12 scroll-mt-24">
                     <div className="flex flex-col justify-between items-start mb-12 gap-6">
                         <div className="space-y-4">
                             <div className="flex items-center gap-2 text-blue-600 font-black text-xs uppercase tracking-widest">
