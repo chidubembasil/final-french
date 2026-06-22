@@ -626,10 +626,10 @@ function Activities() {
         </div>
       </div>
 
-      <section className="py-18 px-6 md:px-12 max-w-7xl mx-auto" ref={exercisesTopRef}>
+      <section className="py-14 px-6 md:px-12 max-w-7xl mx-auto" ref={exercisesTopRef}>
 
         {/* GLOBAL SEARCH */}
-        <div className="mb-16">
+        <div className="mb-10">
           <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 max-w-3xl mx-auto">
             <div className="relative">
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400" size={22} />
@@ -742,7 +742,7 @@ function Activities() {
         ════════════════════════════════════════════════════════ */}
         {!searchQuery.trim() && currentView === "main" && (
           <div>
-            <div className="text-center mb-12">
+            <div className="text-center mb-8">
               <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">Select Exercise</h2>
               <p className="text-slate-400 font-bold uppercase tracking-[0.3em]">Choose your category to begin</p>
             </div>

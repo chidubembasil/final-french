@@ -293,7 +293,7 @@ function BAC() {
                     </div> */}
                 {/* </div> */}
 
-                <div className="w-[90%] max-w-7xl flex flex-col gap-8 py-7">
+                <div className="w-[90%] max-w-7xl flex flex-col gap-8 py-5">
                     <div className="space-y-2">
                         <h2 className="text-3xl md:text-4xl font-serif font-bold text-slate-900">Partner Universities</h2>
                         <p className="text-gray-500 ">Explore the network of institutions participating in the French Embassy Fund project across Nigeria.</p>
@@ -303,8 +303,8 @@ function BAC() {
                     </div>
                 </div>
 
-                <div className="w-[90%] max-w-6xl overflow-hidden rounded-[3rem] bg-gradient-to-r from-red-600 to-red-700 text-white shadow-2xl relative group mb-12">
-                    <div className="relative z-10 p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
+                <div className="w-[90%] max-w-6xl overflow-hidden rounded-[3rem] bg-gradient-to-r from-red-600 to-red-700 text-white shadow-2xl relative group mb-5">
+                    <div className="relative z-10 p-8 md:p-8 flex flex-col md:flex-row items-center justify-between gap-5">
                         <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
                             <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-3xl flex items-center justify-center border border-white/30 shadow-inner">
                                 <Target size={40} className="text-white" />
@@ -321,7 +321,7 @@ function BAC() {
                 </div>
 
                 <div ref={galleryRef} className="w-[90%] max-w-7xl py-7 scroll-mt-24">
-                    <div className="flex flex-col justify-between items-start mb-12 gap-6">
+                    <div className="flex flex-col justify-between items-start mb-8 gap-6">
                         <div className="space-y-4">
                             <div className="flex items-center gap-2 text-blue-600 font-black text-xs uppercase tracking-widest">
                                 <ImageIcon size={14} /> <span>Event Visuals</span>
