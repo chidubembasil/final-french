@@ -208,7 +208,7 @@ function BAC() {
                     ))}
                 </div>
                 
-               <div className="w-[90%] max-w-6xl relative group overflow-hidden mx-auto">
+               {/* <div className="w-[90%] max-w-6xl relative group overflow-hidden mx-auto"> */}
                 {/* Decorative Background Glow */}
                 {/* <div className="absolute top-0 right-0 -mr-20 -mt-20 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl group-hover:bg-blue-500/20 transition-all duration-700"></div>
  */}
@@ -291,7 +291,7 @@ function BAC() {
  */}
                        {/*  </div>
                     </div> */}
-                </div>
+                {/* </div> */}
 
                 <div className="w-[90%] max-w-7xl flex flex-col gap-8 py-7">
                     <div className="space-y-2">
