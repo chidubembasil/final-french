@@ -160,7 +160,7 @@ function Pedagogies() {
       </div>
  
       {/* IFCLASSE BANNER */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 mt-8 relative z-40">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 mt-6 relative z-40">
         <div className="bg-white rounded-[3rem] p-8 md:p-10 shadow-2xl border border-gray-100 flex flex-col md:flex-row items-center gap-8 text-slate-900 relative overflow-hidden">
           <div className="absolute top-0 left-0 w-1.5 h-full bg-gradient-to-b from-blue-600 to-red-600" />
           <div className="bg-white p-4 rounded-3xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-gray-100 shrink-0">
@@ -196,7 +196,7 @@ function Pedagogies() {
             )}
           </div>
           <div className="flex-1 flex flex-col">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-4">
                 <div className="bg-yellow-500/20 p-3 rounded-2xl text-yellow-500">
                   <Trophy size={28} />
@@ -224,8 +224,8 @@ function Pedagogies() {
       </div>
  
       {/* EVENTS */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-9 grid grid-cols-1 gap-8">
-        <p className="font-bold text-5xl w-full text-center mt-8 underline">Events</p>
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 grid grid-cols-1 gap-4">
+        <p className="font-bold text-5xl w-full text-center mt-6 underline">Events</p>
         <div className="bg-white rounded-[3rem] p-8 border border-gray-100 shadow-sm flex flex-col md:flex-row gap-8 items-stretch">
           <div className="w-full md:w-1/3 min-h-[150px] rounded-2xl overflow-hidden bg-gray-50 flex items-center justify-center relative">
             {upcomingEvents[0]?.celebrationImage ? (
@@ -237,7 +237,7 @@ function Pedagogies() {
             )}
           </div>
           <div className="flex-1 flex flex-col">
-            <div className="flex items-center gap-4 mb-6">
+            <div className="flex items-center gap-4 mb-3">
               <div className="bg-red-50 p-3 rounded-2xl text-red-600">
                 <CalendarDays size={28} />
               </div>
@@ -273,8 +273,8 @@ function Pedagogies() {
       </div>
  
       {/* ── RESOURCES: 2 MAIN THUMBNAILS ── */}
-      <div className="px-4 md:px-8 py-10 max-w-7xl mx-auto">
-        <h1 className="font-bold text-5xl w-full text-center mt-8 underline mb-8">Resources</h1>
+      <div className="px-4 md:px-8 py-7 max-w-7xl mx-auto">
+        <h1 className="font-bold text-5xl w-full text-center mt-2 underline mb-4">Resources</h1>
  
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
  
@@ -296,7 +296,7 @@ function Pedagogies() {
             {/* Dark gradient for text readability */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent group-hover:from-black/90 transition-all duration-300" />
 
-            <div className="relative z-10 h-full flex flex-col justify-end p-10">
+            <div className="relative z-10 h-full flex flex-col justify-end p-7">
               <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-4 group-hover:bg-white/30 transition-all border border-white/20">
                 <BookOpen size={32} className="text-white" />
               </div>
@@ -332,7 +332,7 @@ function Pedagogies() {
               }}
             />
 
-            <div className="relative z-10 h-full flex flex-col justify-end p-10">
+            <div className="relative z-10 h-full flex flex-col justify-end p-7">
               <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center mb-4 group-hover:bg-white/20 transition-all border border-white/20">
                 <Link2 size={32} className="text-white" />
               </div>
