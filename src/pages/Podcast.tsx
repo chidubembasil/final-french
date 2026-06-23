@@ -536,7 +536,7 @@ function Podcast() {
 
   return (
     <main className="pt-20 bg-gray-50/50 min-h-screen relative">
-      {/* ── Hero ── */}
+       {/* ── Hero ── */}
       <div className="relative w-full h-[90dvh] overflow-hidden bg-slate-900">
         {loadingHero ? (
           <div className="absolute inset-0 bg-slate-800 animate-pulse" />
