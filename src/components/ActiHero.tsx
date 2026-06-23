@@ -5,7 +5,7 @@ export default function InteractiveActivities() {
   const navigate = useNavigate();
 
   return (
-    <main className="min-h-screen pt-10 pb-5 px-6 bg-white" id="activities">
+    <main className="min-h-screen pt-10 pb-5 px-6 bg-[#f9f7f4] " id="activities">
       {/* Header Section */}
       <div className="max-w-7xl mx-auto text-center mb-2">
         <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-orange-50 text-orange-600 text-sm font-bold mb-2">
@@ -19,7 +19,7 @@ export default function InteractiveActivities() {
 
       {/* Explore Exercises Section */}
       <div className="max-w-7xl mx-auto">
-        <div className=" p-2 md:p-2 border text-center flex flex-col items-center">
+        <div className=" p-2 md:p-2 text-center flex flex-col items-center">
           <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center mb-8">
             <LayoutGrid size={40} />
           </div>
