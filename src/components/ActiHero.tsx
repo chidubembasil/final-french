@@ -5,9 +5,9 @@ export default function InteractiveActivities() {
   const navigate = useNavigate();
 
   return (
-    <main className="min-h-screen pt-10 pb-5 px-6 bg-[#f9f7f4] " id="activities">
+    <main className="py-10 px-6 bg-[#f9f7f4]" id="activities">
       {/* Header Section */}
-      <div className="max-w-7xl mx-auto text-center mb-2">
+      <div className="max-w-7xl mx-auto text-center mb-6">
         <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-orange-50 text-orange-600 text-sm font-bold mb-2">
           <Sparkles size={16} /> Practice with our exercises
         </div>
@@ -19,27 +19,25 @@ export default function InteractiveActivities() {
 
       {/* Explore Exercises Section */}
       <div className="max-w-7xl mx-auto">
-        <div className=" p-2 md:p-2 text-center flex flex-col items-center">
-          <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center mb-8">
+        <div className="text-center flex flex-col items-center">
+          <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center mb-6">
             <LayoutGrid size={40} />
           </div>
-          
+
           <h2 className="text-3xl font-bold text-slate-800 mb-4">
             Explore All Exercises
           </h2>
-          <p className="text-gray-500 text-lg leading-relaxed max-w-xl mb-7">
+          <p className="text-gray-500 text-lg leading-relaxed max-w-xl mb-6">
             Access practical resources, language tips, exercises, videos, and learning tools to help you improve your French at every level.
           </p>
 
-          <button 
+          <button
             onClick={() => navigate('/activities')}
             className="group relative bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-2xl font-bold text-lg shadow-xl shadow-red-100 transition-all active:scale-95 flex items-center gap-3"
           >
             Explore
             <ArrowRight className="group-hover:translate-x-1 transition-transform" />
           </button>
-
-          
         </div>
       </div>
     </main>
