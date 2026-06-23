@@ -303,7 +303,7 @@ function BAC() {
                     </div>
                 </div>
 
-                <div className="w-[90%] max-w-6xl overflow-hidden rounded-[3rem] bg-gradient-to-r from-red-600 to-red-700 text-white shadow-2xl relative group mb-5">
+                <div className="w-[90%] max-w-6xl overflow-hidden rounded-[3rem] bg-gradient-to-r from-red-600 to-red-700 text-white shadow-2xl relative group mb-1">
                     <div className="relative z-10 p-8 md:p-8 flex flex-col md:flex-row items-center justify-between gap-5">
                         <div className="flex flex-col md:flex-row items-center gap-6 text-center md:text-left">
                             <div className="w-20 h-20 bg-white/20 backdrop-blur-md rounded-3xl flex items-center justify-center border border-white/30 shadow-inner">

@@ -58,11 +58,11 @@ export default function BACSection() {
         {/* Pillars Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
           {pillars.map((pillar, i) => (
-            <div key={i} className="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all group">
-              <div className={`w-14 h-14 ${pillar.color} rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform shadow-lg shadow-gray-200`}>
+            <div key={i} className="bg-white p-5 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all group">
+              <div className={`w-14 h-14 ${pillar.color} rounded-2xl flex items-center justify-center mb-2 group-hover:scale-110 transition-transform shadow-lg shadow-gray-200`}>
                 {pillar.icon}
               </div>
-              <h3 className="text-2xl font-bold text-slate-800 mb-4">{pillar.title}</h3>
+              <h3 className="text-2xl font-bold text-slate-800 mb-2">{pillar.title}</h3>
               <p className="text-gray-500 leading-relaxed text-justify">
                 {pillar.desc}
               </p>
@@ -72,7 +72,7 @@ export default function BACSection() {
 
         {/* University Tiers Card */}
         <div className="bg-blue-700 rounded-[3rem] p-8 md:p-8 text-white overflow-hidden relative">
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-4 items-center">
             <div>
               <h3 className="text-3xl font-bold mb-6">Participating Universities</h3>
               <p className="text-blue-100 mb-6 text-justify">

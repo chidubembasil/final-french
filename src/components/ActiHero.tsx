@@ -7,11 +7,11 @@ export default function InteractiveActivities() {
   return (
     <main className="min-h-screen pt-10 pb-5 px-6 bg-white" id="activities">
       {/* Header Section */}
-      <div className="max-w-7xl mx-auto text-center mb-7">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-orange-50 text-orange-600 text-sm font-bold mb-6">
+      <div className="max-w-7xl mx-auto text-center mb-2">
+        <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-orange-50 text-orange-600 text-sm font-bold mb-2">
           <Sparkles size={16} /> Practice with our exercises
         </div>
-        <h1 className="text-4xl md:text-5xl font-serif font-bold text-slate-900 mb-4">
+        <h1 className="text-4xl md:text-5xl font-serif font-bold text-slate-900 mb-2">
           Learn French
         </h1>
         <div className="w-24 h-1 bg-blue-600 mx-auto rounded-full"></div>
@@ -19,7 +19,7 @@ export default function InteractiveActivities() {
 
       {/* Explore Exercises Section */}
       <div className="max-w-7xl mx-auto">
-        <div className=" rounded-[3rem] p-4 md:p-4 border border-gray-100 shadow-sm text-center flex flex-col items-center">
+        <div className=" p-2 md:p-2 border text-center flex flex-col items-center">
           <div className="w-20 h-20 bg-blue-50 text-blue-600 rounded-[2rem] flex items-center justify-center mb-8">
             <LayoutGrid size={40} />
           </div>
