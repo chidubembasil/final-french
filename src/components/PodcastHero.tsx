@@ -341,16 +341,16 @@ export default function LatestPodcasts() {
   }
 
   return (
-    <section className="relative max-w-7xl mx-auto px-6 py-10">
-      <div className="text-center mb-20">
-        <div className="inline-flex items-center gap-3 px-6 py-2 rounded-full bg-blue-50 text-blue-700 font-semibold text-sm mb-6">
+    <section className="relative max-w-7xl mx-auto px-6 py-7">
+      <div className="text-center mb-10">
+        <div className="inline-flex items-center gap-3 px-6 py-1 rounded-full bg-blue-50 text-blue-700 font-semibold text-sm mb-6">
           <Headphones size={16} />
           Featured Podcasts
         </div>
         <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900">
           Latest Episodes
         </h2>
-        <p className="mt-5 text-slate-500 max-w-2xl mx-auto leading-relaxed">
+        <p className="mt-2 text-slate-500 max-w-2xl mx-auto leading-relaxed">
           Listen to inspiring podcasts, interviews, student voices, cultural
           discussions, and educational content created to make French learning
           engaging and accessible.
@@ -362,7 +362,7 @@ export default function LatestPodcasts() {
         </div>
       </div>
 
-      <div className="grid gap-12 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-3">
         {podcasts.map((podcast) => {
           const isAudio = podcast.mediaType === "audio";
           const isVideo = podcast.mediaType === "video";

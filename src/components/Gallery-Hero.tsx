@@ -41,7 +41,7 @@ export default function GalleryHero() {
   }, [CLIENT_KEY]);
 
   return (
-    <main className="w-full py-10 flex flex-col items-center bg-[#f9f7f4]">
+    <main className="w-full py-7 flex flex-col items-center bg-[#f9f7f4]">
       <div className="flex flex-col items-center gap-3 mb-10 text-center">
         <span className="px-4 py-1.5 rounded-full flex items-center gap-2 bg-blue-100 text-blue-600 text-sm font-medium">
           <Sparkles size={16} /> Visual documentation
@@ -71,7 +71,7 @@ export default function GalleryHero() {
                   e.currentTarget.src = 'https://via.placeholder.com/400x600?text=Image+Not+Found';
                 }}
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-6">
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex flex-col justify-end p-3">
                 <h3 className="text-white font-bold text-lg leading-tight">
                   {item.title}
                 </h3>

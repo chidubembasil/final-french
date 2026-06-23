@@ -38,10 +38,10 @@ export default function BACSection() {
   };
 
   return (
-    <section className="py-10 bg-[#fcfaf8]" id="bac">
+    <section className="py-7 bg-[#fcfaf8]" id="bac">
       <div className="max-w-7xl mx-auto px-6">
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-start mb-10 gap-8">
+        <div className="flex flex-col md:flex-row justify-between items-start mb-7 gap-5">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-50 text-red-600 text-xs font-bold uppercase mb-4">
               FEF Initiative • Embassy of France
@@ -56,7 +56,7 @@ export default function BACSection() {
         </div>
 
         {/* Pillars Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
           {pillars.map((pillar, i) => (
             <div key={i} className="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-2xl transition-all group">
               <div className={`w-14 h-14 ${pillar.color} rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform shadow-lg shadow-gray-200`}>
@@ -71,11 +71,11 @@ export default function BACSection() {
         </div>
 
         {/* University Tiers Card */}
-        <div className="bg-blue-700 rounded-[3rem] p-8 md:p-12 text-white overflow-hidden relative">
-          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className="bg-blue-700 rounded-[3rem] p-8 md:p-8 text-white overflow-hidden relative">
+          <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <div>
               <h3 className="text-3xl font-bold mb-6">Participating Universities</h3>
-              <p className="text-blue-100 mb-8 text-justify">
+              <p className="text-blue-100 mb-6 text-justify">
                 The Bilingual and Competitive project provides multi-level support to strengthen French departments 
                 and establish Resource and Employability Centres across Nigeria.
               </p>
