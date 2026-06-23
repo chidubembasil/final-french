@@ -174,16 +174,15 @@ function Pedagogies() {
             href="http://ifclasse.institutfrancais.com/"
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-2xl font-bold shadow-lg hover:bg-slate-800 transition-all"
-          >
+            className="inline-flex items-center gap-3 px-8 py-4 bg-slate-900 text-white rounded-2xl font-bold shadow-lg hover:bg-slate-800 transition-all">
             Visit Portal <ExternalLink size={18} />
           </a>
         </div>
       </div>
  
       {/* TEACHERS HALL OF FAME */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-9 grid grid-cols-1 gap-8">
-        <p className="font-bold text-5xl w-full text-center mt-8 underline">Teachers Hall of fame</p>
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 grid grid-cols-1 gap-4">
+        <p className="font-bold text-5xl w-full text-center mt-2 underline">Teachers Hall of fame</p>
         <div className="bg-slate-900 rounded-[3rem] p-5 text-white shadow-xl relative overflow-hidden flex flex-col md:flex-row gap-8 items-stretch">
           <div className="absolute top-0 right-0 w-32 h-32 bg-yellow-500/10 rounded-full blur-3xl" />
           <div className="w-full md:w-1/3 min-h-[150px] rounded-2xl overflow-hidden bg-white/5 flex items-center justify-center relative border border-white/10">
@@ -224,7 +223,7 @@ function Pedagogies() {
       </div>
  
       {/* EVENTS */}
-      <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 grid grid-cols-1 gap-4">
+      <div className="max-w-7xl mx-auto px-4 md:px-8 py-2 grid grid-cols-1 gap-4">
         <p className="font-bold text-5xl w-full text-center mt-2 underline">Events</p>
         <div className="bg-white rounded-[3rem] p-6 border border-gray-100 shadow-sm flex flex-col md:flex-row gap-4 items-stretch">
           <div className="w-full md:w-1/3 min-h-[150px] rounded-2xl overflow-hidden bg-gray-50 flex items-center justify-center relative">
@@ -273,8 +272,8 @@ function Pedagogies() {
       </div>
  
       {/* ── RESOURCES: 2 MAIN THUMBNAILS ── */}
-      <div className="px-4 md:px-8 py-5 max-w-7xl mx-auto">
-        <h1 className="font-bold text-5xl w-full text-center mt-2 underline mb-4">Resources</h1>
+      <div className="px-4 md:px-8 py-3 max-w-7xl mx-auto">
+        <h1 className="font-bold text-5xl w-full text-center mt-1 underline mb-3">Resources</h1>
  
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
  
