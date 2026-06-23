@@ -160,7 +160,7 @@ function NativeAudioPlayer({
   };
 
   return (
-    <div className="w-full mt-auto space-y-3">
+    <div className="w-full mt-auto space-y-2">
       <audio
         ref={audioRef}
         src={src}
@@ -198,7 +198,7 @@ function NativeAudioPlayer({
         onClick={toggle}
         disabled={isLoading}
         aria-label={playing ? `Pause ${title}` : `Play ${title}`}
-        className="w-full flex items-center justify-center gap-3 py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-700 to-red-600 hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-700 to-red-600 hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {isLoading ? (
           <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
@@ -241,7 +241,7 @@ function IframeAudioPlayer({
     return (
       <button
         onClick={onActivate}
-        className="w-full flex items-center justify-center gap-3 py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-700 to-red-600 hover:opacity-90 transition"
+        className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-700 to-red-600 hover:opacity-90 transition"
       >
         <Play size={18} />
         Play Episode
@@ -250,11 +250,11 @@ function IframeAudioPlayer({
   }
 
   return (
-    <div className="space-y-2">
-      {/* Negative margin breaks out of the p-8 card padding so iframe is full-bleed */}
+    <div className="space-y-1">
+      {/* Negative margin breaks out of the p-6 card padding so iframe is full-bleed */}
       <div
         className="overflow-hidden rounded-xl border border-slate-200"
-        style={{ marginLeft: "-2rem", marginRight: "-2rem" }}
+        style={{ marginLeft: "-1.5rem", marginRight: "-1.5rem" }}
       >
         <iframe
           src={safeUrl}
@@ -277,14 +277,14 @@ function CoverImage({ src, title }: { src?: string; title: string }) {
 
   if (!src || imgError) {
     return (
-      <div className="w-full h-48 flex items-center justify-center bg-gradient-to-br from-blue-700 to-red-600 rounded-t-[2rem]">
-        <Headphones size={40} className="text-white/70" />
+      <div className="w-full h-40 flex items-center justify-center bg-gradient-to-br from-blue-700 to-red-600 rounded-t-[2rem]">
+        <Headphones size={36} className="text-white/70" />
       </div>
     );
   }
 
   return (
-    <div className="w-full h-48 overflow-hidden rounded-t-[2rem]">
+    <div className="w-full h-40 overflow-hidden rounded-t-[2rem]">
       <img
         src={src}
         alt={`Cover art for ${title}`}
@@ -334,16 +334,16 @@ export default function LatestPodcasts() {
 
   if (loading) {
     return (
-      <div className="py-28 text-center text-slate-400 text-lg">
+      <div className="py-12 text-center text-slate-400 text-lg">
         Loading latest episodes…
       </div>
     );
   }
 
   return (
-    <section className="relative max-w-7xl mx-auto px-6 py-7">
-      <div className="text-center mb-10">
-        <div className="inline-flex items-center gap-3 px-6 py-1 rounded-full bg-blue-50 text-blue-700 font-semibold text-sm mb-6">
+    <section className="relative max-w-7xl mx-auto px-6 py-4">
+      <div className="text-center mb-6">
+        <div className="inline-flex items-center gap-3 px-6 py-1 rounded-full bg-blue-50 text-blue-700 font-semibold text-sm mb-3">
           <Headphones size={16} />
           Featured Podcasts
         </div>
@@ -355,7 +355,7 @@ export default function LatestPodcasts() {
           discussions, and educational content created to make French learning
           engaging and accessible.
         </p>
-        <div className="mt-10 flex justify-center gap-2">
+        <div className="mt-4 flex justify-center gap-2">
           <span className="w-10 h-1 rounded-full bg-blue-700" />
           <span className="w-10 h-1 rounded-full bg-gray-200" />
           <span className="w-10 h-1 rounded-full bg-red-600" />
@@ -379,9 +379,9 @@ export default function LatestPodcasts() {
             >
               <CoverImage src={coverImage} title={podcast.title} />
 
-              <div className="p-8 flex flex-col flex-1">
+              <div className="p-6 flex flex-col flex-1">
                 <span
-                  className={`inline-block mb-4 px-4 py-1 rounded-full text-xs font-bold tracking-wide ${
+                  className={`inline-block mb-2 px-4 py-1 rounded-full text-xs font-bold tracking-wide ${
                     isAudio
                       ? "bg-blue-50 text-blue-700"
                       : "bg-red-50 text-red-700"
@@ -390,11 +390,11 @@ export default function LatestPodcasts() {
                   {isAudio ? "Audio Podcast" : "Video Podcast"}
                 </span>
 
-                <h3 className="text-xl font-extrabold text-slate-900 mb-3">
+                <h3 className="text-xl font-extrabold text-slate-900 mb-2">
                   {podcast.title}
                 </h3>
 
-                <p className="text-slate-500 text-sm mb-8 line-clamp-3">
+                <p className="text-slate-500 text-sm mb-4 line-clamp-3">
                   {podcast.description}
                 </p>
 
@@ -443,11 +443,11 @@ export default function LatestPodcasts() {
                 )}
 
                 {isVideo && podcast.videoUrl && (
-                  <div className="mt-auto space-y-4">
+                  <div className="mt-auto space-y-2">
                     {!isIframeActive && (
                       <button
                         onClick={() => setActiveIframeId(podcast.id)}
-                        className="w-full flex items-center justify-center gap-3 py-4 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-700 to-red-600 hover:opacity-90 transition"
+                        className="w-full flex items-center justify-center gap-3 py-3 rounded-xl font-semibold text-white bg-gradient-to-r from-blue-700 to-red-600 hover:opacity-90 transition"
                       >
                         <Play size={18} />
                         Play Episode
@@ -460,7 +460,7 @@ export default function LatestPodcasts() {
                           src={podcast.videoUrl}
                           title={podcast.title}
                           sandbox="allow-same-origin allow-scripts allow-presentation"
-                          className="w-full h-48 rounded-xl border border-slate-200"
+                          className="w-full h-40 rounded-xl border border-slate-200"
                         />
                         <button
                           onClick={() => setActiveIframeId(null)}
@@ -474,7 +474,7 @@ export default function LatestPodcasts() {
                   </div>
                 )}
 
-                <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100 text-xs text-slate-400">
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-slate-100 text-xs text-slate-400">
                   <span>{new Date(podcast.createdAt).toDateString()}</span>
                 </div>
               </div>
@@ -483,7 +483,7 @@ export default function LatestPodcasts() {
         })}
       </div>
 
-      <div className="w-full flex justify-center items-center mt-3">
+      <div className="w-full flex justify-center items-center mt-6">
         <button
           onClick={() => navigate("/podcast")}
           className="group relative bg-red-600 hover:bg-red-700 text-white px-8 py-3 rounded-2xl font-bold text-lg shadow-xl shadow-red-100 transition-all active:scale-95 flex items-center gap-3"
