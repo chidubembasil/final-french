@@ -273,10 +273,10 @@ function Pedagogies() {
       </div>
  
       {/* ── RESOURCES: 2 MAIN THUMBNAILS ── */}
-      <div className="px-4 md:px-8 py-4 max-w-7xl mx-auto">
+      <div className="px-4 md:px-8 py-5 max-w-7xl mx-auto">
         <h1 className="font-bold text-5xl w-full text-center mt-2 underline mb-4">Resources</h1>
  
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
  
           {/* Card 1 — Pedagogical Worksheets */}
           <button
@@ -296,12 +296,12 @@ function Pedagogies() {
             {/* Dark gradient for text readability */}
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent group-hover:from-black/90 transition-all duration-300" />
 
-            <div className="relative z-10 h-full flex flex-col justify-end p-4">
-              <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-2 group-hover:bg-white/30 transition-all border border-white/20">
+            <div className="relative z-10 h-full flex flex-col justify-end p-7">
+              <div className="w-16 h-16 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center mb-4 group-hover:bg-white/30 transition-all border border-white/20">
                 <BookOpen size={32} className="text-white" />
               </div>
               <h3 className="text-3xl font-black text-white mb-2 tracking-tight">Pedagogical Worksheets</h3>
-              <p className="text-white/85 font-medium mb-2 text-sm">
+              <p className="text-white/85 font-medium mb-4 text-sm">
                 Structured exercises for Children, Adolescents & Adults · A1 → B2
               </p>
               <div className="flex items-center gap-2 text-white text-sm font-black uppercase tracking-widest">
@@ -332,12 +332,12 @@ function Pedagogies() {
               }}
             />
 
-            <div className="relative z-10 h-full flex flex-col justify-end p-4">
-              <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center mb-2 group-hover:bg-white/20 transition-all border border-white/20">
+            <div className="relative z-10 h-full flex flex-col justify-end p-7">
+              <div className="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center mb-4 group-hover:bg-white/20 transition-all border border-white/20">
                 <Link2 size={32} className="text-white" />
               </div>
               <h3 className="text-3xl font-black text-white mb-2 tracking-tight">External Resource Links</h3>
-              <p className="text-white/80 font-medium mb-2 text-sm">
+              <p className="text-white/80 font-medium mb-4 text-sm">
                 Curated collection of external pedagogical links and references
               </p>
               <div className="flex items-center gap-2 text-white text-sm font-black uppercase tracking-widest">
